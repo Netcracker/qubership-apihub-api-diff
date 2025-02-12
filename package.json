@@ -30,14 +30,14 @@
     "release-finish": "release-finish"
   },
   "dependencies": {
-    "@netcracker/qubership-apihub-api-unifier": "1.0.4",
-    "@netcracker/qubership-apihub-json-crawl": "1.0.4",
+    "@netcracker/qubership-apihub-api-unifier": "feature-npm-update",
+    "@netcracker/qubership-apihub-json-crawl": "feature-npm-update",
     "fast-equals": "4.0.3"
   },
   "devDependencies": {
-    "@netcracker/qubership-apihub-compatibility-suites": "2.0.3",
-    "@netcracker/qubership-apihub-graphapi": "1.0.8",
-    "@netcracker/qubership-apihub-npm-gitflow": "2.2.2",
+    "@netcracker/qubership-apihub-compatibility-suites": "feature-npm-update",
+    "@netcracker/qubership-apihub-graphapi": "feature-npm-update",
+    "@netcracker/qubership-apihub-npm-gitflow": "feature-npm-update",
     "@types/jest": "29.5.11",
     "@types/node": "20.11.6",
     "@typescript-eslint/eslint-plugin": "6.13.2",
