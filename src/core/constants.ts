@@ -20,9 +20,10 @@ export const ClassifierType = {
   annotation: 'annotation',
   unclassified: 'unclassified',
   deprecated: 'deprecated',
+  risky: 'risky'
 } as const
 
-export const { breaking, nonBreaking, semiBreaking, unclassified, annotation, deprecated } = ClassifierType
+export const { breaking, nonBreaking, semiBreaking, unclassified, annotation, deprecated, risky } = ClassifierType
 
 // predefined classifiers
 export const allNonBreaking: ClassifyRule = [nonBreaking, nonBreaking, nonBreaking]
