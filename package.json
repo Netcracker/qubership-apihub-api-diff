@@ -30,7 +30,7 @@
     "release-finish": "release-finish"
   },
   "dependencies": {
-    "@netcracker/qubership-apihub-api-unifier": "1.0.4",
+    "@netcracker/qubership-apihub-api-unifier": "bugfix-handle-rich-ref-separately",
     "@netcracker/qubership-apihub-json-crawl": "1.0.4",
     "fast-equals": "4.0.3"
   },
