@@ -20,7 +20,7 @@
     "build": "vite build",
     "performance:run-inspect": "vite build --sourcemap=inline -c=vite.performance.config.ts && node --inspect dist/index.es.mjs",
     "development:link": "npm link && npm link @netcracker/qubership-apihub-json-crawl --save && npm link @netcracker/qubership-apihub-graphapi --save-dev && npm link @netcracker/qubership-apihub-api-unifier --save && npm link @netcracker/qubership-apihub-compatibility-suites --save-dev",
-    "development:unlink": "npm unlink && npm unlink @netcracker/qubership-apihub-json-crawl && npm unlink @netcracker/qubership-apihub-graphapi && npm unlink @netcracker/qubership-apihub-api-unifier && npm unlink @netcracker/qubership-apihub-compatibility-suites",
+    "development:unlink": "npm unlink @netcracker/qubership-apihub-json-crawl --no-save && npm unlink @netcracker/qubership-apihub-graphapi --no-save && npm unlink @netcracker/qubership-apihub-api-unifier --no-save && npm unlink @netcracker/qubership-apihub-compatibility-suites --no-save",
     "test": "jest --maxWorkers 3 --verbose",
     "test:compatibility-suites": "jest --findRelatedTests --detectOpenHandles test/compatibility-suites/*",
     "test:human-readble": "jest --findRelatedTests --detectOpenHandles test/human-readable/*",
