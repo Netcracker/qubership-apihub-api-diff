@@ -93,35 +93,50 @@ export const contentMediaTypeMappingResolver: MappingResolver<string> = (before,
 
   const beforeKeys = objectKeys(before)
   const afterKeys = objectKeys(after)
-  
-  // Extract base media types (without parameters like charset, etc.)
-  const beforeBaseTypes = beforeKeys.map((key) => key.split(';')[0] ?? '')
-  const afterBaseTypes = afterKeys.map((key) => key.split(';')[0] ?? '')
 
   const unmappedAfterIndices = new Set(afterKeys.keys())
   const unmappedBeforeIndices = new Set(beforeKeys.keys())
 
-  // Map exact matches first
-  for (let i = 0; i < beforeKeys.length; i++) {
-    const beforeBaseType = beforeBaseTypes[i]
-    const afterIndex = afterBaseTypes.findIndex((afterBaseType, index) => 
-      afterBaseType === beforeBaseType && unmappedAfterIndices.has(index)
-    )
+  function mapExactMatches(
+    getComparisonKey: (key: string) => string
+  ): void {
+    
+    for (const beforeIndex of unmappedBeforeIndices) {
+      const beforeKey = getComparisonKey(beforeKeys[beforeIndex])
+      
+      // Find matching after index by iterating over the after indices set
+      let matchingAfterIndex: number | undefined
+      for (const afterIndex of unmappedAfterIndices) {
+        const afterKey = getComparisonKey(afterKeys[afterIndex])
+        if (afterKey === beforeKey) {
+          matchingAfterIndex = afterIndex
+          break
+        }
+      }
 
-    if (afterIndex >= 0) {
-      // Exact match found - map it
-      result.mapped[beforeKeys[i]] = afterKeys[afterIndex]
-      unmappedAfterIndices.delete(afterIndex)
-      unmappedBeforeIndices.delete(i)
+      if (matchingAfterIndex !== undefined) {
+        // Match found - create mapping and remove from unmapped sets
+        result.mapped[beforeKeys[beforeIndex]] = afterKeys[matchingAfterIndex]
+        unmappedAfterIndices.delete(matchingAfterIndex)
+        unmappedBeforeIndices.delete(beforeIndex)
+      }
     }
   }
+
+  // First, map exact matches for full media type
+  mapExactMatches((key) => key)
+
+  // After that, try to map media types by base type for remaining unmapped keys
+  mapExactMatches(getMediaTypeBase)
 
   // If exactly one unmapped item in both before and after, try wildcard matching
   if (unmappedBeforeIndices.size === 1 && unmappedAfterIndices.size === 1) {
     const beforeIndex = Array.from(unmappedBeforeIndices)[0]
     const afterIndex = Array.from(unmappedAfterIndices)[0]
-    const beforeBaseType = beforeBaseTypes[beforeIndex]
-    const afterBaseType = afterBaseTypes[afterIndex]
+    const beforeKey = beforeKeys[beforeIndex]
+    const afterKey = afterKeys[afterIndex]
+    const beforeBaseType = getMediaTypeBase(beforeKey)
+    const afterBaseType = getMediaTypeBase(afterKey)
 
     // Check if they are compatible using wildcard matching
     if (isWildcardCompatible(beforeBaseType, afterBaseType)) {
@@ -137,6 +152,10 @@ export const contentMediaTypeMappingResolver: MappingResolver<string> = (before,
   unmappedAfterIndices.forEach((index) => result.added.push(afterKeys[index]))
 
   return result
+}
+
+function getMediaTypeBase(mediaType: string): string {
+  return mediaType.split(';')[0] ?? ''
 }
 
 function isWildcardCompatible(beforeType: string, afterType: string): boolean {

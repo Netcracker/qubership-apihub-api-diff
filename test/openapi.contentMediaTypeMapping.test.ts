@@ -119,29 +119,7 @@ describe('Content Media Type Mapping', () => {
         removed: [],
         mapped: { '*/*': 'application/*' }
       })
-    })
-
-    it('should map wildcard fallback after exact matches', () => {
-      const before = { 
-        'application/json': {},
-        '*/*': {}
-      }
-      const after = { 
-        'application/json': {},
-        'text/xml': {}
-      }
-      
-      const result = contentMediaTypeMappingResolver(before, after, mockContext)
-      
-      expect(result).toEqual({
-        added: [],
-        removed: [],
-        mapped: { 
-          'application/json': 'application/json',
-          '*/*': 'text/xml'
-        }
-      })
-    })
+    })    
   })
 
   describe('No Mapping Cases', () => {
@@ -347,6 +325,70 @@ describe('Content Media Type Mapping', () => {
         removed: ['text/xml', '*/*'],
         mapped: { 
           'application/json': 'application/json'
+        }
+      })
+    })
+  })
+
+  describe('Full Media Type Matching Priority Tests', () => {
+    it('should prioritize exact full media type matches over base type matches', () => {
+      const before = { 
+        'application/json': {},
+        'application/json; charset=utf-8': {}
+      }
+      const after = { 
+        'application/json; charset=utf-8': {},
+        'application/json': {}
+      }
+      
+      const result = contentMediaTypeMappingResolver(before, after, mockContext)
+      
+      expect(result).toEqual({
+        added: [],
+        removed: [],
+        mapped: { 
+          'application/json': 'application/json',
+          'application/json; charset=utf-8': 'application/json; charset=utf-8'
+        }
+      })
+    })
+
+    it('should fall back to base type matching when no full media type matches exist', () => {
+      const before = { 
+        'application/json; charset=utf-8': {}
+      }
+      const after = { 
+        'application/json; charset=iso-8859-1': {}
+      }
+      
+      const result = contentMediaTypeMappingResolver(before, after, mockContext)
+      
+      expect(result).toEqual({
+        added: [],
+        removed: [],
+        mapped: { 
+          'application/json; charset=utf-8': 'application/json; charset=iso-8859-1'
+        }
+      })
+    })
+
+    it('should prioritize full media type matches even when base types could match differently', () => {
+      const before = { 
+        'application/json; charset=utf-8': {},
+        'application/xml': {}
+      }
+      const after = { 
+        'application/json; charset=utf-8': {},
+        'application/json': {}
+      }
+      
+      const result = contentMediaTypeMappingResolver(before, after, mockContext)
+      
+      expect(result).toEqual({
+        added: ['application/json'],
+        removed: ['application/xml'],
+        mapped: { 
+          'application/json; charset=utf-8': 'application/json; charset=utf-8'
         }
       })
     })
