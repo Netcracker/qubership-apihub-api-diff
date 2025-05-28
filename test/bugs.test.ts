@@ -212,6 +212,7 @@ describe('Real Data', () => {
     expect(diffs).toBeEmpty()
   })
 
+  // The original issue was that media type was reported as added/removed, when nothing actually changed
   it('wildcard content schema media type in combination with specific media type', () => {
     const before: any = wildcardContentSchemaMediaTypeCombinedWithSpecificMediaTypeBefore
     const after: any = wildcardContentSchemaMediaTypeCombinedWithSpecificMediaTypeAfter
