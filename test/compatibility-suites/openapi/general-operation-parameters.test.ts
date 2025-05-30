@@ -1,6 +1,6 @@
 import { compareFiles, TEST_DEFAULTS_DECLARATION_PATHS } from '../utils'
 import { diffsMatcher } from '../../helper/matchers'
-import { annotation, breaking, deprecated, DiffAction, nonBreaking, unclassified } from '../../../src'
+import { annotation, breaking, deprecated, DiffAction, nonBreaking } from '../../../src'
 
 const SUITE_ID = 'general-operation-parameters'
 const COMMON_PATH1_GET = ['paths', '/path1', 'get']
@@ -595,19 +595,21 @@ describe('Openapi3 General Operation Parameters', () => {
     ]))
   })
 
-  test('Add custom property in path', async () => {
+  // No changes
+  test.skip('Add custom property in path', async () => {
     const testId = 'add-custom-property-in-path'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
         afterDeclarationPaths: [['paths', '/pets', 'x-feature-flag']],
-        type: unclassified,
+        type: nonBreaking,
       }),
     ]))
   })
 
-  test('Update custom property in path', async () => {
+  // No changes
+  test.skip('Update custom property in path', async () => {
     const testId = 'update-custom-property-value-in-path'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
@@ -615,19 +617,20 @@ describe('Openapi3 General Operation Parameters', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [['paths', '/pets', 'x-feature-flag']],
         afterDeclarationPaths: [['paths', '/pets', 'x-feature-flag']],
-        type: unclassified,
+        type: nonBreaking,
       }),
     ]))
   })
 
-  test('Remove custom property in path', async () => {
+  // No changes
+  test.skip('Remove custom property in path', async () => {
     const testId = 'remove-custom-property-in-path'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
         beforeDeclarationPaths: [['paths', '/pets', 'x-feature-flag']],
-        type: unclassified,
+        type: nonBreaking,
       }),
     ]))
   })

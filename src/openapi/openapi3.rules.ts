@@ -74,20 +74,6 @@ import { encodingParamsCalculator } from './openapi3.description.encoding'
 const documentAnnotationRule: CompareRules = { $: allAnnotation }
 const operationAnnotationRule: CompareRules = { $: allAnnotation }
 
-const openApiExtensionRulesFunction: (fallbackRules: CompareRules | (() => CompareRules)) => CompareRules = (fallbackRules) => ({
-  '/*': (ctx) => {
-    const { key } = ctx
-    return typeof key === 'string' && key.startsWith('x-')
-      ? {
-        $: allUnclassified,
-        '/**': {
-          $: allUnclassified,
-        },
-      }
-      : typeof fallbackRules === 'function' ? fallbackRules() : fallbackRules
-  },
-})
-
 export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
   const requestSchemaRules = openApiSchemaRules(options)
   const responseSchemaRules = openApiSchemaRules({ ...options, response: true })
@@ -345,51 +331,6 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     },
   }
 
-  const operationCompareRules:CompareRules = {
-    $: [nonBreaking, breaking, unclassified],
-    '/*': operationAnnotationRule,
-    '/tags': {
-      ...operationAnnotationRule,
-      mapping: deepEqualsUniqueItemsArrayMappingResolver,
-      '/*': {
-        ...operationAnnotationRule,
-        [IGNORE_DIFFERENCE_IN_KEYS_RULE]: true,
-      },
-    },
-    '/parameters': {
-      ...parametersRules,
-      $: [nonBreaking, apihubParametersRemovalClassifyRule, breaking],
-      mapping: paramMappingResolver(2),
-    },
-    '/requestBody': requestBodiesRules,
-    '/callbacks': {
-      '/*': {
-        //no support?
-      },
-    },
-    '/responses': responsesRules,
-    '/deprecated': { $: allDeprecated },
-    '/security': {
-      $: operationSecurityClassifyRule,
-      '/*': {
-        $: operationSecurityItemClassifyRule,
-        '/*': {
-          $: allBreaking,
-          mapping: deepEqualsUniqueItemsArrayMappingResolver,
-          '/*': {
-            $: [breaking, nonBreaking, breaking],
-            ignoreKeyDifference: true,
-          },
-        },
-      },
-    },
-    '/servers': serversRules,
-    '/externalDocs': {
-      $: allAnnotation,
-      '/*': { $: allAnnotation },
-    },
-  }
-
   return {
     '/openapi': documentAnnotationRule,
     '/info': {
@@ -405,7 +346,50 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
         '/summary': { $: allAnnotation },
         '/description': { $: allAnnotation },
-        ...openApiExtensionRulesFunction(operationCompareRules),
+        '/*': {
+          $: [nonBreaking, breaking, unclassified],
+          '/*': operationAnnotationRule,
+          '/tags': {
+            ...operationAnnotationRule,
+            mapping: deepEqualsUniqueItemsArrayMappingResolver,
+            '/*': {
+              ...operationAnnotationRule,
+              [IGNORE_DIFFERENCE_IN_KEYS_RULE]: true,
+            },
+          },
+          '/parameters': {
+            ...parametersRules,
+            $: [nonBreaking, apihubParametersRemovalClassifyRule, breaking],
+            mapping: paramMappingResolver(2),
+          },
+          '/requestBody': requestBodiesRules,
+          '/callbacks': {
+            '/*': {
+              //no support?
+            },
+          },
+          '/responses': responsesRules,
+          '/deprecated': { $: allDeprecated },
+          '/security': {
+            $: operationSecurityClassifyRule,
+            '/*': {
+              $: operationSecurityItemClassifyRule,
+              '/*': {
+                $: allBreaking,
+                mapping: deepEqualsUniqueItemsArrayMappingResolver,
+                '/*': {
+                  $: [breaking, nonBreaking, breaking],
+                  ignoreKeyDifference: true,
+                },
+              },
+            },
+          },
+          '/servers': serversRules,
+          '/externalDocs': {
+            $: allAnnotation,
+            '/*': { $: allAnnotation },
+          },
+        },
         '/servers': serversRules,
         '/parameters': {
           ...parametersRules,
