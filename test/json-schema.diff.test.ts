@@ -208,6 +208,7 @@ describe('JSON schema changes', () => {
       expect(merged).not.toHaveProperty('writeOnly')
     })
 
+    // expected to fail in this PoC, we serialize/deserialize the merged document, but not the diffs
     it('diff share share instance', () => {
       const before = {
         type: 'object',

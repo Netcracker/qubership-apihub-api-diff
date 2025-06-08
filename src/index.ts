@@ -23,5 +23,7 @@ export {
   isDiffRemove,
   isDiffRename,
   isDiffReplace,
+  serialize,
+  deserialize,
 } from './utils'
 export { onlyExistedArrayIndexes } from './utils'
