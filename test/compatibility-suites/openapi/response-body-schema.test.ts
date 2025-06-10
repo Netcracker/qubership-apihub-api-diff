@@ -1641,8 +1641,8 @@ const RESPONSE_SCHEMA31_PATH = [
 ]
 
 describe('Openapi31 ResponseBody.Schema ', () => {
-  test('Add second type', async () => {
-    const testId = 'add-second-type'
+  test('Add union type', async () => {
+    const testId = 'add-union-type'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -1653,8 +1653,8 @@ describe('Openapi31 ResponseBody.Schema ', () => {
     ]))
   })
 
-  test('Add third type', async () => {
-    const testId = 'add-third-type'
+  test('Add null to union type', async () => {
+    const testId = 'add-null-to-union-type'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -1665,8 +1665,8 @@ describe('Openapi31 ResponseBody.Schema ', () => {
     ]))
   })
 
-  test('Remove second type', async () => {
-    const testId = 'remove-second-type'
+  test('Remove union type', async () => {
+    const testId = 'remove-union-type'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -1677,8 +1677,8 @@ describe('Openapi31 ResponseBody.Schema ', () => {
     ]))
   })
 
-  test('Remove third type', async () => {
-    const testId = 'remove-third-type'
+  test('Remove null from union type', async () => {
+    const testId = 'remove-null-from-union-type'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -1689,8 +1689,8 @@ describe('Openapi31 ResponseBody.Schema ', () => {
     ]))
   })
 
-  test('Reorder types', async () => {
-    const testId = 'reorder-types'
+  test('Reorder types in union type', async () => {
+    const testId = 'reorder-types-in-union-type'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result.length).toEqual(0)
   })
