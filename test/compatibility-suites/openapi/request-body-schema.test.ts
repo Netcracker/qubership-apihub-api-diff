@@ -13,7 +13,7 @@ const REQUEST_SCHEMA_PATH = [
   'schema',
 ]
 
-const PARAMETERS_SCHEMA31_PATH = [
+const PATH_TO_PARAMETERS_SCHEMA31 = [
   'paths',
   '/example',
   'post',
@@ -28,5 +28,5 @@ describe('Openapi3 Request Body Schema', () => {
 })
 
 describe('Openapi31 Request Body Schema', () => {
-  runCommonSchema31Tests(SUITE_ID, PARAMETERS_SCHEMA31_PATH)
+  runCommonSchema31Tests(SUITE_ID, PATH_TO_PARAMETERS_SCHEMA31)
 })
