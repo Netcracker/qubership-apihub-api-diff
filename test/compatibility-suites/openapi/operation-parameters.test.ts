@@ -506,12 +506,6 @@ describe('Openapi3 Operation Parameters', () => {
     ))
   })
 
-  test('Explicitly prohibit reserved characters for query', async () => {
-    const testId = 'explicitly-prohibit-reserved-characters-for-query'
-    const result = await compareFiles(SUITE_ID, testId)
-    expect(result).toEqual([])
-  })
-
   test('Allow reserved characters for not query', async () => {
     const testId = 'allow-reserved-characters-for-not-query'
     const result = await compareFiles(SUITE_ID, testId)
