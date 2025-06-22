@@ -168,14 +168,14 @@ describe('Openapi3 Request', () => {
       expect(result).toEqual([])
     })
 
-    test('Add allowReserved attribute with default value for request body content media type encoding', async () => {
-      const testId = 'add-allowReserved-with-default-value-for-requestBody-content-media-type-encoding'
+    test('Add allowReserved attribute with default value for request body parameter encoding', async () => {
+      const testId = 'add-allowReserved-with-default-value-for-requestBody-parameter-encoding'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })
 
-    test('Remove allowReserved attribute with default value from request body content media type encoding', async () => {
-      const testId = 'remove-allowReserved-with-default-value-from-requestBody-content-media-type-encoding'
+    test('Remove allowReserved attribute with default value from request body parameter encoding', async () => {
+      const testId = 'remove-allowReserved-with-default-value-from-requestBody-parameter-encoding'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })

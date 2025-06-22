@@ -191,14 +191,14 @@ describe('Openapi3 Response', () => {
 
   describe('Add/remove default values', () => {
 
-    test('Add allowReserved attribute with default value for encoding', async () => {
-      const testId = 'add-allowReserved-attribute-with-default-value-for-encoding'
+    test('Add allowReserved attribute with default value for response parameter encoding', async () => {
+      const testId = 'add-allowReserved-attribute-with-default-value-for-response-parameter-encoding'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })
 
-    test('Remove allowReserved attribute with default value for encoding', async () => {
-      const testId = 'remove-allowReserved-attribute-with-default-value-from-encoding'
+    test('Remove allowReserved attribute with default value from response parameter encoding', async () => {
+      const testId = 'remove-allowReserved-attribute-with-default-value-from-response-parameter-encoding'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })
