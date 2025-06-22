@@ -632,39 +632,39 @@ describe('Openapi3 Operation Parameters', () => {
   })
 
   describe('Add/remove default values', () => {
-    
-    test('Explicitly mark parameter as not required (default)', async () => {
-      const testId = 'explicitly-mark-parameter-as-not-required-default'
+
+    test('Add required attribute with default value for parameter', async () => {
+      const testId = 'add-required-attribute-with-default-value-for-parameter'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })
 
-    test('Remove required attribute with default value', async () => {
-      const testId = 'remove-required-attribute-with-default-value'
+    test('Remove required attribute with default value from parameter', async () => {
+      const testId = 'remove-required-attribute-with-default-value-from-parameter'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })
 
-    test('Explicitly mark parameter as not deprecated (default)', async () => {
-      const testId = 'explicitly-mark-parameter-as-not-deprecated-default'
+    test('Add deprecated attribute with default value for parameter', async () => {
+      const testId = 'add-deprecated-attribute-with-default-value-for-parameter'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })
 
-    test('Remove deprecated attribute with default value', async () => {
-      const testId = 'remove-deprecated-attribute-with-default-value'
+    test('Remove deprecated attribute with default value from parameter', async () => {
+      const testId = 'remove-deprecated-attribute-with-default-value-from-parameter'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })
 
-    test('Explicitly prohibit empty value (default)', async () => {
-      const testId = 'explicitly-prohibit-empty-value-default'
+    test('Add allowEmptyValue attribute with default value for parameter', async () => {
+      const testId = 'add-allowEmptyValue-attribute-with-default-value-for-parameter'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })
 
-    test('Remove allowEmptyValue attribute with default value', async () => {
-      const testId = 'remove-allowEmptyValue-attribute-with-default-value'
+    test('Remove allowEmptyValue attribute with default value from parameter', async () => {
+      const testId = 'remove-allowEmptyValue-attribute-with-default-value-from-parameter'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })
@@ -717,14 +717,14 @@ describe('Openapi3 Operation Parameters', () => {
       expect(result).toEqual([])
     })
 
-    test('Explicitly prohibit reserved characters for query parameter (default)', async () => {
-      const testId = 'explicitly-prohibit-reserved-characters-for-query-parameter-default'
+    test('Add allowReserved attribute with default value for query parameter', async () => {
+      const testId = 'add-allowReserved-attribute-with-default-value-for-query-parameter'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })
 
-    test('Remove allowReserved attribute with default value', async () => {
-      const testId = 'remove-allowReserved-attribute-with-default-value'
+    test('Remove allowReserved attribute with default value from query parameter', async () => {
+      const testId = 'remove-allowReserved-attribute-with-default-value-from-query-parameter'
       const result = await compareFiles(SUITE_ID, testId)
       expect(result).toEqual([])
     })
