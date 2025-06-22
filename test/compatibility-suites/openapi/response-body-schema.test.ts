@@ -2,6 +2,7 @@ import { compareFiles, compareFilesWithMerge, TEST_DEFAULTS_DECLARATION_PATHS } 
 import { diffsMatcher } from '../../helper/matchers'
 import { annotation, breaking, DiffAction, nonBreaking, risky } from '../../../src'
 import { JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY } from '@netcracker/qubership-apihub-api-unifier'
+import { runAddRemoveDefaultValuesSchemaTests } from './templates/schema'
 
 const SUITE_ID = 'response-body-schema'
 
@@ -1627,4 +1628,6 @@ describe('Openapi3 ResponseBody.Schema ', () => {
       }),
     ]))
   })
+
+  runAddRemoveDefaultValuesSchemaTests(SUITE_ID)
 })
