@@ -153,4 +153,31 @@ describe('Openapi3 Request', () => {
       }),
     ]))
   })
+
+  describe('Add/remove default values', () => {
+
+    test('Add required attribute with default value for request body', async () => {
+      const testId = 'add-required-attribute-with-default-value-for-requestBody'
+      const result = await compareFiles(SUITE_ID, testId)
+      expect(result).toEqual([])
+    })
+
+    test('Remove required attribute with default value from request body', async () => {
+      const testId = 'remove-required-attribute-with-default-value-from-requestBody'
+      const result = await compareFiles(SUITE_ID, testId)
+      expect(result).toEqual([])
+    })
+
+    test('Add allowReserved attribute with default value for request body content media type encoding', async () => {
+      const testId = 'add-allowReserved-with-default-value-for-requestBody-content-media-type-encoding'
+      const result = await compareFiles(SUITE_ID, testId)
+      expect(result).toEqual([])
+    })
+
+    test('Remove allowReserved attribute with default value from request body content media type encoding', async () => {
+      const testId = 'remove-allowReserved-with-default-value-from-requestBody-content-media-type-encoding'
+      const result = await compareFiles(SUITE_ID, testId)
+      expect(result).toEqual([])
+    })
+  })
 })
