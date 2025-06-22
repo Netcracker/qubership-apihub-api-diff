@@ -55,7 +55,7 @@ describe('Openapi3 Request', () => {
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
-        action: DiffAction.add,
+        action: DiffAction.replace,
         afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'required']],
         type: breaking,
       }),
@@ -80,7 +80,7 @@ describe('Openapi3 Request', () => {
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
-        action: DiffAction.remove,
+        action: DiffAction.replace,
         beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'required']],
         type: nonBreaking,
       }),
