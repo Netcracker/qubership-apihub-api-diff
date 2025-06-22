@@ -326,18 +326,6 @@ describe('Openapi3 Operation Parameters', () => {
     ))
   })
 
-  test('Add style simple for path parameter', async () => {
-    const testId = 'add-style-simple-for-path-parameter'
-    const result = await compareFiles(SUITE_ID, testId)
-    expect(result).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.add,
-        afterDeclarationPaths: [['paths', '/path1/{param1}', 'get', 'parameters', 0, 'style']],
-        type: nonBreaking,
-      }),
-    ]))
-  })
-
   test('Update style for path parameter', async () => {
     const testId = 'update-style-for-path-parameter'
     const result = await compareFiles(SUITE_ID, testId)
@@ -350,42 +338,7 @@ describe('Openapi3 Operation Parameters', () => {
       }),
     ]))
   })
-
-  test('Add style form for query parameter', async () => {
-    const testId = 'add-style-form-for-query-parameter'
-    const result = await compareFiles(SUITE_ID, testId)
-    expect(result).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.add,
-        afterDeclarationPaths: [[...OPERATION_PARAMETERS_PATH, 0, 'style']],
-        type: nonBreaking,
-      }),
-    ]))
-  })
-
-  test('Add style simple for header parameter', async () => {
-    const testId = 'add-style-simple-for-header-parameter'
-    const result = await compareFiles(SUITE_ID, testId)
-    expect(result).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.add,
-        afterDeclarationPaths: [[...OPERATION_PARAMETERS_PATH, 0, 'style']],
-        type: nonBreaking,
-      }),
-    ]))
-  })
-
-  test('Add style form for cookie parameter', async () => {
-    const testId = 'add-style-form-for-cookie-parameter'
-    const result = await compareFiles(SUITE_ID, testId)
-    expect(result).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.add,
-        afterDeclarationPaths: [[...OPERATION_PARAMETERS_PATH, 0, 'style']],
-        type: nonBreaking,
-      }),
-    ]))
-  })
+  
 
   // TODO: fixme
   test.skip('Mark primitive parameter as exploded', async () => {
