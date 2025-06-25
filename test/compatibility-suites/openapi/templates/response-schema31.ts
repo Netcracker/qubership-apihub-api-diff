@@ -3,7 +3,7 @@ import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 import { breaking, DiffAction, nonBreaking } from '../../../../src'
 import { diffsMatcher } from '../../../helper/matchers'
 
-export function runCommonSchema31Tests(suiteId: string, commonPath: JsonPath): void {
+export function runCommonResponseSchema31Tests(suiteId: string, commonPath: JsonPath): void {
   test('Add union type', async () => {
     const testId = 'add-union-type'
     const result = await compareFiles(suiteId, testId)
@@ -11,7 +11,7 @@ export function runCommonSchema31Tests(suiteId: string, commonPath: JsonPath): v
       expect.objectContaining({
         action: DiffAction.add,
         afterDeclarationPaths: [[...commonPath, 'type', 1]],
-        type: nonBreaking,
+        type: breaking,
       }),
     ]))
   })
@@ -23,7 +23,7 @@ export function runCommonSchema31Tests(suiteId: string, commonPath: JsonPath): v
       expect.objectContaining({
         action: DiffAction.add,
         afterDeclarationPaths: [[...commonPath, 'type', 2]],
-        type: nonBreaking,
+        type: breaking,
       }),
     ]))
   })
@@ -35,7 +35,7 @@ export function runCommonSchema31Tests(suiteId: string, commonPath: JsonPath): v
       expect.objectContaining({
         action: DiffAction.remove,
         beforeDeclarationPaths: [[...commonPath, 'type', 1]],
-        type: breaking,
+        type: nonBreaking,
       }),
     ]))
   })
@@ -47,7 +47,7 @@ export function runCommonSchema31Tests(suiteId: string, commonPath: JsonPath): v
       expect.objectContaining({
         action: DiffAction.remove,
         beforeDeclarationPaths: [[...commonPath, 'type', 2]],
-        type: breaking,
+        type: nonBreaking,
       }),
     ]))
   })

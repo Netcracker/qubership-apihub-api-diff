@@ -1,11 +1,11 @@
-import { runCommonSchema31Tests } from './templates/schema31'
+import { runCommonResponseSchema31Tests } from './templates/response-schema31'
 
 const SUITE_ID = 'response-headers-schema'
 
-const PATH_TO_PARAMETERS_SCHEMA31 = [
+const RESPONSE_SCHEMA_PATH = [
   'paths',
-  '/example',
-  'get',
+  '/path1',
+  'post',
   'responses',
   '200',
   'headers',
@@ -14,5 +14,5 @@ const PATH_TO_PARAMETERS_SCHEMA31 = [
 ]
 
 describe('Openapi31 ResponseHeaders.Schema', () => {
-  runCommonSchema31Tests(SUITE_ID, PATH_TO_PARAMETERS_SCHEMA31, true)
+  runCommonResponseSchema31Tests(SUITE_ID, RESPONSE_SCHEMA_PATH)
 })
