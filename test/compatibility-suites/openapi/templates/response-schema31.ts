@@ -55,6 +55,6 @@ export function runCommonResponseSchema31Tests(suiteId: string, commonPath: Json
   test('Reorder types in union type', async () => {
     const testId = 'reorder-types-in-union-type'
     const result = await compareFiles(suiteId, testId)
-    expect(result.length).toBeEmpty()
+    expect(result).toBeEmpty()
   })
 }
