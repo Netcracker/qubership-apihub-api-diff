@@ -3,6 +3,7 @@ import { diffsMatcher } from '../../helper/matchers'
 import { annotation, breaking, DiffAction, nonBreaking, risky } from '../../../src'
 import { JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY } from '@netcracker/qubership-apihub-api-unifier'
 import { runAddRemoveDefaultValuesSchemaTests } from './templates/schema'
+import { runCommonResponseSchema31Tests } from './templates/response-schema31'
 
 const SUITE_ID = 'response-body-schema'
 
@@ -138,7 +139,7 @@ describe('Openapi3 ResponseBody.Schema ', () => {
           afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
           type: nonBreaking,
         }),
-      ]
+      ],
     ))
   })
 
@@ -305,7 +306,7 @@ describe('Openapi3 ResponseBody.Schema ', () => {
         beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option2', 'minLength']],
         afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
         type: breaking,
-      })
+      }),
     ]))
   })
 
@@ -694,7 +695,7 @@ describe('Openapi3 ResponseBody.Schema ', () => {
         beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option1', 'minItems']],
         afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option1', 'minItems']],
         type: nonBreaking,
-      })
+      }),
     ]))
   })
 
@@ -739,7 +740,7 @@ describe('Openapi3 ResponseBody.Schema ', () => {
         beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option1', 'minItems']],
         afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option1', 'minItems']],
         type: breaking,
-      })
+      }),
     ]))
   })
 
@@ -1021,7 +1022,7 @@ describe('Openapi3 ResponseBody.Schema ', () => {
         beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
         afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option2', 'minProperties']],
         type: nonBreaking,
-      })
+      }),
     ]))
   })
 
@@ -1066,7 +1067,7 @@ describe('Openapi3 ResponseBody.Schema ', () => {
         beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option2', 'minProperties']],
         afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
         type: breaking,
-      })
+      }),
     ]))
   })
 
@@ -1630,4 +1631,8 @@ describe('Openapi3 ResponseBody.Schema ', () => {
   })
 
   runAddRemoveDefaultValuesSchemaTests(SUITE_ID)
+})
+
+describe('Openapi31 ResponseBody.Schema', () => {
+  runCommonResponseSchema31Tests(SUITE_ID, RESPONSE_SCHEMA_PATH)
 })
