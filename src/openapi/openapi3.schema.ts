@@ -28,6 +28,7 @@ import {
   SPEC_TYPE_OPEN_API_31,
 } from '@netcracker/qubership-apihub-api-unifier'
 import { schemaParamsCalculator } from './openapi3.description.schema'
+import { openApiSpecificationExtensionRules } from './openapi3.compare.rules'
 
 const SPEC_TYPE_TO_VERSION: Record<OpenApiSpecVersion, string> = {
   [SPEC_TYPE_OPEN_API_30]: '3.0.0',
@@ -98,12 +99,16 @@ export const openApiSchemaRules = (options: OpenApi3SchemaRulesOptions): Compare
           $: allAnnotation,
           description: diffDescription(resolveSchemaDescriptionTemplates('url of externalDocs'))
         },
+        ...openApiSpecificationExtensionRules,
         '/*': {
           $: allAnnotation,
           description: diffDescription(resolveSchemaDescriptionTemplates('externalDocs'))
         },
       },
-      '/xml': {},
+      '/xml': {
+        ...openApiSpecificationExtensionRules,
+      },
+      ...openApiSpecificationExtensionRules,
     },
     version: jsonSchemaVersion,
   })
