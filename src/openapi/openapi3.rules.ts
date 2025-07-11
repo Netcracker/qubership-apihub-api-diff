@@ -416,6 +416,13 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/*': oAuthFlowObjectRules,
   }
 
+  const tagObjectCompareRules: CompareRules = {
+    $: allAnnotation,
+    '/externalDocs': externalDocumentationRules,
+    ...openApiSpecificationExtensionRules,
+    '/*': { $: allAnnotation },
+  }
+
   const componentsRule: CompareRules = {
     $: allNonBreaking,
     [START_NEW_COMPARE_SCOPE_RULE]: COMPARE_SCOPE_COMPONENTS,
@@ -497,7 +504,10 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       $: globalSecurityClassifyRule,
       '/*': { $: globalSecurityItemClassifyRule },
     },
-    '/tags': { $: allAnnotation },
+    '/tags': { 
+      $: allAnnotation,
+      '/*': tagObjectCompareRules,
+    },
     '/externalDocs': externalDocumentationRules,
   }
 }

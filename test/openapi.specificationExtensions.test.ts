@@ -61,7 +61,7 @@ const operationObjectPaths: JsonPath[] = [
 ]
 
 const tagObjectPaths: JsonPath[] = [
-  //['tags', 0],  //Tag Object classification rules are not implemented yet
+  ['tags', 0],
 ]
 
 const responseObjectPaths: JsonPath[] = [
