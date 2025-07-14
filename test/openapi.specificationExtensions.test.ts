@@ -162,7 +162,7 @@ const callbackObjectPaths: JsonPath[] = [
 ]
 
 const pathItemObjectPaths: JsonPath[] = [
-  //['paths', '/somePath'], //TODO: fix `change complex value of specification extension` test, annotation for some reason
+  ['paths', '/somePath'],
   ...callbackObjectPaths.map(path => [...path, 'someExpression']),
   // ['components', 'pathItems', 'somePathItem'], // support path items in components for OAS 3.1
 ]
@@ -189,7 +189,7 @@ const exampleObjectPaths: JsonPath[] = [
   ...mediaTypeObjectPaths.map(path => [...path, 'examples', 'someExample']),  
 ]
 
-// Paths where OAS specification extensions can be added
+// Paths where OpenAPI specification extensions can be added
 const specificationExtensionObjectPaths: JsonPath[] = [
   
   // OpenAPI Object
@@ -283,7 +283,8 @@ describe('OpenAPI specification extensions changes classification', () => {
     })
   })
 
-  // ['paths', '/somePath'].forEach(path => { // use for debugging specific case
+  //const testPaths: JsonPath[] = [['paths']] // use for debugging specific case
+  //testPaths.forEach(path => {
   specificationExtensionObjectPaths.forEach(path => {
     const pathDescription = path.length > 0 ? path.join('.') : '[]'
     const fullExtensionPath = [...path, extensionName]

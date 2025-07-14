@@ -5,6 +5,9 @@ export const openApiSpecificationExtensionRules = {
   '/^': {
     'x-': {
       $: allUnclassified,
+      '/*': {
+        $: allUnclassified,
+      },
       '/**': {
         $: allUnclassified,
       },
