@@ -210,7 +210,7 @@ const specificationExtensionObjectPaths: JsonPath[] = [
   ...serverObjectPaths.map(path => [...path, 'variables', 'someVariable']),
 
   // Paths Object
-  // ['paths'], //TODO: fix cases with complex values- they fail now for paths
+  ['paths'],
 
   // Path Item Object 
   ...pathItemObjectPaths,  
@@ -240,7 +240,7 @@ const specificationExtensionObjectPaths: JsonPath[] = [
   ...responseObjectPaths,
 
   // Callback Object
-  //...callbackObjectPaths, 
+  ...callbackObjectPaths, 
  
   // Example Object
   ...exampleObjectPaths,
