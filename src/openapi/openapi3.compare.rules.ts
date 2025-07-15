@@ -1,15 +1,15 @@
-import { allUnclassified } from '../core'
+import { allAnnotation } from '../core'
 import { CompareRules } from '../types'
 
 export const openApiSpecificationExtensionRules = {
   '/^': {
     'x-': {
-      $: allUnclassified,
+      $: allAnnotation,
       '/*': {
-        $: allUnclassified,
+        $: allAnnotation,
       },
       '/**': {
-        $: allUnclassified,
+        $: allAnnotation,
       },
     },
   }

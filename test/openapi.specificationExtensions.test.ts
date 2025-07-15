@@ -1,7 +1,7 @@
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper'
 import { CompareOptions } from '../src/types'
 import { apiDiff } from '../src/api'
-import { DiffAction, unclassified } from '../src/core/constants'
+import { DiffAction, annotation } from '../src/core/constants'
 import { diffsMatcher } from './helper/matchers'
 import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 import base from './helper/resources/openapi-specification-extensions/base.json'
@@ -291,7 +291,7 @@ describe('OpenAPI specification extensions changes classification', () => {
     
     describe(`Extensions in '${pathDescription}'`, () => {
 
-      const expectedType = unclassified
+      const expectedType = annotation
       
       it(`add specification extension with primitive value`, () => {
         const { before, after } = prepareSpecsForComparison(fullExtensionPath, undefined, 'primitive value')
