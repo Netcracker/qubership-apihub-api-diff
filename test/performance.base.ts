@@ -33,6 +33,19 @@ export function qgl() {
   return diffs.length
 }
 
+export function qglSimple() {
+  const beforeSource = buildFromSchema(buildSchema(readFileSync('./test/helper/resources/graphql/simple/before.graphql').toString(), { noLocation: true }))
+  const afterSource = buildFromSchema(buildSchema(readFileSync('./test/helper/resources/graphql/simple/after.graphql').toString(), { noLocation: true }))
+  const before: unknown = splitSourceToComponents(beforeSource)
+  const after: unknown = splitSourceToComponents(afterSource)
+  return apiDiff(before, after, {
+      ...OPTIONS,
+      beforeSource,
+      afterSource,
+    },
+  )
+}
+
 export function oas30() {
   const beforeSource = load(readFileSync('./test/helper/resources/openapi/30/before.yaml').toString())
   const afterSource = load(readFileSync('./test/helper/resources/openapi/30/after.yaml').toString())

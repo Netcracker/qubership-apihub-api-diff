@@ -1,4 +1,4 @@
-import { oas30, qgl } from './performance.base'
+import { oas30, qgl, qglSimple } from './performance.base'
 
 describe('Real Data', () => {
 
@@ -8,5 +8,9 @@ describe('Real Data', () => {
 
   it('OAS 3.0', () => {
     expect(oas30()).toEqual(4842)
+  })
+
+  it('GraphQL Simple', () => {
+    expect(qglSimple()).toEqual(1)
   })
 })
