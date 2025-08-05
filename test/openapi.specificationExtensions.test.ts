@@ -370,15 +370,45 @@ describe('OpenAPI specification extensions changes classification', () => {
         ]))
       })
 
-      it(`change complex value of specification extension`, () => {
-        const { before, after } = prepareSpecsForComparison(fullExtensionPath, { nested: 'original' }, { nested: 'modified' })
+      it(`add property to complex value of specification extension`, () => {
+        const { before, after } = prepareSpecsForComparison(fullExtensionPath, { nested: {} }, { nested: {property: 'value'} })
+        
+        const { diffs } = apiDiff(before, after, OPTIONS)
+        
+        expect(diffs).toEqual(diffsMatcher([
+          expect.objectContaining({            
+            afterDeclarationPaths: [[...fullExtensionPath, 'nested', 'property']],
+            action: DiffAction.add,
+            type: expectedType,            
+            afterValue: 'value',
+          })
+        ]))
+      })
+
+      it(`delete property from complex value of specification extension`, () => {
+        const { before, after } = prepareSpecsForComparison(fullExtensionPath, { nested: {property: 'value'} }, { nested: {} })
+        
+        const { diffs } = apiDiff(before, after, OPTIONS)
+        
+        expect(diffs).toEqual(diffsMatcher([
+          expect.objectContaining({            
+            beforeDeclarationPaths: [[...fullExtensionPath, 'nested', 'property']],
+            action: DiffAction.remove,
+            type: expectedType,            
+            beforeValue: 'value',
+          })
+        ]))
+      })
+
+      it(`change property in complex value of specification extension`, () => {
+        const { before, after } = prepareSpecsForComparison(fullExtensionPath, { nested: {property: 'original'} }, { nested: {property: 'modified'} })
         
         const { diffs } = apiDiff(before, after, OPTIONS)
         
         expect(diffs).toEqual(diffsMatcher([
           expect.objectContaining({
-            beforeDeclarationPaths: [[...fullExtensionPath, 'nested']],
-            afterDeclarationPaths: [[...fullExtensionPath, 'nested']],
+            beforeDeclarationPaths: [[...fullExtensionPath, 'nested', 'property']],
+            afterDeclarationPaths: [[...fullExtensionPath, 'nested', 'property']],
             action: DiffAction.replace,
             type: expectedType,
             beforeValue: 'original',
