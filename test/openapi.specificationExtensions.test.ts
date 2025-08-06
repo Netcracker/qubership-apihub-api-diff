@@ -114,7 +114,7 @@ const encodingObjectPaths: JsonPath[] = [
 const schemaObjectPaths: JsonPath[] = [
   ['components', 'schemas', 'someSchema'],
   ...parameterObjectPaths.map(path => [...path, 'schema']),
-  ...headerObjectPaths.map(path => [...path, 'schema']),
+  ...headerObjectPathsWithRecursionFirstLevel.map(path => [...path, 'schema']),
   ...mediaTypeObjectPaths.map(path => [...path, 'schema']),
 ]
 
@@ -185,7 +185,7 @@ const oAuthFlowObjectPaths: JsonPath[] = [
 const exampleObjectPaths: JsonPath[] = [
   ['components', 'examples', 'someExample'],
   ...parameterObjectPaths.map(path => [...path, 'examples', 'someExample']),
-  ...headerObjectPaths.map(path => [...path, 'examples', 'someExample']),
+  ...headerObjectPathsWithRecursionFirstLevel.map(path => [...path, 'examples', 'someExample']),
   ...mediaTypeObjectPaths.map(path => [...path, 'examples', 'someExample']),  
 ]
 
