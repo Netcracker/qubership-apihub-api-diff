@@ -18,7 +18,7 @@ import {
   deepEqualsUniqueItemsArrayMappingResolver
 } from '../core'
 import { resolveSchemaDescriptionTemplates } from '../jsonSchema'
-import type { ClassifyRule, CompareRules, DescriptionTemplates, MappingResolver } from '../types'
+import { AGGREGATE_DIFFS_HERE_RULE, ClassifyRule, CompareRules, DescriptionTemplates, MappingResolver } from '../types'
 import { graphApiSchemaAdapter as graphApiTypeAdapter, removeNotCorrectlySupportedInterfacesAdapter } from './graphapi.adapter'
 import { COMPARE_SCOPE_COMPONENTS, COMPARE_SCOPE_DIRECTIVE_USAGES, COMPARE_SCOPE_ARGS, COMPARE_SCOPE_OUTPUT } from './graphapi.const'
 import { complexTypeCompareResolver } from './graphapi.resolver'
@@ -335,18 +335,21 @@ export const graphApiRules = (): CompareRules => {
     '/queries': {
       '/*': {
         ...methodRules,
+        [AGGREGATE_DIFFS_HERE_RULE]: true,
         $: addNonBreaking
       },
     },
     '/mutations': {
       '/*': {
         ...methodRules,
+        [AGGREGATE_DIFFS_HERE_RULE]: true,
         $: addNonBreaking
       },
     },
     '/subscriptions': {
       '/*': {
         ...methodRules,
+        [AGGREGATE_DIFFS_HERE_RULE]: true,
         $: addNonBreaking
       }
     },

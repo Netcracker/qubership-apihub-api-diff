@@ -88,6 +88,7 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   mode?: CompareMode
   normalizedResult?: boolean
   metaKey?: symbol         // metakey for merge changes
+  diffsAggregatedFlag?: symbol
   beforeSource?: unknown
   afterSource?: unknown
   onCreateDiffError?: (message: string, diff: Diff, ctx: CompareContext) => void
@@ -101,6 +102,7 @@ export interface StrictCompareOptions extends Omit<CompareOptions, 'defaultsFlag
   metaKey: symbol
   defaultsFlag: symbol,
   originsFlag: symbol,
+  diffsAggregatedFlag: symbol,
   compareScope: CompareScope
   mergedJsoCache: EvaluationCacheService
   diffUniquenessCache: EvaluationCacheService

@@ -30,6 +30,7 @@ import {
   deepEqualsUniqueItemsArrayMappingResolver,
 } from '../core'
 import {
+  AGGREGATE_DIFFS_HERE_RULE,
   COMPARE_MODE_OPERATION,
   CompareRules,
   DescriptionTemplates,
@@ -345,6 +346,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const operationRule: CompareRules = {
     $: [nonBreaking, breaking, unclassified],
+    [AGGREGATE_DIFFS_HERE_RULE]: true,
     '/callbacks': {
       '/*': {
         //no support?

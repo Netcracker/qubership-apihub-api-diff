@@ -1,4 +1,11 @@
-import { anyArrayKeys, getNodeRules, JsonPath, syncCrawl, SyncCrawlHook } from '@netcracker/qubership-apihub-json-crawl'
+import {
+  anyArrayKeys,
+  getNodeRules,
+  JsonPath,
+  syncClone,
+  syncCrawl,
+  SyncCrawlHook,
+} from '@netcracker/qubership-apihub-json-crawl'
 
 import {
   ChainItem,
@@ -16,6 +23,7 @@ import { deepEqual } from 'fast-equals'
 import {
   AdapterContext,
   AdapterResolver,
+  AGGREGATE_DIFFS_HERE_RULE,
   CompareContext,
   CompareResult,
   CompareRule,
@@ -473,7 +481,7 @@ export const compare = (before: unknown, after: unknown, options: InternalCompar
     return {
       diffs: rawDiffs,
       ownerDiffEntry: undefined,
-      merged,
+      merged: aggregateDiffs(merged, options),
     }
   }
   const diffFlags = Symbol('diffs')
@@ -491,8 +499,66 @@ export const compare = (before: unknown, after: unknown, options: InternalCompar
   return {
     diffs: denormalizedDiffs,
     ownerDiffEntry: undefined,
-    merged,
+    merged: merged,
   }
+}
+
+export function aggregateDiffs(merged: unknown, options: InternalCompareOptions): unknown {
+  let activeDataCycleGuard: Set<unknown> = new Set()
+
+  const collectCurrentNodeDiffs = (value: Record<string | symbol, unknown>, operationDiffs: Set<Diff>) => {
+    if (options.metaKey in value) {
+      const diffs = value[options.metaKey] as Record<PropertyKey, unknown> | undefined
+      for (const key in diffs) {
+        // @ts-ignore
+        if (operationDiffs) {
+          // @ts-ignore
+          operationDiffs.add(diffs[key])
+        }
+      }
+    }
+  }
+
+  syncClone(
+    merged,
+    [
+      ({ key, value, state, rules }) => {
+        if (!isObject(value)) {
+          return { value }
+        }
+        if (typeof key === 'symbol') {
+          // return { value }
+          return { done: true }
+        }
+        if (activeDataCycleGuard.has(value)) {
+          return { done: true }
+        }
+        activeDataCycleGuard.add(value)
+
+        // @ts-ignore
+        collectCurrentNodeDiffs(value, state.operationDiffs)
+
+        if (rules && AGGREGATE_DIFFS_HERE_RULE in rules) {
+          activeDataCycleGuard = new Set()
+          const operationDiffs = new Set<Diff>()
+          collectCurrentNodeDiffs(value, operationDiffs)
+          return {
+            value,
+            state: { ...state, operationDiffs },
+            exitHook: () => {
+              value[options.diffsAggregatedFlag] = operationDiffs
+            },
+          }
+        }
+        return { value }
+      },
+    ],
+    {
+      rules: options.rules
+    },
+  )
+
+  return merged
 }
 
 export const nestedCompare = (before: unknown, after: unknown, options: InternalCompareOptions): CompareResult => {
