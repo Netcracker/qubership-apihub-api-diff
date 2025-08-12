@@ -1,6 +1,7 @@
 import { compareFiles } from '../utils'
 import { diffsMatcher } from '../../helper/matchers'
 import { annotation, breaking, DiffAction, nonBreaking } from '../../../src'
+import { runRefObjectDescriptionTests } from './templates/reference-object-31.template'
 
 const SUITE_ID = 'response'
 
@@ -251,4 +252,11 @@ describe('Openapi3 Response', () => {
       expect(result).toEqual([])
     })
   })
+})
+
+const PATH_TO_RESPONSES_DESCRIPTION = ['paths', '/pet', 'post', 'responses', '200']
+const PATH_TO_COMPONENTS_DESCRIPTION = ['components', 'responses', 'response200', 'description']
+
+describe('Reference object. Response. Description fields in ref object', () => {
+  runRefObjectDescriptionTests(SUITE_ID, PATH_TO_RESPONSES_DESCRIPTION, PATH_TO_COMPONENTS_DESCRIPTION)
 })

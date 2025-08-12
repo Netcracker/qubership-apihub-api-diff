@@ -1,6 +1,7 @@
 import { compareFiles } from '../utils'
 import { diffsMatcher } from '../../helper/matchers'
 import { annotation, DiffAction } from '../../../src'
+import { runRefObjectDescriptionTests } from './templates/reference-object-31.template'
 
 const SUITE_ID = 'response-body-examples'
 
@@ -160,4 +161,11 @@ describe('Openapi3 Response Body Examples', () => {
       }),
     ]))
   })
+})
+
+const PATH_TO_RESPONSES_DESCRIPTION = ['paths', '/pet', 'post', 'responses', '200', 'content', 'application/json', 'examples', 'ex1']
+const PATH_TO_COMPONENTS_DESCRIPTION = ['components', 'examples', 'ex1', 'description']
+
+describe('Reference object. Response body examples. Description fields in ref object', () => {
+  runRefObjectDescriptionTests(SUITE_ID, PATH_TO_RESPONSES_DESCRIPTION, PATH_TO_COMPONENTS_DESCRIPTION)
 })

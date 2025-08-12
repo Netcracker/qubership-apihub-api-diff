@@ -1,6 +1,7 @@
 import { compareFiles, TEST_DEFAULTS_DECLARATION_PATHS } from '../utils'
 import { diffsMatcher } from '../../helper/matchers'
 import { annotation, breaking, deprecated, DiffAction, nonBreaking, unclassified } from '../../../src'
+import { runRefObjectDescriptionTests } from './templates/reference-object-31.template'
 
 const SUITE_ID = 'operation-parameters'
 
@@ -338,7 +339,6 @@ describe('Openapi3 Operation Parameters', () => {
       }),
     ]))
   })
-  
 
   // TODO: fixme
   test.skip('Mark primitive parameter as exploded', async () => {
@@ -723,4 +723,11 @@ describe('Openapi3 Operation Parameters', () => {
       expect(result).toEqual([])
     })
   })
+})
+
+const PATH_TO_OPERATION_PARAMETERS_DESCRIPTION = ['paths', '/pet/findByStatus', 'get', 'parameters', 0]
+const PATH_TO_COMPONENT_DESCRIPTION = ['components', 'parameters', 'status', 'description']
+
+describe('Reference object. Operation parameters. Description fields in ref object', () => {
+  runRefObjectDescriptionTests(SUITE_ID, PATH_TO_OPERATION_PARAMETERS_DESCRIPTION, PATH_TO_COMPONENT_DESCRIPTION)
 })
