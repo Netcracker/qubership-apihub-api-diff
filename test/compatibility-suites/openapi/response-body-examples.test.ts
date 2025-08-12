@@ -5,7 +5,7 @@ import { runRefObjectDescriptionTests } from './templates/reference-object-31.te
 
 const SUITE_ID = 'response-body-examples'
 
-const COMMON_PATH = ['paths', '/path1', 'post', 'responses', '200', 'content', 'application/json']
+const COMMON_PATH = ['paths', '/path1', 'post', 'responses', '200', 'content', 'application/json', 'examples']
 
 describe('Openapi3 Response Body Examples', () => {
 
@@ -15,7 +15,7 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1']],
+        afterDeclarationPaths: [[...COMMON_PATH, 'example1']],
         type: annotation,
       }),
     ]))
@@ -27,7 +27,7 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [[...COMMON_PATH, 'examples', 'example2']],
+        afterDeclarationPaths: [[...COMMON_PATH, 'example2']],
         type: annotation,
       }),
     ]))
@@ -39,8 +39,8 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'value']],
-        afterDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'value']],
+        beforeDeclarationPaths: [[...COMMON_PATH, 'example1', 'value']],
+        afterDeclarationPaths: [[...COMMON_PATH, 'example1', 'value']],
         type: annotation,
       }),
     ]))
@@ -52,12 +52,12 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1']],
+        beforeDeclarationPaths: [[...COMMON_PATH, 'example1']],
         type: annotation,
       }),
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [[...COMMON_PATH, 'examples', 'example0']],
+        afterDeclarationPaths: [[...COMMON_PATH, 'example0']],
         type: annotation,
       }),
     ]))
@@ -69,8 +69,8 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'externalValue']],
-        afterDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'externalValue']],
+        beforeDeclarationPaths: [[...COMMON_PATH, 'example1', 'externalValue']],
+        afterDeclarationPaths: [[...COMMON_PATH, 'example1', 'externalValue']],
         type: annotation,
       }),
     ]))
@@ -82,7 +82,7 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'externalValue']],
+        beforeDeclarationPaths: [[...COMMON_PATH, 'example1', 'externalValue']],
         type: annotation,
       }),
     ]))
@@ -94,7 +94,7 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'summary']],
+        afterDeclarationPaths: [[...COMMON_PATH, 'example1', 'summary']],
         type: annotation,
       }),
     ]))
@@ -106,8 +106,8 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'summary']],
-        afterDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'summary']],
+        beforeDeclarationPaths: [[...COMMON_PATH, 'example1', 'summary']],
+        afterDeclarationPaths: [[...COMMON_PATH, 'example1', 'summary']],
         type: annotation,
       }),
     ]))
@@ -119,7 +119,7 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'summary']],
+        beforeDeclarationPaths: [[...COMMON_PATH, 'example1', 'summary']],
         type: annotation,
       }),
     ]))
@@ -131,7 +131,7 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'description']],
+        afterDeclarationPaths: [[...COMMON_PATH, 'example1', 'description']],
         type: annotation,
       }),
     ]))
@@ -143,8 +143,8 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'description']],
-        afterDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'description']],
+        beforeDeclarationPaths: [[...COMMON_PATH, 'example1', 'description']],
+        afterDeclarationPaths: [[...COMMON_PATH, 'example1', 'description']],
         type: annotation,
       }),
     ]))
@@ -156,16 +156,14 @@ describe('Openapi3 Response Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [[...COMMON_PATH, 'examples', 'example1', 'description']],
+        beforeDeclarationPaths: [[...COMMON_PATH, 'example1', 'description']],
         type: annotation,
       }),
     ]))
   })
 })
 
-const PATH_TO_RESPONSES_DESCRIPTION = ['paths', '/pet', 'post', 'responses', '200', 'content', 'application/json', 'examples', 'ex1']
 const PATH_TO_COMPONENTS_DESCRIPTION = ['components', 'examples', 'ex1', 'description']
-
 describe('Reference object. Response body examples. Description fields in ref object', () => {
-  runRefObjectDescriptionTests(SUITE_ID, PATH_TO_RESPONSES_DESCRIPTION, PATH_TO_COMPONENTS_DESCRIPTION)
+  runRefObjectDescriptionTests(SUITE_ID, [...COMMON_PATH, 'ex1'], PATH_TO_COMPONENTS_DESCRIPTION)
 })

@@ -5,12 +5,7 @@ import { runRefObjectDescriptionTests } from './templates/reference-object-31.te
 
 const SUITE_ID = 'request-body-examples'
 
-const REQUEST_BODY_PATH = [
-  'paths',
-  '/path1',
-  'post',
-  'requestBody',
-]
+const REQUEST_BODY_PATH = ['paths', '/path1', 'post', 'requestBody', 'content', 'application/json', 'examples']
 
 describe('Openapi3 Request Body Examples', () => {
 
@@ -20,7 +15,7 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1']],
+        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1']],
         type: annotation,
       }),
     ]))
@@ -32,7 +27,7 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example2']],
+        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'example2']],
         type: annotation,
       }),
     ]))
@@ -44,8 +39,8 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'value']],
-        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'value']],
+        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'value']],
+        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'value']],
         type: annotation,
       }),
     ]))
@@ -57,12 +52,12 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1']],
+        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1']],
         type: annotation,
       }),
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example0']],
+        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'example0']],
         type: annotation,
       }),
     ]))
@@ -74,8 +69,8 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'externalValue']],
-        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'externalValue']],
+        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'externalValue']],
+        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'externalValue']],
         type: annotation,
       }),
     ]))
@@ -87,7 +82,7 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'externalValue']],
+        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'externalValue']],
         type: annotation,
       }),
     ]))
@@ -99,7 +94,7 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'summary']],
+        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'summary']],
         type: annotation,
       }),
     ]))
@@ -111,8 +106,8 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'summary']],
-        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'summary']],
+        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'summary']],
+        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'summary']],
         type: annotation,
       }),
     ]))
@@ -124,7 +119,7 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'summary']],
+        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'summary']],
         type: annotation,
       }),
     ]))
@@ -136,7 +131,7 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'description']],
+        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'description']],
         type: annotation,
       }),
     ]))
@@ -148,8 +143,8 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'description']],
-        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'description']],
+        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'description']],
+        afterDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'description']],
         type: annotation,
       }),
     ]))
@@ -161,16 +156,15 @@ describe('Openapi3 Request Body Examples', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'content', 'application/json', 'examples', 'example1', 'description']],
+        beforeDeclarationPaths: [[...REQUEST_BODY_PATH, 'example1', 'description']],
         type: annotation,
       }),
     ]))
   })
 })
 
-const PATH_TO_REQUEST_BODY_DESCRIPTION = ['paths', '/pet', 'post', 'requestBody', 'content', 'application/json', 'examples', 'ex1']
 const PATH_TO_COMPONENTS_DESCRIPTION = ['components', 'examples', 'ex1', 'description']
 
 describe('Reference object. Request body examples. Description fields in ref object', () => {
-  runRefObjectDescriptionTests(SUITE_ID, PATH_TO_REQUEST_BODY_DESCRIPTION, PATH_TO_COMPONENTS_DESCRIPTION)
+  runRefObjectDescriptionTests(SUITE_ID, [...REQUEST_BODY_PATH, 'ex1'], PATH_TO_COMPONENTS_DESCRIPTION)
 })

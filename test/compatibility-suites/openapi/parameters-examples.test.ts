@@ -5,14 +5,7 @@ import { runRefObjectDescriptionTests, runRefObjectSummaryTests } from './templa
 
 const SUITE_ID = 'parameters-examples'
 
-const PARAMETERS_EXAMPLES_PATH = [
-  'paths',
-  '/path1',
-  'post',
-  'parameters',
-  0,
-  'examples',
-]
+const PARAMETERS_EXAMPLES_PATH = ['paths', '/path1', 'post', 'parameters', 0, 'examples']
 
 describe('Openapi3 Parameters Examples', () => {
 
@@ -170,11 +163,9 @@ describe('Openapi3 Parameters Examples', () => {
   })
 })
 
-const PATH_TO_RESPONSES_DESCRIPTION = ['paths', '/pet/findByTags', 'get', 'parameters', 0, 'examples', 'ex1']
 const PATH_TO_COMPONENTS = ['components', 'examples', 'ex1']
-
 describe('Reference object. Parameters examples. Description and Summary fields in ref object', () => {
-  runRefObjectDescriptionTests(SUITE_ID, PATH_TO_RESPONSES_DESCRIPTION, [...PATH_TO_COMPONENTS, 'description'])
-  runRefObjectSummaryTests(SUITE_ID, PATH_TO_RESPONSES_DESCRIPTION, [...PATH_TO_COMPONENTS, 'summary'])
+  runRefObjectDescriptionTests(SUITE_ID, [...PARAMETERS_EXAMPLES_PATH, 'ex1'], [...PATH_TO_COMPONENTS, 'description'])
+  runRefObjectSummaryTests(SUITE_ID, [...PARAMETERS_EXAMPLES_PATH, 'ex1'], [...PATH_TO_COMPONENTS, 'summary'])
 })
 
