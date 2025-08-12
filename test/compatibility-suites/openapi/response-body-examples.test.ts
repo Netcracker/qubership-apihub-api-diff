@@ -165,5 +165,5 @@ describe('Openapi3 Response Body Examples', () => {
 
 const PATH_TO_COMPONENTS_DESCRIPTION = ['components', 'examples', 'ex1', 'description']
 describe('Reference object. Response body examples. Description fields in ref object', () => {
-  runRefObjectDescriptionTests(SUITE_ID, [...COMMON_PATH, 'ex1'], PATH_TO_COMPONENTS_DESCRIPTION)
+  runRefObjectDescriptionTests(SUITE_ID, [...COMMON_PATH, 'ex1', 'description'], PATH_TO_COMPONENTS_DESCRIPTION)
 })

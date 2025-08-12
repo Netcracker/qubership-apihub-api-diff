@@ -257,5 +257,5 @@ describe('Openapi3 Response', () => {
 const RESPONSES_POST_PATH = ['paths', '/path1', 'post', 'responses']
 const PATH_TO_COMPONENTS_DESCRIPTION = ['components', 'responses', 'response200', 'description']
 describe('Reference object. Response. Description fields in ref object', () => {
-  runRefObjectDescriptionTests(SUITE_ID, [...RESPONSES_POST_PATH, '200'], PATH_TO_COMPONENTS_DESCRIPTION)
+  runRefObjectDescriptionTests(SUITE_ID, [...RESPONSES_POST_PATH, '200', 'description'], PATH_TO_COMPONENTS_DESCRIPTION)
 })
