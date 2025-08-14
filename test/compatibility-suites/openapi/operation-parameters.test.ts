@@ -725,7 +725,7 @@ describe('Openapi3 Operation Parameters', () => {
   })
 })
 
-const PATH_TO_COMPONENT_DESCRIPTION = ['components', 'parameters', 'status', 'description']
+const COMPONENTS_OPERATION_PARAMETER_PATH = ['components', 'parameters', 'status']
 describe('Reference object. Operation parameters. Description fields in ref object', () => {
-  runRefObjectDescriptionTests(SUITE_ID, [...OPERATION_PARAMETERS_PATH, 0, 'description'], PATH_TO_COMPONENT_DESCRIPTION)
+  runRefObjectDescriptionTests(SUITE_ID, [...OPERATION_PARAMETERS_PATH, 0], COMPONENTS_OPERATION_PARAMETER_PATH)
 })

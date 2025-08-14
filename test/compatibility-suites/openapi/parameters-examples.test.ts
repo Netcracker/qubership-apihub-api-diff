@@ -163,9 +163,9 @@ describe('Openapi3 Parameters Examples', () => {
   })
 })
 
-const PATH_TO_COMPONENTS = ['components', 'examples', 'ex1']
+const COMPONENTS_PARAMETERS_EXAMPLE_PATH = ['components', 'examples', 'ex1']
 describe('Reference object. Parameters examples. Description and Summary fields in ref object', () => {
-  runRefObjectDescriptionTests(SUITE_ID, [...PARAMETERS_EXAMPLES_PATH, 'ex1', 'description'], [...PATH_TO_COMPONENTS, 'description'])
-  runRefObjectSummaryTests(SUITE_ID, [...PARAMETERS_EXAMPLES_PATH, 'ex1', 'summary'], [...PATH_TO_COMPONENTS, 'summary'])
+  runRefObjectDescriptionTests(SUITE_ID, [...PARAMETERS_EXAMPLES_PATH, 'ex1'], COMPONENTS_PARAMETERS_EXAMPLE_PATH)
+  runRefObjectSummaryTests(SUITE_ID, [...PARAMETERS_EXAMPLES_PATH, 'ex1'], COMPONENTS_PARAMETERS_EXAMPLE_PATH)
 })
 

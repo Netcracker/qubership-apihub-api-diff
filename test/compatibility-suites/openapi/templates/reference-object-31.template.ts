@@ -8,23 +8,23 @@ const enum OverridenFields {
   SUMMARY = 'summary'
 }
 
-export function runRefObjectDescriptionTests(suiteId: string, commonPath: JsonPath, componentPath: JsonPath): void {
-  runReferenceObjectTests(suiteId, commonPath, componentPath, OverridenFields.DESCRIPTION)
+export function runRefObjectDescriptionTests(suiteId: string, refPath: JsonPath, componentPath: JsonPath): void {
+  runReferenceObjectTests(suiteId, refPath, componentPath, OverridenFields.DESCRIPTION)
 }
 
-export function runRefObjectSummaryTests(suiteId: string, commonPath: JsonPath, componentPath: JsonPath): void {
-  runReferenceObjectTests(suiteId, commonPath, componentPath, OverridenFields.SUMMARY)
+export function runRefObjectSummaryTests(suiteId: string, refPath: JsonPath, componentPath: JsonPath): void {
+  runReferenceObjectTests(suiteId, refPath, componentPath, OverridenFields.SUMMARY)
 }
 
-function runReferenceObjectTests(suiteId: string, commonPath: JsonPath, componentPath: JsonPath, overridenField: OverridenFields): void {
+export function runReferenceObjectTests(suiteId: string, refPath: JsonPath, componentPath: JsonPath, overridenField: OverridenFields): void {
   test(`Add overriden ${overridenField}`, async () => {
     const testId = `add-overriden-${overridenField}`
     const result = await compareFiles(suiteId, testId)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        afterDeclarationPaths: [commonPath],
-        beforeDeclarationPaths: [componentPath],
+        afterDeclarationPaths: [[...refPath , overridenField]],
+        beforeDeclarationPaths: [[...componentPath, overridenField]],
         type: annotation,
       }),
     ]))
@@ -36,8 +36,8 @@ function runReferenceObjectTests(suiteId: string, commonPath: JsonPath, componen
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        afterDeclarationPaths: [componentPath],
-        beforeDeclarationPaths: [commonPath],
+        afterDeclarationPaths: [[...componentPath, overridenField]],
+        beforeDeclarationPaths: [[...refPath , overridenField]],
         type: annotation,
       }),
     ]))
@@ -49,8 +49,8 @@ function runReferenceObjectTests(suiteId: string, commonPath: JsonPath, componen
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        afterDeclarationPaths: [commonPath],
-        beforeDeclarationPaths: [commonPath],
+        afterDeclarationPaths:  [[...refPath , overridenField]],
+        beforeDeclarationPaths:  [[...refPath , overridenField]],
         type: annotation,
       }),
     ]))
