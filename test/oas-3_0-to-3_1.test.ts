@@ -42,4 +42,25 @@ describe('OpenAPI 3.0 to 3.1 Migration Tests', () => {
       }),
     ]))
   })
+
+  test.skip('nullable-to-union', () => {
+    // Load the before and after files
+    const beforePath = './test/helper/resources/3_0-to-3_1/nullable-to-union/before.yaml'
+    const afterPath = './test/helper/resources/3_0-to-3_1/nullable-to-union/after.yaml'
+    
+    const beforeSource = load(readFileSync(beforePath).toString())
+    const afterSource = load(readFileSync(afterPath).toString())
+    
+    // Call apiDiff
+    const { diffs } = apiDiff(beforeSource, afterSource, {
+      ...TEST_NORMALIZE_OPTIONS,
+      beforeSource,
+      afterSource,
+    })
+    
+    // Check the result - expecting changes from nullable: true to union types
+    expect(diffs).toEqual(diffsMatcher([
+      // TODO: Add assertions for nullable to union type changes
+    ]))
+  })
 })
