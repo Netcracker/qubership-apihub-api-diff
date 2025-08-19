@@ -412,6 +412,13 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         ...requestSchemaRules,
       }),
     },
+    '/pathItems': {
+      $: [nonBreaking, breaking, breaking],
+      '/*': {
+        $: [nonBreaking, breaking, breaking],
+        '/*': operationRule
+      },
+    },
     '/securitySchemes': {
       $: [breaking, nonBreaking, breaking],
       '/*': {
