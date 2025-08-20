@@ -12,7 +12,7 @@ const PATH_ITEM_PATH = [
 
 describe('Openapi3.1 PathItems', () => {
 
-  test('Add method in path item', async () => {
+  test('Add method in pathitem', async () => {
     const testId = 'add-method-in-pathitem'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
@@ -24,13 +24,13 @@ describe('Openapi3.1 PathItems', () => {
     ]))
   })
 
-  test('Add unused method in path item', async () => {
+  test('Add unused method in pathitem', async () => {
     const testId = 'add-unused-method-in-pathitem'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual([])
   })
 
-  test('Remove method in path item', async () => {
+  test('Remove method in pathitem', async () => {
     const testId = 'remove-method-in-pathitem'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
@@ -42,13 +42,13 @@ describe('Openapi3.1 PathItems', () => {
     ]))
   })
 
-  test('Replace inline path item to ref', async () => {
+  test('Replace inline pathitem to ref', async () => {
     const testId = 'replace-inline-pathitem-to-ref'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual([])
   })
 
-  test('Replace ref path item to inline', async () => {
+  test('Replace ref pathitem to inline', async () => {
     const testId = 'replace-ref-pathitem-to-inline'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual([])
