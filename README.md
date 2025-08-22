@@ -34,7 +34,7 @@ Modified version of [udamir/api-smart-diff](https://github.com/udamir/api-smart-
 - [JsonSchema](https://json-schema.org/draft/2020-12/json-schema-core.html)
 - GraphQL via GraphApi
 - ~~Swagger 2.0~~
-- ~~[AsyncApi 3.x](https://www.asyncapi.com/docs/specifications/)~~ (Roadmap)
+- ~~[AsyncApi 3.x](https://www.asyncapi.com/docs/reference/specification/v3.0.0-explorer)~~ (Roadmap)
 - ~~gRPC~~ (Roadmap)
 
 ## Features
