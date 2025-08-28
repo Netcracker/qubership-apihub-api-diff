@@ -388,7 +388,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/*': operationAnnotationRule,
   }
 
-  const pathItemChildrenRules = (options: OpenApi3RulesOptions): CompareRules => ({
+  const pathItemObjectRules = (options: OpenApi3RulesOptions): CompareRules => ({
     $: pathChangeClassifyRule,
     mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
     '/description': { $: allAnnotation },
@@ -428,7 +428,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     },
     '/pathItems': {
       $: [nonBreaking, breaking, breaking],
-      '/*': pathItemChildrenRules(options),
+      '/*': pathItemObjectRules(options),
     },
     '/securitySchemes': {
       $: [breaking, nonBreaking, breaking],
@@ -456,7 +456,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/paths': {
       $: allUnclassified,
       mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
-      '/*': pathItemChildrenRules(options),
+      '/*': pathItemObjectRules(options),
     },
     '/components': componentsRule,
     '/security': {
