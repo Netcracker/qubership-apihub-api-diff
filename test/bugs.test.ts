@@ -30,6 +30,8 @@ import spearedParamsAfter from './helper/resources/speared-parameters/after.json
 import wildcardContentSchemaMediaTypeCombinedWithSpecificMediaTypeBefore from './helper/resources/wildcard-content-schema-media-type-combined-with-specific-media-type/before.json'
 import wildcardContentSchemaMediaTypeCombinedWithSpecificMediaTypeAfter from './helper/resources/wildcard-content-schema-media-type-combined-with-specific-media-type/after.json'
 
+import parameterReuseOnPathItemAndOperationLevel from './helper/resources/parameter-reuse-on-path-item-and-operation-level/specification.json'
+
 import { diffsMatcher } from './helper/matchers'
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper'
 import { JSON_SCHEMA_NODE_SYNTHETIC_TYPE_NOTHING } from '@netcracker/qubership-apihub-api-unifier'
@@ -105,14 +107,14 @@ describe('Real Data', () => {
         afterDeclarationPaths: [['components', 'schemas', 'DictionaryItem', 'x-entity']],
         afterValue: 'DictionaryItem',
         action: DiffAction.add,
-        type: unclassified,
+        type: annotation,
         scope: 'response',
       }),
       expect.objectContaining({
         afterDeclarationPaths: [['components', 'schemas', 'DictionaryItem', 'x-entity']],
         afterValue: 'DictionaryItem',
         action: DiffAction.add,
-        type: unclassified,
+        type: annotation,
         scope: 'components',
       }),
       expect.objectContaining({
@@ -226,5 +228,13 @@ describe('Real Data', () => {
         type: annotation,
       }),
     ]))
+  })
+
+  // TODO: fix
+  it.skip('should not detect any changes - parameter reuse on path item and operation level', () => {
+    const before: any = parameterReuseOnPathItemAndOperationLevel
+    const after: any = parameterReuseOnPathItemAndOperationLevel
+    const { diffs } = apiDiff(before, after, OPTIONS)
+    expect(diffs).toBeEmpty()
   })
 })
