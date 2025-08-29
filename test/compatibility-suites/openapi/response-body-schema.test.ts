@@ -4,6 +4,7 @@ import { annotation, breaking, DiffAction, nonBreaking, risky } from '../../../s
 import { JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY } from '@netcracker/qubership-apihub-api-unifier'
 import { runAddRemoveDefaultValuesSchemaTests } from './templates/schema'
 import { runCommonResponseSchema31Tests } from './templates/response-schema31'
+import { runResponseSiblingPropertiesSchema } from './templates/sibling-properties-schema.template'
 
 const SUITE_ID = 'response-body-schema'
 
@@ -1635,4 +1636,8 @@ describe('Openapi3 ResponseBody.Schema ', () => {
 
 describe('Openapi31 ResponseBody.Schema', () => {
   runCommonResponseSchema31Tests(SUITE_ID, RESPONSE_SCHEMA_PATH)
+})
+
+describe('Openapi31 ResponseBody. Sibling properties Schema', () => {
+  runResponseSiblingPropertiesSchema(SUITE_ID, RESPONSE_SCHEMA_PATH)
 })

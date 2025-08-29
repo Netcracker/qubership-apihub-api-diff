@@ -1,5 +1,6 @@
 import { runAddRemoveDefaultValuesSchemaTests, runCommonSchemaTests } from './templates/schema'
 import { runCommonSchema31Tests } from './templates/schema31'
+import { runSiblingPropertiesSchema } from './templates/sibling-properties-schema.template'
 
 const SUITE_ID = 'parameters-schema'
 
@@ -20,4 +21,8 @@ describe('Openapi3 Parameters Schema', () => {
 
 describe('Openapi31 Parameters Schema', () => {
   runCommonSchema31Tests(SUITE_ID, PARAMETERS_SCHEMA_PATH)
+})
+
+describe('Openapi31 Parameters. Sibling properties Schema', () => {
+  runSiblingPropertiesSchema(SUITE_ID, PARAMETERS_SCHEMA_PATH)
 })
