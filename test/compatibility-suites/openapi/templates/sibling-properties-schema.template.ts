@@ -6,14 +6,70 @@ import { diffsMatcher } from '../../../helper/matchers'
 const COMPONENTS_SCHEMAS = ['components', 'schemas']
 
 export function runResponseSiblingPropertiesSchema(suiteId: string, commonPath: JsonPath): void {
-  runTests(suiteId, commonPath, true)
+  runTests(suiteId, commonPath)
+
+  test('Change referenced enum when sibling exists for ref', async () => {
+    const testId = 'change-referenced-enum-when-sibling-exists-for-ref'
+    const result = await compareFiles(suiteId, testId)
+    expect(result).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.add,
+        afterDeclarationPaths: [
+          [...COMPONENTS_SCHEMAS, 'Color', 'enum', 1],
+          [...commonPath, 'enum', 1],
+        ],
+        type: risky,
+      }),
+    ]))
+  })
+
+  test('Remove sibling maxLength for ref', async () => {
+    const testId = 'remove-sibling-maxLength-for-ref'
+    const result = await compareFiles(suiteId, testId)
+    expect(result).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.replace,
+        beforeDeclarationPaths: [[...commonPath, 'maxLength']],
+        afterDeclarationPaths: [[...COMPONENTS_SCHEMAS, 'Color', 'maxLength']],
+        type: breaking,
+      }),
+    ]))
+  })
 }
 
 export function runSiblingPropertiesSchema(suiteId: string, commonPath: JsonPath): void {
-  runTests(suiteId, commonPath, false)
+  runTests(suiteId, commonPath)
+
+  test('Change referenced enum when sibling exists for ref', async () => {
+    const testId = 'change-referenced-enum-when-sibling-exists-for-ref'
+    const result = await compareFiles(suiteId, testId)
+    expect(result).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.add,
+        afterDeclarationPaths: [
+          [...COMPONENTS_SCHEMAS, 'Color', 'enum', 1],
+          [...commonPath, 'enum', 1],
+        ],
+        type: nonBreaking,
+      }),
+    ]))
+  })
+
+  test('Remove sibling maxLength for ref', async () => {
+    const testId = 'remove-sibling-maxLength-for-ref'
+    const result = await compareFiles(suiteId, testId)
+    expect(result).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.replace,
+        beforeDeclarationPaths: [[...commonPath, 'maxLength']],
+        afterDeclarationPaths: [[...COMPONENTS_SCHEMAS, 'Color', 'maxLength']],
+        type: nonBreaking,
+      }),
+    ]))
+  })
 }
 
-function runTests(suiteId: string, commonPath: JsonPath, isResponse: boolean): void {
+function runTests(suiteId: string, commonPath: JsonPath): void {
   test('Add sibling description for ref', async () => {
     const testId = 'add-sibling-description-for-ref'
     const result = await compareFiles(suiteId, testId)
@@ -31,33 +87,5 @@ function runTests(suiteId: string, commonPath: JsonPath, isResponse: boolean): v
     const testId = 'change-sibling-enum-for-ref'
     const result = await compareFiles(suiteId, testId)
     expect(result.length).toEqual(0)
-  })
-
-  test('Change referenced enum when sibling exists for ref', async () => {
-    const testId = 'change-referenced-enum-when-sibling-exists-for-ref'
-    const result = await compareFiles(suiteId, testId)
-    expect(result).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.add,
-        afterDeclarationPaths: [
-          [...COMPONENTS_SCHEMAS, 'Color', 'enum', 1],
-          [...commonPath, 'enum', 1],
-        ],
-        type: isResponse ? risky : nonBreaking,
-      }),
-    ]))
-  })
-
-  test('Remove sibling maxLength for ref', async () => {
-    const testId = 'remove-sibling-maxLength-for-ref'
-    const result = await compareFiles(suiteId, testId)
-    expect(result).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.replace,
-        beforeDeclarationPaths: [[...commonPath, 'maxLength']],
-        afterDeclarationPaths: [[...COMPONENTS_SCHEMAS, 'Color', 'maxLength']],
-        type: isResponse ? breaking : nonBreaking,
-      }),
-    ]))
   })
 }
