@@ -31,6 +31,19 @@ function areSpecTypesCompatible(beforeType: SpecType, afterType: SpecType): bool
   return isOpenApiSpecVersion(beforeType) && isOpenApiSpecVersion(afterType)
 }
 
+function selectEngineSpecType(beforeType: SpecType, afterType: SpecType): SpecType {
+  // For OpenAPI version comparisons, use the higher version
+  if (isOpenApiSpecVersion(beforeType) && isOpenApiSpecVersion(afterType)) {
+    if (beforeType === SPEC_TYPE_OPEN_API_31 || afterType === SPEC_TYPE_OPEN_API_31) {
+      return SPEC_TYPE_OPEN_API_31
+    }
+    return SPEC_TYPE_OPEN_API_30
+  }
+  
+  // For same spec types or other compatible types, use the before type
+  return beforeType
+}
+
 export const COMPARE_ENGINES_MAP: Record<SpecType, CompareEngine> = {
   [SPEC_TYPE_JSON_SCHEMA_04]: compareJsonSchema(SPEC_TYPE_JSON_SCHEMA_04),
   [SPEC_TYPE_JSON_SCHEMA_06]: compareJsonSchema(SPEC_TYPE_JSON_SCHEMA_06),
@@ -48,7 +61,7 @@ export function apiDiff(before: unknown, after: unknown, options: CompareOptions
   if (!areSpecTypesCompatible(beforeSpec.type, afterSpec.type)) {
     throw new Error(`Specification cannot be different. Got ${beforeSpec.type} and ${afterSpec.type}`)
   }
-  const engine = COMPARE_ENGINES_MAP[beforeSpec.type]
+  const engine = COMPARE_ENGINES_MAP[selectEngineSpecType(beforeSpec.type, afterSpec.type)]
   return engine(before, after, {
     mode: COMPARE_MODE_DEFAULT,
     normalizedResult: DEFAULT_NORMALIZED_RESULT,

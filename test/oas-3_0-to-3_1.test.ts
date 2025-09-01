@@ -4,6 +4,17 @@ import { readFileSync } from 'fs'
 import { load } from 'js-yaml'
 import { diffsMatcher } from './helper/matchers'
 
+// Helper function for OpenAPI version change assertion
+const expectOpenApiVersionChange = (fromVersion: string = '3.0.4', toVersion: string = '3.1.0') =>
+  expect.objectContaining({
+    action: 'replace',
+    afterDeclarationPaths: [['openapi']],
+    afterValue: toVersion,
+    beforeDeclarationPaths: [['openapi']],
+    beforeValue: fromVersion,
+    type: 'annotation',
+  })
+
 const TEST_NORMALIZE_OPTIONS: CompareOptions = {
   validate: true,
   liftCombiners: true,
@@ -14,7 +25,7 @@ const TEST_NORMALIZE_OPTIONS: CompareOptions = {
   allowNotValidSyntheticChanges: true,
 }
 
-describe('OpenAPI 3.0 to 3.1 Migration Tests', () => {
+describe('OpenAPI 3.0 to 3.1 Comparison Tests', () => {
   test('empty-schema', () => {
     // Load the before and after files
     const beforePath = './test/helper/resources/3_0-to-3_1/empty-schema/before.yaml'
@@ -32,64 +43,84 @@ describe('OpenAPI 3.0 to 3.1 Migration Tests', () => {
     
     // Check the result - expecting changes from empty schema {} to typed schemas
     expect(diffs).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: 'replace',
-        afterDeclarationPaths: [['openapi']],
-        afterValue: '3.1.0',
-        beforeDeclarationPaths: [['openapi']],
-        beforeValue: '3.0.3',
-        type: 'annotation',
-      }),
+      expectOpenApiVersionChange(),
     ]))
-  })
-
-  test('nullable-to-union', () => {
-    // Load the before and after files
-    const beforePath = './test/helper/resources/3_0-to-3_1/nullable-to-union/before.yaml'
-    const afterPath = './test/helper/resources/3_0-to-3_1/nullable-to-union/after.yaml'
-    
-    const beforeSource = load(readFileSync(beforePath).toString())
-    const afterSource = load(readFileSync(afterPath).toString())
-    
-    // Call apiDiff
-    const { diffs } = apiDiff(beforeSource, afterSource, {
-      ...TEST_NORMALIZE_OPTIONS,
-      beforeSource,
-      afterSource,
-    })
-    
-    // Check the result - expecting changes from nullable: true to union types
-    expect(diffs).toEqual(diffsMatcher([
-      // TODO: Add assertions for nullable to union type changes
-    ]))
-  })
+  })  
 
   test('add-overriden-description', () => {
-    // Load the before and after files
     const beforePath = './test/helper/resources/3_0-to-3_1/add-overriden-description/before.yaml'
     const afterPath = './test/helper/resources/3_0-to-3_1/add-overriden-description/after.yaml'
     
     const beforeSource = load(readFileSync(beforePath).toString())
     const afterSource = load(readFileSync(afterPath).toString())
     
-    // Call apiDiff
     const { diffs } = apiDiff(beforeSource, afterSource, {
       ...TEST_NORMALIZE_OPTIONS,
       beforeSource,
       afterSource,
-    })
+    })    
     
-    // Check the result - expecting OpenAPI version change and added overridden description
     expect(diffs).toEqual(diffsMatcher([
+      expectOpenApiVersionChange(),
       expect.objectContaining({
         action: 'replace',
-        afterDeclarationPaths: [['openapi']],
-        afterValue: '3.1.0',
-        beforeDeclarationPaths: [['openapi']],
-        beforeValue: '3.0.0',
+        beforeValue: 'response description from components',
+        afterValue: 'response description override',
+        afterDeclarationPaths: [['paths', '/path1', 'post', 'responses', '200', 'description']],
+        beforeDeclarationPaths: [['components', 'responses', 'response200', 'description']],
         type: 'annotation',
       }),
-      // Additional diffs for the overridden description will be added after running the test
     ]))
   })
+
+  describe('nullable and null type', () => {
+    test('nullable-to-union', () => {
+      // Load the before and after files
+      const beforePath = './test/helper/resources/3_0-to-3_1/nullable-to-union/before.yaml'
+      const afterPath = './test/helper/resources/3_0-to-3_1/nullable-to-union/after.yaml'
+      
+      const beforeSource = load(readFileSync(beforePath).toString())
+      const afterSource = load(readFileSync(afterPath).toString())
+      
+      // Call apiDiff
+      const { diffs } = apiDiff(beforeSource, afterSource, {
+        ...TEST_NORMALIZE_OPTIONS,
+        beforeSource,
+        afterSource,
+      })
+      
+      expect(diffs.length).toBe(1)
+  
+           expect(diffs).toEqual(diffsMatcher([
+         expectOpenApiVersionChange(),      
+       ]))
+    })
+
+    test('nullable-to-null', () => {
+      // Load the before and after files
+      const beforePath = './test/helper/resources/3_0-to-3_1/nullable-to-null/before.yaml'
+      const afterPath = './test/helper/resources/3_0-to-3_1/nullable-to-null/after.yaml'
+      
+      const beforeSource = load(readFileSync(beforePath).toString())
+      const afterSource = load(readFileSync(afterPath).toString())
+      
+      // Call apiDiff
+      const { diffs } = apiDiff(beforeSource, afterSource, {
+        ...TEST_NORMALIZE_OPTIONS,
+        beforeSource,
+        afterSource,
+      })
+      
+      expect(diffs).toEqual(diffsMatcher([
+        expectOpenApiVersionChange(),
+        expect.objectContaining({
+          action: 'remove',          
+          //TODO: validate declaration path
+          beforeDeclarationPaths: [['paths', '/path1', 'get', 'responses', '200', 'content', 'application/json', 'schema']],
+          scope: 'response',
+          type: 'non-breaking',          
+        }),
+      ]))
+    })
+  })  
 })
