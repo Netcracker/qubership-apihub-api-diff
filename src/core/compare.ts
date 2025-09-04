@@ -503,6 +503,10 @@ export const compare = (before: unknown, after: unknown, options: InternalCompar
   }
 }
 
+export interface AggregateDiffsCrawlState {
+  operationDiffs?: Set<Diff>
+}
+
 export function aggregateDiffs(merged: unknown, options: InternalCompareOptions): unknown {
   let activeDataCycleGuard: Set<unknown> = new Set()
 
@@ -510,16 +514,12 @@ export function aggregateDiffs(merged: unknown, options: InternalCompareOptions)
     if (options.metaKey in value) {
       const diffs = value[options.metaKey] as Record<PropertyKey, unknown> | undefined
       for (const key in diffs) {
-        // @ts-ignore
-        if (operationDiffs) {
-          // @ts-ignore
-          operationDiffs.add(diffs[key])
-        }
+        operationDiffs.add(diffs[key] as Diff)
       }
     }
   }
 
-  syncClone(
+  syncClone<AggregateDiffsCrawlState>(
     merged,
     [
       ({ key, value, state, rules }) => {
@@ -527,7 +527,6 @@ export function aggregateDiffs(merged: unknown, options: InternalCompareOptions)
           return { value }
         }
         if (typeof key === 'symbol') {
-          // return { value }
           return { done: true }
         }
         if (activeDataCycleGuard.has(value)) {
@@ -535,8 +534,9 @@ export function aggregateDiffs(merged: unknown, options: InternalCompareOptions)
         }
         activeDataCycleGuard.add(value)
 
-        // @ts-ignore
-        collectCurrentNodeDiffs(value, state.operationDiffs)
+        if (state.operationDiffs) {
+          collectCurrentNodeDiffs(value, state.operationDiffs)
+        }
 
         if (rules && AGGREGATE_DIFFS_HERE_RULE in rules) {
           activeDataCycleGuard = new Set()
@@ -554,7 +554,8 @@ export function aggregateDiffs(merged: unknown, options: InternalCompareOptions)
       },
     ],
     {
-      rules: options.rules
+      state: {},
+      rules: options.rules,
     },
   )
 
