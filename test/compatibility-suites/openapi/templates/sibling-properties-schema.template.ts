@@ -6,7 +6,7 @@ import { diffsMatcher } from '../../../helper/matchers'
 const COMPONENTS_SCHEMAS = ['components', 'schemas']
 
 export function runResponseSiblingPropertiesSchema(suiteId: string, commonPath: JsonPath): void {
-  runTests(suiteId, commonPath)
+  runCommonRefSiblingPropertiesTests(suiteId, commonPath)
 
   test('Change referenced enum when sibling exists for ref', async () => {
     const testId = 'change-referenced-enum-when-sibling-exists-for-ref'
@@ -38,7 +38,7 @@ export function runResponseSiblingPropertiesSchema(suiteId: string, commonPath: 
 }
 
 export function runSiblingPropertiesSchema(suiteId: string, commonPath: JsonPath): void {
-  runTests(suiteId, commonPath)
+  runCommonRefSiblingPropertiesTests(suiteId, commonPath)
 
   test('Change referenced enum when sibling exists for ref', async () => {
     const testId = 'change-referenced-enum-when-sibling-exists-for-ref'
@@ -69,7 +69,7 @@ export function runSiblingPropertiesSchema(suiteId: string, commonPath: JsonPath
   })
 }
 
-function runTests(suiteId: string, commonPath: JsonPath): void {
+function runCommonRefSiblingPropertiesTests(suiteId: string, commonPath: JsonPath): void {
   test('Add sibling description for ref', async () => {
     const testId = 'add-sibling-description-for-ref'
     const result = await compareFiles(suiteId, testId)
@@ -85,7 +85,7 @@ function runTests(suiteId: string, commonPath: JsonPath): void {
 
   test('Change sibling enum for ref', async () => {
     const testId = 'change-sibling-enum-for-ref'
-    const result = await compareFiles(suiteId, testId)
-    expect(result.length).toEqual(0)
+    const diffs = await compareFiles(suiteId, testId)
+    expect(diffs).toBeEmpty()
   })
 }
