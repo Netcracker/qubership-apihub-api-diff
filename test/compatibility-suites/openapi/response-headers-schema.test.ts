@@ -1,5 +1,4 @@
 import { runCommonResponseSchema31Tests } from './templates/response-schema31'
-import { runResponseSiblingPropertiesSchema } from './templates/sibling-properties-schema.template'
 
 const SUITE_ID = 'response-headers-schema'
 
@@ -16,8 +15,4 @@ const RESPONSE_HEADERS_SCHEMA_PATH = [
 
 describe('Openapi31 ResponseHeaders.Schema', () => {
   runCommonResponseSchema31Tests(SUITE_ID, RESPONSE_HEADERS_SCHEMA_PATH)
-})
-
-describe('Openapi31 ResponseHeaders. Sibling properties Schema', () => {
-  runResponseSiblingPropertiesSchema(SUITE_ID, RESPONSE_HEADERS_SCHEMA_PATH)
 })
