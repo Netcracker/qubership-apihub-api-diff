@@ -81,5 +81,33 @@ export function runCommonSchema31Tests(suiteId: string, commonPath: JsonPath): v
       const diffs = await compareFiles(suiteId, testId)
       expect(diffs).toBeEmpty()
     })
+
+    test('Change referenced enum when sibling exists for ref', async () => {
+      const testId = 'change-referenced-enum-when-sibling-exists-for-ref'
+      const result = await compareFiles(suiteId, testId)
+      expect(result).toEqual(diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.add,
+          afterDeclarationPaths: [
+            [...COMPONENTS_SCHEMAS, 'Color', 'enum', 1],
+            [...commonPath, 'enum', 1],
+          ],
+          type: nonBreaking,
+        }),
+      ]))
+    })
+
+    test('Remove sibling maxLength for ref', async () => {
+      const testId = 'remove-sibling-maxLength-for-ref'
+      const result = await compareFiles(suiteId, testId)
+      expect(result).toEqual(diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.replace,
+          beforeDeclarationPaths: [[...commonPath, 'maxLength']],
+          afterDeclarationPaths: [[...COMPONENTS_SCHEMAS, 'Color', 'maxLength']],
+          type: nonBreaking,
+        }),
+      ]))
+    })
   })
 }
