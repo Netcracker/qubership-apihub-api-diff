@@ -415,6 +415,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       }),
     },
     '/securitySchemes': {
+      [AGGREGATE_DIFFS_HERE_RULE]: true,
       $: [breaking, nonBreaking, breaking],
       '/*': {
         $: [breaking, nonBreaking, breaking],
