@@ -455,7 +455,10 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       ...documentAnnotationRule,
       '/**': documentAnnotationRule,
     },
-    '/servers': serversRules,
+    '/servers': {
+      [AGGREGATE_DIFFS_HERE_RULE]: true,
+      ...serversRules,
+    },
     '/paths': {
       $: allUnclassified,
       mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
@@ -463,6 +466,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     },
     '/components': componentsRule,
     '/security': {
+      [AGGREGATE_DIFFS_HERE_RULE]: true,
       $: globalSecurityClassifyRule,
       '/*': { $: globalSecurityItemClassifyRule },
     },
