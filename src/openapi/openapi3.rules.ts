@@ -390,6 +390,20 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/*': operationAnnotationRule,
   }
 
+  const pathItemObjectRules = (options: OpenApi3RulesOptions): CompareRules => ({
+    $: pathChangeClassifyRule,
+    mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
+    '/description': { $: allAnnotation },
+    '/parameters': {
+      $: [nonBreaking, breaking, breaking],
+      mapping: paramMappingResolver(1),
+      ...parametersRules,
+    },
+    '/servers': serversRules,
+    '/summary': { $: allAnnotation },
+    '/*': operationRule,
+  })
+
   const componentsRule: CompareRules = {
     $: allNonBreaking,
     [START_NEW_COMPARE_SCOPE_RULE]: COMPARE_SCOPE_COMPONENTS,
@@ -413,6 +427,10 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         $: allUnclassified,/*for mode One operation*/
         ...requestSchemaRules,
       }),
+    },
+    '/pathItems': {
+      $: [nonBreaking, breaking, breaking],
+      '/*': pathItemObjectRules(options),
     },
     '/securitySchemes': {
       [AGGREGATE_DIFFS_HERE_RULE]: true,
@@ -441,19 +459,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/paths': {
       $: allUnclassified,
       mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
-      '/*': {
-        $: pathChangeClassifyRule,
-        mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
-        '/description': { $: allAnnotation },
-        '/parameters': {
-          $: [nonBreaking, breaking, breaking],
-          mapping: paramMappingResolver(1),
-          ...parametersRules,          
-        },
-        '/servers': serversRules,
-        '/summary': { $: allAnnotation },        
-        '/*': operationRule,
-      },
+      '/*': pathItemObjectRules(options),
     },
     '/components': componentsRule,
     '/security': {
