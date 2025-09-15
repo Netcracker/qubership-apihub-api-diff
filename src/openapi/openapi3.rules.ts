@@ -55,6 +55,7 @@ import {
 } from './openapi3.classify'
 import {
   contentMediaTypeMappingResolver,
+  methodMappingResolver,
   paramMappingResolver,
   pathMappingResolver,
   singleOperationPathMappingResolver,
@@ -392,7 +393,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const pathItemObjectRules = (options: OpenApi3RulesOptions): CompareRules => ({
     $: pathChangeClassifyRule,
-    mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
+    mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : methodMappingResolver,
     '/description': { $: allAnnotation },
     '/parameters': {
       $: [nonBreaking, breaking, breaking],
