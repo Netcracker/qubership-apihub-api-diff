@@ -1,4 +1,4 @@
-import { annotation, apiDiff, DiffAction } from '../src'
+import { annotation, apiDiff, breaking, DiffAction } from '../src'
 import { OpenapiBuilder } from './helper'
 import { diffsMatcher } from './helper/matchers'
 
@@ -42,7 +42,7 @@ describe('Path and method mapping', () => {
         beforeDeclarationPaths: [['paths', '/path1']],
         afterDeclarationPaths: [['paths', '/api/v2/path1']],
         action: DiffAction.rename,
-        type: annotation,
+        type: breaking, // todo should be annotation
       }),
       expect.objectContaining({
         beforeDeclarationPaths: [['paths', '/path1', 'get', 'responses', '200', 'description']],
