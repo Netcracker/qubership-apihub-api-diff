@@ -91,33 +91,104 @@ const hasNullType = (schema: unknown): boolean => {
   return false
 }
 
-// Adapter to transform JSON Schemas used in OpenAPI 3.0 schemas to JSOn schemas used in OpenAPI 3.1 for comparison
+// Builds a "null" type schema carrying over relevant origins from source
+// const buildNullTypeWithOrigins = (
+//   valueWithoutNullable: Record<PropertyKey, unknown>,
+//   originsFlag: PropertyKey,
+// ): Record<PropertyKey, unknown> => {
+//   const nullTypeObject: Record<PropertyKey, unknown> = {
+//     [JSON_SCHEMA_PROPERTY_TYPE]: JSON_SCHEMA_NODE_TYPE_NULL,
+//   }
+//   const valueOrigins = valueWithoutNullable[originsFlag] as Record<PropertyKey, unknown> | undefined
+//
+//   if (valueWithoutNullable.title) {
+//     nullTypeObject.title = valueWithoutNullable.title
+//     const titleOrigin = valueOrigins && (valueOrigins as Record<PropertyKey, unknown>).title
+//     if (titleOrigin !== undefined) {
+//       nullTypeObject[originsFlag] = { title: titleOrigin }
+//     }
+//   }
+//
+//   const nullableOrigin = valueOrigins && (valueOrigins as Record<PropertyKey, unknown>).nullable
+//   if (nullableOrigin !== undefined) {
+//     const existing = (nullTypeObject[originsFlag] as Record<PropertyKey, unknown>) || {}
+//     nullTypeObject[originsFlag] = { ...existing, nullable: nullableOrigin }
+//   }
+//
+//   return nullTypeObject
+// }
+
+const buildNullTypeWithOrigins = (
+  valueWithoutNullable: Record<PropertyKey, unknown>,
+  originsFlag: PropertyKey,
+  syntheticTitleFlag: PropertyKey
+): Record<PropertyKey, unknown> => {
+  const nullTypeObject: Record<PropertyKey, unknown> = {
+    [JSON_SCHEMA_PROPERTY_TYPE]: JSON_SCHEMA_NODE_TYPE_NULL,
+  }
+
+  const valueOrigins = valueWithoutNullable[originsFlag] as Record<PropertyKey, unknown> | undefined
+  const origins: Record<PropertyKey, unknown> = {}
+
+  if (valueWithoutNullable.title) {
+    nullTypeObject.title = valueWithoutNullable.title
+    if (valueOrigins?.title !== undefined) {
+      origins.title = valueOrigins.title
+    }
+  }
+
+  if (valueOrigins?.nullable !== undefined) {
+
+    // origins.nullable = valueOrigins.nullable
+
+    const getOriginParent = (item: unknown) => ({
+      value: JSON_SCHEMA_PROPERTY_TYPE,
+      parent: (item as any)?.parent,
+    })
+
+    origins[JSON_SCHEMA_PROPERTY_TYPE] = Array.isArray(valueOrigins.nullable)
+      ? valueOrigins.nullable.map(getOriginParent)
+      : getOriginParent(valueOrigins.nullable)
+  }
+
+  if (Object.keys(origins).length > 0) {
+    nullTypeObject[originsFlag] = origins
+  }
+
+  return nullTypeObject
+}
+
+// Adapter to transform JSON Schemas used in OpenAPI 3.0 schemas to JSON Schemas used in OpenAPI 3.1 for comparison
 const jsonSchemaOas30to31Adapter: AdapterResolver = (value, reference, ctx) => {
-  if (!isObject(value) || !isObject(reference)) return value
-  
-  // Check if value has nullable: true
-  if (value[JSON_SCHEMA_PROPERTY_NULLABLE] !== true) return value
-  
-  // Check if reference has null type or combiner with null
-  if (!hasNullType(reference)) return value
-  
-  // Transform to anyOf format
-  return ctx.transformer(value, 'nullable-to-anyof', (value) => {
-    const { [JSON_SCHEMA_PROPERTY_NULLABLE]: _, ...valueWithoutNullable } = value as Record<PropertyKey, unknown>
-    
-    // Create the anyOf array with the original schema (without nullable) and null type
-    const anyOfArray = [
-      valueWithoutNullable,
-      { [JSON_SCHEMA_PROPERTY_TYPE]: JSON_SCHEMA_NODE_TYPE_NULL }
-    ]
-    
-    const result = { [JSON_SCHEMA_PROPERTY_ANY_OF]: anyOfArray }
-    
-    // Set origins for the anyOf property and its items
-    setOrigins(result, JSON_SCHEMA_PROPERTY_ANY_OF, ctx.options.originsFlag, ctx.valueOrigins)
-    setOrigins(anyOfArray, 0, ctx.options.originsFlag, ctx.valueOrigins)
-    setOrigins(anyOfArray, 1, ctx.options.originsFlag, ctx.valueOrigins)
-    
+  if (!isObject(value) || !isObject(reference)) {
+    return value
+  }
+
+  if (value[JSON_SCHEMA_PROPERTY_NULLABLE] !== true) {
+    return value
+  }
+
+  if (!hasNullType(reference)) {
+    return value
+  }
+
+  const originsFlag: PropertyKey = ctx.options.originsFlag
+  // @ts-ignore
+  const syntheticTitleFlag: PropertyKey = ctx.options.syntheticTitleFlag
+
+  return ctx.transformer(value, 'nullable-to-anyof', (current) => {
+    const { [JSON_SCHEMA_PROPERTY_NULLABLE]: _nullable, ...valueWithoutNullable } = current as Record<PropertyKey, unknown>
+
+    const nullTypeObject = buildNullTypeWithOrigins(valueWithoutNullable, originsFlag, syntheticTitleFlag)
+
+    const anyOfArray = [valueWithoutNullable, nullTypeObject]
+
+    const result: Record<PropertyKey, unknown> = { [JSON_SCHEMA_PROPERTY_ANY_OF]: anyOfArray }
+
+    setOrigins(result, JSON_SCHEMA_PROPERTY_ANY_OF, originsFlag, ctx.valueOrigins)
+    setOrigins(anyOfArray, 0, originsFlag, ctx.valueOrigins)
+    setOrigins(anyOfArray, 1, originsFlag, ctx.valueOrigins)
+
     return result
   })
 }
