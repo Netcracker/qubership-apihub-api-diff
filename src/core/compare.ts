@@ -238,8 +238,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
 
     const beforeKey = unsafeKey ?? (isArray(beforeJso) ? +Object.keys(keyMap).pop()! : Object.keys(keyMap).pop())
     const afterKey = keyMap[beforeKey]
-    // gitleaks:allow(generic-api-key)
-    const mergeKey = isArray(mergedJso) && isNumber(beforeKey) ? beforeKey : afterKey//THIS IS VERY FRAGILE. Cause this logic duplicate this line mergedJsoValue[keyInMerge] = afterValue[keyInAfter]
+    const mergeKey = isArray(mergedJso) && isNumber(beforeKey) ? beforeKey : afterKey //gitleaks:allow //THIS IS VERY FRAGILE. Cause this logic duplicate this line mergedJsoValue[keyInMerge] = afterValue[keyInAfter]
 
     // skip if node was removed
     if (!(beforeKey in keyMap)) {
