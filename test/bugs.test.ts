@@ -42,11 +42,8 @@ import wildcardContentSchemaMediaTypeCombinedWithSpecificMediaTypeAfter from './
 import shouldNotMissRemoveDiffForEnumEntryInOneOfBefore from './helper/resources/should-not-miss-remove-diff-for-enum-entry-in-oneOf/before.json'
 import shouldNotMissRemoveDiffForEnumEntryInOneOfAfter from './helper/resources/should-not-miss-remove-diff-for-enum-entry-in-oneOf/after.json'
 
-import shouldCalculateDiffsCorrectlyInOneOfBefore from './helper/resources/should-calculate-diffs-correctly-in-oneOf/before.json'
-import shouldCalculateDiffsCorrectlyInOneOfAfter from './helper/resources/should-calculate-diffs-correctly-in-oneOf/after.json'
-
-import shouldCalculateDiffsCorrectlyInAnyOfBefore from './helper/resources/should-calculate-diffs-correctly-in-anyOf/before.json'
-import shouldCalculateDiffsCorrectlyInAnyOfAfter from './helper/resources/should-calculate-diffs-correctly-in-anyOf/after.json'
+import shouldReportSingleDiffWhenRequiredPropertyIsChangedForTheCombinerBefore from './helper/resources/should-report-single-diff-when-required-property-is-changed-for-the-combiner/before.json'
+import shouldReportSingleDiffWhenRequiredPropertyIsChangedForTheCombinerAfter from './helper/resources/should-report-single-diff-when-required-property-is-changed-for-the-combiner/after.json'
 
 import { diffsMatcher } from './helper/matchers'
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper'
@@ -278,39 +275,12 @@ describe('Real Data', () => {
   })
 
   // check diffUniquenessCache works correctly for oneOf
-  it('should calculate diffs correctly in oneOf', () => {
-    const before: any = shouldCalculateDiffsCorrectlyInOneOfBefore
-    const after: any = shouldCalculateDiffsCorrectlyInOneOfAfter
+  it('should report single diff when required property is changed for the combiner', () => {
+    const before: any = shouldReportSingleDiffWhenRequiredPropertyIsChangedForTheCombinerBefore
+    const after: any = shouldReportSingleDiffWhenRequiredPropertyIsChangedForTheCombinerAfter
     const { diffs } = apiDiff(before, after, OPTIONS)
 
-    expect(diffs).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.add,
-        afterValue: "eventType",
-        afterNormalizedValue: "eventType",
-        afterDeclarationPaths: [[
-          "paths",
-          "/path1",
-          "get",
-          "responses",
-          "200",
-          "content",
-          "application/json",
-          "schema",
-          "required",
-          0
-        ]],
-        type: nonBreaking,
-      }),
-    ]))
-  })
-
-  // check diffUniquenessCache works correctly for anyOf
-  it('should calculate diffs correctly in anyOf', () => {
-    const before: any = shouldCalculateDiffsCorrectlyInAnyOfBefore
-    const after: any = shouldCalculateDiffsCorrectlyInAnyOfAfter
-    const { diffs } = apiDiff(before, after, OPTIONS)
-
+    expect(diffs).toHaveLength(1)
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,

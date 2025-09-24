@@ -156,24 +156,24 @@ const cleanUpRecursive = (ctx: NodeContext): NodeContext => {
 }
 
 export const getOrCreateChildDiffAdd = (diffUniquenessCache: EvaluationCacheService, childCtx: CompareContext) => {
-  const addDiffEntry = diffUniquenessCache.cacheEvaluationResultByFootprint<[unknown, string, CompareScope, typeof DiffAction.add], DiffAdd>([childCtx.after.value, buildPathsIdentifier(childCtx.after.declarativePaths), childCtx.scope, DiffAction.add], () => {
+  const diff = diffUniquenessCache.cacheEvaluationResultByFootprint<[unknown, string, CompareScope, typeof DiffAction.add], DiffAdd>([childCtx.after.value, buildPathsIdentifier(childCtx.after.declarativePaths), childCtx.scope, DiffAction.add], () => {
     return diffFactory.added(childCtx)
   }, {} as DiffAdd, (result, guard) => {
     Object.assign(guard, result)
     return guard
   })
 
-  return createDiffEntry(childCtx, addDiffEntry)
+  return createDiffEntry(childCtx, diff)
 }
 
 export const getOrCreateChildDiffRemove = (diffUniquenessCache: EvaluationCacheService, childCtx: CompareContext) => {
-  const getOrCreateDiffEntry = diffUniquenessCache.cacheEvaluationResultByFootprint<[unknown, string, CompareScope, typeof DiffAction.remove], DiffRemove>([childCtx.before.value, buildPathsIdentifier(childCtx.before.declarativePaths), childCtx.scope, DiffAction.remove], () => {
+  const diff = diffUniquenessCache.cacheEvaluationResultByFootprint<[unknown, string, CompareScope, typeof DiffAction.remove], DiffRemove>([childCtx.before.value, buildPathsIdentifier(childCtx.before.declarativePaths), childCtx.scope, DiffAction.remove], () => {
     return diffFactory.removed(childCtx)
   }, {} as DiffRemove, (result, guard) => {
     Object.assign(guard, result)
     return guard
   })
-  return createDiffEntry(childCtx, getOrCreateDiffEntry)
+  return createDiffEntry(childCtx, diff)
 }
 
 const adaptValues = (beforeJso: JsonNode, beforeKey: PropertyKey, afterJso: JsonNode, afterKey: PropertyKey, adapter: AdapterResolver[] | undefined, options: InternalCompareOptions) => {
