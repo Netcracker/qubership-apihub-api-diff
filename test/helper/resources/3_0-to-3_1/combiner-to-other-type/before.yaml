@@ -11,12 +11,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/MySchema'
+                $ref: '#/components/schemas/MySchema'
 components:
   schemas:
     MySchema:
