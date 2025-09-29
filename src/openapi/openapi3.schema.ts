@@ -16,8 +16,9 @@ import {
   transformCompareRules,
 } from '../core'
 import type { OpenApi3SchemaRulesOptions } from './openapi3.types'
-import { AdapterResolver, CompareRules } from '../types'
+import { AdapterContext, AdapterResolver, CompareRules } from '../types'
 import {
+  cleanOrigins,
   JSON_SCHEMA_NODE_TYPE_NULL,
   JSON_SCHEMA_PROPERTY_ANY_OF,
   JSON_SCHEMA_PROPERTY_NULLABLE,
@@ -93,21 +94,39 @@ const hasNullType = (schema: unknown): boolean => {
 
 const buildNullTypeWithOrigins = (
   valueWithoutNullable: Record<PropertyKey, unknown>,
-  originsFlag: PropertyKey,
-  syntheticTitleFlag: symbol | undefined,
+  context: AdapterContext<unknown>,
+  factory: NativeAnySchemaFactory,
 ): Record<PropertyKey, unknown> => {
-  const nullableObject: Record<PropertyKey, unknown> = {
-    [JSON_SCHEMA_PROPERTY_TYPE]: JSON_SCHEMA_NODE_TYPE_NULL,
-  }
+  const { options, valueOrigins } = context
+  const { originsFlag, syntheticTitleFlag } = options
 
-  const origins: Record<PropertyKey, unknown> = {}
-  const valueOrigins = valueWithoutNullable[originsFlag] as Record<PropertyKey, unknown> | undefined
+  const nullableObject = factory(
+    { [JSON_SCHEMA_PROPERTY_TYPE]: JSON_SCHEMA_NODE_TYPE_NULL },
+    valueOrigins,
+    options,
+  )
+
+  const inputOrigins = valueWithoutNullable[originsFlag] as Record<PropertyKey, unknown> | undefined
+  const nullOrigins = nullableObject[originsFlag] as Record<PropertyKey, unknown> | undefined ?? {}
+
+  if (inputOrigins && inputOrigins.nullable) {
+    const getOriginParent = (item: unknown) => ({
+      value: JSON_SCHEMA_PROPERTY_TYPE,
+      parent: (item as any)?.parent,
+    })
+
+    nullOrigins[JSON_SCHEMA_PROPERTY_TYPE] = isArray(inputOrigins.nullable)
+      ? inputOrigins.nullable.map(getOriginParent)
+      : getOriginParent(inputOrigins.nullable)
+  }
 
   const valueTitle = valueWithoutNullable[JSON_SCHEMA_PROPERTY_TITLE]
   if (valueTitle) {
     nullableObject[JSON_SCHEMA_PROPERTY_TITLE] = valueTitle
-    if (valueOrigins && valueOrigins[JSON_SCHEMA_PROPERTY_TITLE] !== undefined) {
-      origins[JSON_SCHEMA_PROPERTY_TITLE] = valueOrigins[JSON_SCHEMA_PROPERTY_TITLE]
+
+    const titleOrigins = inputOrigins && inputOrigins[JSON_SCHEMA_PROPERTY_TITLE]
+    if (titleOrigins) {
+      nullOrigins[JSON_SCHEMA_PROPERTY_TITLE] = titleOrigins
     }
   }
 
@@ -115,25 +134,10 @@ const buildNullTypeWithOrigins = (
     nullableObject[syntheticTitleFlag] = true
   }
 
-  if (valueOrigins && valueOrigins[JSON_SCHEMA_PROPERTY_NULLABLE] !== undefined) {
-    const getOriginParent = (item: unknown) => ({
-      value: JSON_SCHEMA_PROPERTY_TYPE,
-      parent: (item as any)?.parent,
-    })
-
-    origins[JSON_SCHEMA_PROPERTY_TYPE] = isArray(valueOrigins.nullable)
-      ? valueOrigins.nullable.map(getOriginParent)
-      : getOriginParent(valueOrigins.nullable)
-  }
-
-  if (Object.keys(origins).length > 0) {
-    nullableObject[originsFlag] = origins
-  }
-
   return nullableObject
 }
 
-const jsonSchemaOas30to31Adapter: AdapterResolver = (value, reference, ctx) => {
+const jsonSchemaOas30to31Adapter: (factory: NativeAnySchemaFactory) => AdapterResolver = (factory) => (value, reference, valueContext) => {
   if (!isObject(value) || !isObject(reference)) {
     return value
   }
@@ -146,23 +150,25 @@ const jsonSchemaOas30to31Adapter: AdapterResolver = (value, reference, ctx) => {
     return value
   }
 
-  const { originsFlag, syntheticTitleFlag } = ctx.options
+  const { originsFlag } = valueContext.options
 
-  return ctx.transformer(value, 'nullable-to-anyof', (current) => {
+  return valueContext.transformer(value, 'nullable-to-anyof', (current) => {
     const {
       [JSON_SCHEMA_PROPERTY_NULLABLE]: _nullable,
       ...valueWithoutNullable
     } = current as Record<PropertyKey, unknown>
 
-    const nullTypeObject = buildNullTypeWithOrigins(valueWithoutNullable, originsFlag, syntheticTitleFlag)
+    const nullTypeObject = buildNullTypeWithOrigins(valueWithoutNullable, valueContext, factory)
+
+    cleanOrigins(valueWithoutNullable, JSON_SCHEMA_PROPERTY_NULLABLE, originsFlag)
 
     const anyOfArray = [valueWithoutNullable, nullTypeObject]
 
     const result: Record<PropertyKey, unknown> = { [JSON_SCHEMA_PROPERTY_ANY_OF]: anyOfArray }
 
-    setOrigins(result, JSON_SCHEMA_PROPERTY_ANY_OF, originsFlag, ctx.valueOrigins)
-    setOrigins(anyOfArray, 0, originsFlag, ctx.valueOrigins)
-    setOrigins(anyOfArray, 1, originsFlag, ctx.valueOrigins)
+    setOrigins(result, JSON_SCHEMA_PROPERTY_ANY_OF, originsFlag, valueContext.valueOrigins)
+    setOrigins(anyOfArray, 0, originsFlag, valueContext.valueOrigins)
+    setOrigins(anyOfArray, 1, originsFlag, valueContext.valueOrigins)
 
     return result
   })
@@ -175,7 +181,7 @@ export const openApiSchemaRules = (options: OpenApi3SchemaRulesOptions): Compare
   const schemaRules = jsonSchemaRules({
     additionalRules: {
       adapter: [
-        ...(options.version === SPEC_TYPE_OPEN_API_31 ? [jsonSchemaOas30to31Adapter] : []),
+        ...(options.version === SPEC_TYPE_OPEN_API_31 ? [jsonSchemaOas30to31Adapter(openApiJsonSchemaAnyFactory(options.version))] : []),
         jsonSchemaAdapter(openApiJsonSchemaAnyFactory(options.version)),
       ],
       descriptionParamCalculator: schemaParamsCalculator,
@@ -190,7 +196,7 @@ export const openApiSchemaRules = (options: OpenApi3SchemaRulesOptions): Compare
           nonBreaking,
           ({ after }) => breakingIf(!!after.value),
         ],
-        description: diffDescription(resolveSchemaDescriptionTemplates('nullable status'))
+        description: diffDescription(resolveSchemaDescriptionTemplates('nullable status')),
       },
       '/discriminator': { $: allUnclassified },
       '/example': { $: allAnnotation, description: diffDescription(resolveSchemaDescriptionTemplates('example')) },
@@ -199,15 +205,15 @@ export const openApiSchemaRules = (options: OpenApi3SchemaRulesOptions): Compare
         description: diffDescription(resolveSchemaDescriptionTemplates('externalDocs')),
         '/description': {
           $: allAnnotation,
-          description: diffDescription(resolveSchemaDescriptionTemplates('description of externalDocs'))
+          description: diffDescription(resolveSchemaDescriptionTemplates('description of externalDocs')),
         },
         '/url': {
           $: allAnnotation,
-          description: diffDescription(resolveSchemaDescriptionTemplates('url of externalDocs'))
+          description: diffDescription(resolveSchemaDescriptionTemplates('url of externalDocs')),
         },
         '/*': {
           $: allAnnotation,
-          description: diffDescription(resolveSchemaDescriptionTemplates('externalDocs'))
+          description: diffDescription(resolveSchemaDescriptionTemplates('externalDocs')),
         },
       },
       '/xml': {},
