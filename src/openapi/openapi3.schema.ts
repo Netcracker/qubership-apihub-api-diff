@@ -100,14 +100,14 @@ const buildNullTypeWithOrigins = (
   const { options, valueOrigins } = context
   const { originsFlag, syntheticTitleFlag } = options
 
-  const nullableObject = factory(
+  const nullTypeObject = factory(
     { [JSON_SCHEMA_PROPERTY_TYPE]: JSON_SCHEMA_NODE_TYPE_NULL },
     valueOrigins,
     options,
   )
 
   const inputOrigins = valueWithoutNullable[originsFlag] as Record<PropertyKey, unknown> | undefined
-  const nullOrigins = nullableObject[originsFlag] as Record<PropertyKey, unknown> | undefined ?? {}
+  const nullOrigins = nullTypeObject[originsFlag] as Record<PropertyKey, unknown> | undefined ?? {}
 
   if (inputOrigins && inputOrigins.nullable) {
     const getOriginParent = (item: unknown) => ({
@@ -122,7 +122,7 @@ const buildNullTypeWithOrigins = (
 
   const valueTitle = valueWithoutNullable[JSON_SCHEMA_PROPERTY_TITLE]
   if (valueTitle) {
-    nullableObject[JSON_SCHEMA_PROPERTY_TITLE] = valueTitle
+    nullTypeObject[JSON_SCHEMA_PROPERTY_TITLE] = valueTitle
 
     const titleOrigins = inputOrigins && inputOrigins[JSON_SCHEMA_PROPERTY_TITLE]
     if (titleOrigins) {
@@ -131,10 +131,10 @@ const buildNullTypeWithOrigins = (
   }
 
   if (syntheticTitleFlag && valueWithoutNullable[syntheticTitleFlag]) {
-    nullableObject[syntheticTitleFlag] = true
+    nullTypeObject[syntheticTitleFlag] = true
   }
 
-  return nullableObject
+  return nullTypeObject
 }
 
 const jsonSchemaOas30to31Adapter: (factory: NativeAnySchemaFactory) => AdapterResolver = (factory) => (value, reference, valueContext) => {
