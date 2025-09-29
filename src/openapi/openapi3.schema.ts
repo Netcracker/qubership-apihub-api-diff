@@ -107,26 +107,27 @@ const buildNullTypeWithOrigins = (
   )
 
   const inputOrigins = valueWithoutNullable[originsFlag] as Record<PropertyKey, unknown> | undefined
-  const nullOrigins = nullTypeObject[originsFlag] as Record<PropertyKey, unknown> | undefined ?? {}
+  const nullTypeOrigins = nullTypeObject[originsFlag] as Record<PropertyKey, unknown> | undefined ?? {}
 
-  if (inputOrigins && inputOrigins.nullable) {
+  const nullable = inputOrigins && inputOrigins.nullable
+  if (nullable) {
     const getOriginParent = (item: unknown) => ({
       value: JSON_SCHEMA_PROPERTY_TYPE,
       parent: (item as any)?.parent,
     })
 
-    nullOrigins[JSON_SCHEMA_PROPERTY_TYPE] = isArray(inputOrigins.nullable)
-      ? inputOrigins.nullable.map(getOriginParent)
-      : getOriginParent(inputOrigins.nullable)
+    nullTypeOrigins[JSON_SCHEMA_PROPERTY_TYPE] = isArray(nullable)
+      ? nullable.map(getOriginParent)
+      : getOriginParent(nullable)
   }
 
-  const valueTitle = valueWithoutNullable[JSON_SCHEMA_PROPERTY_TITLE]
-  if (valueTitle) {
-    nullTypeObject[JSON_SCHEMA_PROPERTY_TITLE] = valueTitle
+  const title = valueWithoutNullable[JSON_SCHEMA_PROPERTY_TITLE]
+  if (title) {
+    nullTypeObject[JSON_SCHEMA_PROPERTY_TITLE] = title
 
     const titleOrigins = inputOrigins && inputOrigins[JSON_SCHEMA_PROPERTY_TITLE]
     if (titleOrigins) {
-      nullOrigins[JSON_SCHEMA_PROPERTY_TITLE] = titleOrigins
+      nullTypeOrigins[JSON_SCHEMA_PROPERTY_TITLE] = titleOrigins
     }
   }
 

@@ -53,7 +53,7 @@ describe('OpenAPI 3.0 to 3.1 Comparison Tests', () => {
     ]))
   })
 
-  test('could compare with overridden description via reference object', () => {
+  test('could compare overridden description via reference object', () => {
     const { diffs } = apiDiff(addOverridenDescriptionBefore, addOverridenDescriptionAfter, TEST_NORMALIZE_OPTIONS)
 
     expect(diffs).toEqual(diffsMatcher([
