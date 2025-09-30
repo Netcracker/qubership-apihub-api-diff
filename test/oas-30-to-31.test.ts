@@ -2,26 +2,23 @@ import { apiDiff, CompareOptions } from '../src'
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG, TEST_SYNTHETIC_TITLE_FLAG } from './helper'
 import { diffsMatcher } from './helper/matchers'
 
-import addOverridenDescriptionBefore from './helper/resources/30-to-31/add-overriden-description/before.json'
-import addOverridenDescriptionAfter from './helper/resources/30-to-31/add-overriden-description/after.json'
+import couldCompareOverriddenDescriptionViaReferenceObjectBefore from './helper/resources/openapi-3_0-to-3_1/could-compare-overridden-description-via-reference-object/before.json'
+import couldCompareOverriddenDescriptionViaReferenceObjectAfter from './helper/resources/openapi-3_0-to-3_1/could-compare-overridden-description-via-reference-object/after.json'
 
-import combinerToOtherTypeBefore from './helper/resources/30-to-31/combiner-to-other-type/before.json'
-import combinerToOtherTypeAfter from './helper/resources/30-to-31/combiner-to-other-type/after.json'
+import nullableIsEquivalentToAnyOfWithNullTypeForSchemaViaRefBefore from './helper/resources/openapi-3_0-to-3_1/nullable-is-equivalent-to-anyOf-with-null-type-for-schema-via-ref/before.json'
+import nullableIsEquivalentToAnyOfWithNullTypeForSchemaViaRefAfter from './helper/resources/openapi-3_0-to-3_1/nullable-is-equivalent-to-anyOf-with-null-type-for-schema-via-ref/after.json'
 
-import emptySchemaBefore from './helper/resources/30-to-31/empty-schema/before.json'
-import emptySchemaAfter from './helper/resources/30-to-31/empty-schema/after.json'
+import emptySchemasAreEquivalentBetweenVersionsBefore from './helper/resources/openapi-3_0-to-3_1/empty-schemas-are-equivalent-between-versions/before.json'
+import emptySchemasAreEquivalentBetweenVersionsAfter from './helper/resources/openapi-3_0-to-3_1/empty-schemas-are-equivalent-between-versions/after.json'
 
-import nullableToAnyOfBefore from './helper/resources/30-to-31/nullable-to-any-of/before.json'
-import nullableToAnyOfAfter from './helper/resources/30-to-31/nullable-to-any-of/after.json'
+import nullableIsEquivalentToAnyOfWithNullTypeBefore from './helper/resources/openapi-3_0-to-3_1/nullable-is-equivalent-to-anyOf-with-null-type/before.json'
+import nullableIsEquivalentToAnyOfWithNullTypeAfter from './helper/resources/openapi-3_0-to-3_1/nullable-is-equivalent-to-anyOf-with-null-type/after.json'
 
-import nullableToNullBefore from './helper/resources/30-to-31/nullable-to-null/before.json'
-import nullableToNullAfter from './helper/resources/30-to-31/nullable-to-null/after.json'
+import nullableIsEquivalentToUnionWithNullTypeBefore from './helper/resources/openapi-3_0-to-3_1/nullable-is-equivalent-to-union-with-null-type/before.json'
+import nullableIsEquivalentToUnionWithNullTypeAfter from './helper/resources/openapi-3_0-to-3_1/nullable-is-equivalent-to-union-with-null-type/after.json'
 
-import nullableToUnionBefore from './helper/resources/30-to-31/nullable-to-union/before.json'
-import nullableToUnionAfter from './helper/resources/30-to-31/nullable-to-union/after.json'
-
-import nullableToUnionWithRefBefore from './helper/resources/30-to-31/nullable-to-union-with-ref/before.json'
-import nullableToUnionWithRefAfter from './helper/resources/30-to-31/nullable-to-union-with-ref/after.json'
+import nullableIsEquivalentToUnionWithNullTypeForSchemaViaRefBefore from './helper/resources/openapi-3_0-to-3_1/nullable-is-equivalent-to-union-with-null-type-for-schema-via-ref/before.json'
+import nullableIsEquivalentToUnionWithNullTypeForSchemaViaRefAfter from './helper/resources/openapi-3_0-to-3_1/nullable-is-equivalent-to-union-with-null-type-for-schema-via-ref/after.json'
 
 const expectOpenApiVersionChange = (fromVersion: string = '3.0.4', toVersion: string = '3.1.0') =>
   expect.objectContaining({
@@ -44,8 +41,16 @@ const TEST_NORMALIZE_OPTIONS: CompareOptions = {
 }
 
 describe('OpenAPI 3.0 to 3.1 Comparison Tests', () => {
-  test('empty schemas should have no difference', () => {
-    const { diffs } = apiDiff(emptySchemaBefore, emptySchemaAfter, TEST_NORMALIZE_OPTIONS)
+  /*
+    Empty schema in 3.1 includes null type, while empty schema in 3.0 does not,
+    but we keep this expected result because it is more aligned with user expectations.
+  */
+  test('empty schemas are equivalent between versions', () => {
+    const { diffs } = apiDiff(
+      emptySchemasAreEquivalentBetweenVersionsBefore,
+      emptySchemasAreEquivalentBetweenVersionsAfter,
+      TEST_NORMALIZE_OPTIONS
+    )
 
     // only openapi version change
     expect(diffs).toEqual(diffsMatcher([
@@ -54,7 +59,11 @@ describe('OpenAPI 3.0 to 3.1 Comparison Tests', () => {
   })
 
   test('could compare overridden description via reference object', () => {
-    const { diffs } = apiDiff(addOverridenDescriptionBefore, addOverridenDescriptionAfter, TEST_NORMALIZE_OPTIONS)
+    const { diffs } = apiDiff(
+      couldCompareOverriddenDescriptionViaReferenceObjectBefore,
+      couldCompareOverriddenDescriptionViaReferenceObjectAfter,
+      TEST_NORMALIZE_OPTIONS
+    )
 
     expect(diffs).toEqual(diffsMatcher([
       expectOpenApiVersionChange(),
@@ -70,8 +79,12 @@ describe('OpenAPI 3.0 to 3.1 Comparison Tests', () => {
   })
 
   describe('Comparison nullable and null type', () => {
-    test('could compare nullable to anyOf', () => {
-      const { diffs } = apiDiff(nullableToAnyOfBefore, nullableToAnyOfAfter, TEST_NORMALIZE_OPTIONS)
+    test('nullable is equivalent to anyOf with null type', () => {
+      const { diffs } = apiDiff(
+        nullableIsEquivalentToAnyOfWithNullTypeBefore,
+        nullableIsEquivalentToAnyOfWithNullTypeAfter,
+        TEST_NORMALIZE_OPTIONS
+      )
 
       expect(diffs.length).toBe(1)
       expect(diffs).toEqual(diffsMatcher([
@@ -79,8 +92,12 @@ describe('OpenAPI 3.0 to 3.1 Comparison Tests', () => {
       ]))
     })
 
-    test('could compare nullable to union', () => {
-      const { diffs } = apiDiff(nullableToUnionBefore, nullableToUnionAfter, TEST_NORMALIZE_OPTIONS)
+    test('nullable is equivalent to union with null type', () => {
+      const { diffs } = apiDiff(
+        nullableIsEquivalentToUnionWithNullTypeBefore,
+        nullableIsEquivalentToUnionWithNullTypeAfter,
+        TEST_NORMALIZE_OPTIONS
+      )
 
       expect(diffs.length).toBe(1)
       expect(diffs).toEqual(diffsMatcher([
@@ -88,8 +105,12 @@ describe('OpenAPI 3.0 to 3.1 Comparison Tests', () => {
       ]))
     })
 
-    test('could compare combiner to other type', () => {
-      const { diffs } = apiDiff(combinerToOtherTypeBefore, combinerToOtherTypeAfter, TEST_NORMALIZE_OPTIONS)
+    test('nullable is equivalent to anyOf with null type for schema defined via ref', () => {
+      const { diffs } = apiDiff(
+        nullableIsEquivalentToAnyOfWithNullTypeForSchemaViaRefBefore,
+        nullableIsEquivalentToAnyOfWithNullTypeForSchemaViaRefAfter,
+        TEST_NORMALIZE_OPTIONS
+      )
 
       expect(diffs.length).toBe(1)
       expect(diffs).toEqual(diffsMatcher([
@@ -97,23 +118,12 @@ describe('OpenAPI 3.0 to 3.1 Comparison Tests', () => {
       ]))
     })
 
-    test('could compare nullable to null', () => {
-      const { diffs } = apiDiff(nullableToNullBefore, nullableToNullAfter, TEST_NORMALIZE_OPTIONS)
-
-      expect(diffs).toEqual(diffsMatcher([
-        expectOpenApiVersionChange(),
-        expect.objectContaining({
-          action: 'remove',
-          //TODO: validate declaration path
-          beforeDeclarationPaths: [['paths', '/path1', 'get', 'responses', '200', 'content', 'application/json', 'schema']],
-          scope: 'response',
-          type: 'non-breaking',
-        }),
-      ]))
-    })
-
-    test('could compare nullable to union with ref', () => {
-      const { diffs } = apiDiff(nullableToUnionWithRefBefore, nullableToUnionWithRefAfter, TEST_NORMALIZE_OPTIONS)
+    test('nullable is equivalent to union with null type for schema defined via ref', () => {
+      const { diffs } = apiDiff(
+        nullableIsEquivalentToUnionWithNullTypeForSchemaViaRefBefore,
+        nullableIsEquivalentToUnionWithNullTypeForSchemaViaRefAfter,
+        TEST_NORMALIZE_OPTIONS
+      )
 
       expect(diffs.length).toBe(1)
       expect(diffs).toEqual(diffsMatcher([
