@@ -18,6 +18,7 @@ import {
 import type { OpenApi3SchemaRulesOptions } from './openapi3.types'
 import { AdapterContext, AdapterResolver, CompareRules } from '../types'
 import {
+  ChainItem,
   cleanOrigins,
   JSON_SCHEMA_NODE_TYPE_NULL,
   JSON_SCHEMA_PROPERTY_ANY_OF,
@@ -107,17 +108,17 @@ const buildNullTypeWithOrigins = (
   )
 
   const inputOrigins = valueWithoutNullable[originsFlag] as Record<PropertyKey, unknown> | undefined
-  const nullTypeOrigins = nullTypeObject[originsFlag] as Record<PropertyKey, unknown> | undefined ?? {}
+  const nullTypeOrigins = isObject(nullTypeObject[originsFlag]) ? nullTypeObject[originsFlag] as Record<PropertyKey, unknown> : {}
 
-  const nullable = inputOrigins && inputOrigins.nullable
+  const nullable = inputOrigins && inputOrigins.nullable as ChainItem[]
   if (nullable) {
-    const getOriginParent = (item: unknown) => ({
+    const getOriginParent = (item: ChainItem | undefined) => ({
       value: JSON_SCHEMA_PROPERTY_TYPE,
-      parent: (item as any)?.parent,
+      parent: item?.parent,
     })
 
     nullTypeOrigins[JSON_SCHEMA_PROPERTY_TYPE] = isArray(nullable)
-      ? nullable.map(getOriginParent)
+      ? (nullable).map(getOriginParent)
       : getOriginParent(nullable)
   }
 
@@ -154,10 +155,13 @@ const jsonSchemaOas30to31Adapter: (factory: NativeAnySchemaFactory) => AdapterRe
   const { originsFlag } = valueContext.options
 
   return valueContext.transformer(value, 'nullable-to-anyof', (current) => {
+    if (!isObject(current)) {
+      return current
+    }
     const {
       [JSON_SCHEMA_PROPERTY_NULLABLE]: _nullable,
       ...valueWithoutNullable
-    } = current as Record<PropertyKey, unknown>
+    } = current
 
     const nullTypeObject = buildNullTypeWithOrigins(valueWithoutNullable, valueContext, factory)
 
