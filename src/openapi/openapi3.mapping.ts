@@ -1,6 +1,14 @@
-import type { MapKeysResult, MappingResolver } from '../types'
-import { getStringValue, objectKeys, onlyExistedArrayIndexes } from '../utils'
+import { MapKeysResult, MappingResolver, NodeContext } from '../types'
+import {
+  difference,
+  getStringValue,
+  intersection,
+  objectKeys,
+  onlyExistedArrayIndexes,
+  removeSlashes,
+} from '../utils'
 import { mapPathParams } from './openapi3.utils'
+import { OpenAPIV3 } from 'openapi-types'
 
 export const singleOperationPathMappingResolver: MappingResolver<string> = (before, after) => {
 
@@ -23,32 +31,40 @@ export const singleOperationPathMappingResolver: MappingResolver<string> = (befo
   return result
 }
 
-export const pathMappingResolver: MappingResolver<string> = (before, after) => {
+export const pathMappingResolver: MappingResolver<string> = (before, after, ctx) => {
 
   const result: MapKeysResult<string> = { added: [], removed: [], mapped: {} }
 
-  const originalBeforeKeys = objectKeys(before)
-  const originalAfterKeys = objectKeys(after)
-  const unifiedAfterKeys = originalAfterKeys.map(hidePathParamNames)
+  const unifyBeforePath = createPathUnifier(ctx.before)
+  const unifyAfterPath = createPathUnifier(ctx.after)
 
-  const notMappedAfterIndices = new Set(originalAfterKeys.keys())
+  const unifiedBeforeKeyToKey = Object.fromEntries(objectKeys(before).map(key => [unifyBeforePath(key), key]))
+  const unifiedAfterKeyToKey = Object.fromEntries(objectKeys(after).map(key => [unifyAfterPath(key), key]))
 
-  originalBeforeKeys.forEach(beforeKey => {
-    const unifiedBeforePath = hidePathParamNames(beforeKey)
-    const index = unifiedAfterKeys.indexOf(unifiedBeforePath)
+  const unifiedBeforeKeys = Object.keys(unifiedBeforeKeyToKey)
+  const unifiedAfterKeys = Object.keys(unifiedAfterKeyToKey)
 
-    if (index < 0) {
-      // removed item
-      result.removed.push(beforeKey)
-    } else {
-      // mapped items
-      result.mapped[beforeKey] = originalAfterKeys[index]
-      notMappedAfterIndices.delete(index)
-    }
-  })
+  result.added = difference(unifiedAfterKeys, unifiedBeforeKeys).map(key => unifiedAfterKeyToKey[key])
+  result.removed = difference(unifiedBeforeKeys, unifiedAfterKeys).map(key => unifiedBeforeKeyToKey[key])
+  result.mapped = Object.fromEntries(
+    intersection(unifiedBeforeKeys, unifiedAfterKeys).map(key => [unifiedBeforeKeyToKey[key], unifiedAfterKeyToKey[key]]),
+  )
 
-  // added items
-  notMappedAfterIndices.forEach((notMappedIndex) => result.added.push(originalAfterKeys[notMappedIndex]))
+  return result
+}
+
+export const methodMappingResolver: MappingResolver<string> = (before, after) => {
+
+  const result: MapKeysResult<string> = { added: [], removed: [], mapped: {} }
+
+  const beforeKeys = objectKeys(before)
+  const afterKeys = objectKeys(after)
+
+  result.added = difference(afterKeys, beforeKeys)
+  result.removed = difference(beforeKeys, afterKeys)
+
+  const mapped = intersection(beforeKeys, afterKeys)
+  mapped.forEach(key => result.mapped[key] = key)
 
   return result
 }
@@ -173,6 +189,31 @@ function isWildcardCompatible(beforeType: string, afterType: string): boolean {
   }
 
   return true
+}
+
+// todo copy-paste from api-processor
+export const extractOperationBasePath = (servers?: OpenAPIV3.ServerObject[]): string => {
+  if (!Array.isArray(servers) || !servers.length) { return '' }
+
+  try {
+    const [firstServer] = servers
+    let serverUrl = firstServer.url
+    const { variables = {} } = firstServer
+
+    for (const param of Object.keys(variables)) {
+      serverUrl = serverUrl.replace(new RegExp(`{${param}}`, 'g'), variables[param].default)
+    }
+
+    const { pathname } = new URL(serverUrl, 'https://localhost')
+    return pathname.slice(-1) === '/' ? pathname.slice(0, -1) : pathname
+  } catch (error) {
+    return ''
+  }
+}
+
+export function createPathUnifier(nodeContext: NodeContext): (path: string) => string {
+  const serverPrefix = extractOperationBasePath((nodeContext.root as OpenAPIV3.Document).servers) // /api/v2
+  return (path) => removeSlashes(`${serverPrefix}${hidePathParamNames(path)}`)
 }
 
 export function hidePathParamNames(path: string): string {

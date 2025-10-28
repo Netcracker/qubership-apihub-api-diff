@@ -30,6 +30,7 @@ import {
   deepEqualsUniqueItemsArrayMappingResolver,
 } from '../core'
 import {
+  AGGREGATE_DIFFS_HERE_RULE,
   COMPARE_MODE_OPERATION,
   CompareRules,
   DescriptionTemplates,
@@ -54,6 +55,7 @@ import {
 } from './openapi3.classify'
 import {
   contentMediaTypeMappingResolver,
+  methodMappingResolver,
   paramMappingResolver,
   pathMappingResolver,
   singleOperationPathMappingResolver,
@@ -345,6 +347,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const operationRule: CompareRules = {
     $: [nonBreaking, breaking, unclassified],
+    [AGGREGATE_DIFFS_HERE_RULE]: true,
     '/callbacks': {
       '/*': {
         //no support?
@@ -390,7 +393,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const pathItemObjectRules = (options: OpenApi3RulesOptions): CompareRules => ({
     $: pathChangeClassifyRule,
-    mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
+    mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : methodMappingResolver,
     '/description': { $: allAnnotation },
     '/parameters': {
       $: [nonBreaking, breaking, breaking],
@@ -431,6 +434,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       '/*': pathItemObjectRules(options),
     },
     '/securitySchemes': {
+      [AGGREGATE_DIFFS_HERE_RULE]: true,
       $: [breaking, nonBreaking, breaking],
       '/*': {
         $: [breaking, nonBreaking, breaking],
@@ -452,7 +456,10 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       ...documentAnnotationRule,
       '/**': documentAnnotationRule,
     },
-    '/servers': serversRules,
+    '/servers': {
+      [AGGREGATE_DIFFS_HERE_RULE]: true,
+      ...serversRules,
+    },
     '/paths': {
       $: allUnclassified,
       mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
@@ -460,6 +467,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     },
     '/components': componentsRule,
     '/security': {
+      [AGGREGATE_DIFFS_HERE_RULE]: true,
       $: globalSecurityClassifyRule,
       '/*': { $: globalSecurityItemClassifyRule },
     },

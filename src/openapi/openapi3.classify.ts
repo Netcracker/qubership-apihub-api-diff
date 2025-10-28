@@ -5,8 +5,8 @@ import {
   breakingIfAfterTrue,
   nonBreaking,
   PARENT_JUMP,
-  strictResolveValueFromContext,
   reverseClassifyRule,
+  strictResolveValueFromContext,
   transformClassifyRule,
   unclassified,
 } from '../core'
@@ -143,9 +143,12 @@ export const pathChangeClassifyRule: ClassifyRule = [
   ({ before, after }) => {
     const beforePath = before.key as string
     const afterPath = after.key as string
+    // todo uncomment
+    // const unifiedBeforePath = createPathUnifier(before)(beforePath)
+    // const unifiedAfterPath = createPathUnifier(after)(afterPath)
     const unifiedBeforePath = hidePathParamNames(beforePath)
     const unifiedAfterPath = hidePathParamNames(afterPath)
-    
+
     // If unified paths are the same, it means only parameter names changed
     return unifiedBeforePath === unifiedAfterPath ? annotation : breaking
   }

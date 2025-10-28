@@ -16,7 +16,13 @@ import {
   SpecType,
   OpenApiSpecVersion,
 } from '@netcracker/qubership-apihub-api-unifier'
-import { DEFAULT_NORMALIZED_RESULT, DEFAULT_OPTION_DEFAULTS_META_KEY, DEFAULT_OPTION_ORIGINS_META_KEY, DIFF_META_KEY } from './core'
+import {
+  DIFFS_AGGREGATED_META_KEY,
+  DEFAULT_NORMALIZED_RESULT,
+  DEFAULT_OPTION_DEFAULTS_META_KEY,
+  DEFAULT_OPTION_ORIGINS_META_KEY,
+  DIFF_META_KEY,
+} from './core'
 
 function isOpenApiSpecVersion(specType: SpecType): specType is OpenApiSpecVersion {
   return specType === SPEC_TYPE_OPEN_API_30 || specType === SPEC_TYPE_OPEN_API_31
@@ -68,6 +74,7 @@ export function apiDiff(before: unknown, after: unknown, options: CompareOptions
     metaKey: DIFF_META_KEY,
     defaultsFlag: DEFAULT_OPTION_DEFAULTS_META_KEY,
     originsFlag: DEFAULT_OPTION_ORIGINS_META_KEY,
+    diffsAggregatedFlag: DIFFS_AGGREGATED_META_KEY,
     compareScope: COMPARE_SCOPE_ROOT,
     mergedJsoCache: createEvaluationCacheService(),
     diffUniquenessCache: createEvaluationCacheService(),
