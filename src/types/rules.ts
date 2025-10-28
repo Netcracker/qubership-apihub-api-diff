@@ -82,7 +82,6 @@ export const DIFF_DESCRIPTION_PARAM_CALCULATOR_RULE = 'descriptionParamCalculato
 export const IGNORE_DIFFERENCE_IN_KEYS_RULE = 'ignoreKeyDifference'
 //not happy to do this, but introduce covariant support on core level too hard. If you can change it, feel free
 export const START_NEW_COMPARE_SCOPE_RULE = 'newCompareScope'
-export const AGGREGATE_DIFFS_HERE_RULE = 'aggregateDiffsHere'
 
 export type CompareRule = {
   [CLASSIFIER_RULE]?: ClassifyRule                           // classifier for current node
@@ -93,7 +92,6 @@ export type CompareRule = {
   [DIFF_DESCRIPTION_PARAM_CALCULATOR_RULE]?: DiffTemplateParamsCalculator               // rule for description calculation
   [IGNORE_DIFFERENCE_IN_KEYS_RULE]?: boolean                 // rule for ignore keys as values, it is relevant for arrays as sets
   [START_NEW_COMPARE_SCOPE_RULE]?: CompareScope // rule for star a new scope
-  [AGGREGATE_DIFFS_HERE_RULE]?: boolean
 }
 
 export type CompareRules = CrawlRules<CompareRule>
