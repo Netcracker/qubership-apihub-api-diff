@@ -289,6 +289,16 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
 
       // compare objects or arrays
       if (isObject(beforeValue) && isObject(afterValue)) {
+
+        // hash-based short-circuit: if both values have the same hash, they are identical
+        if (options.hashProperty) {
+          const beforeHash = beforeValue[options.hashProperty]
+          const afterHash = afterValue[options.hashProperty]
+          if (beforeHash !== undefined && afterHash !== undefined && beforeHash === afterHash) {
+            return { diffsToPullUp: [], mergedValue: afterValue } satisfies LeafReusableMergeResult
+          }
+        }
+
         const mergedJsoValue: JsonNode = isArray(beforeValue) ? [] as JsonNode<number> : {} as JsonNode<string | symbol>
         const mapKeys = mapping ?? (isArray(beforeValue) ? arrayMappingResolver : objectMappingResolver)
         const {
