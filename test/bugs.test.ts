@@ -49,6 +49,7 @@ import shouldReportSingleDiffWhenRequiredPropertyIsChangedForTheCombinerAfter fr
 
 import { diffsMatcher } from './helper/matchers'
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper'
+import { loadYamlSample } from './helper'
 import { JSON_SCHEMA_NODE_SYNTHETIC_TYPE_NOTHING } from '@netcracker/qubership-apihub-api-unifier'
 
 const OPTIONS: CompareOptions = {
@@ -304,5 +305,30 @@ describe('Real Data', () => {
         type: nonBreaking,
       }),
     ]))
+  })
+
+  it('should detect changes in tags (arrays with primitive values)', () => {
+    // Assuming loadYaml is available from helper (as in other test files)
+    const before = loadYamlSample('changelog/tags/before.yaml')
+    const after = loadYamlSample('changelog/tags/after.yaml')
+    const HASH_PROPERTY = Symbol('hash-property')
+    const { diffs } = apiDiff(before, after, { ...OPTIONS, hashProperty: HASH_PROPERTY })
+
+    // Simple assertion: expect there to be some diff matching tags change between /changed1/get
+    expect(diffs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          // could be an add or remove/change, so just check the path and type
+          beforeDeclarationPaths: expect.arrayContaining([
+            expect.arrayContaining(['paths', '/changed1', 'get', 'tags'])
+          ]),
+        }),
+        expect.objectContaining({
+          afterDeclarationPaths: expect.arrayContaining([
+            expect.arrayContaining(['paths', '/changed1', 'get', 'tags'])
+          ]),
+        }),
+      ])
+    )
   })
 })
