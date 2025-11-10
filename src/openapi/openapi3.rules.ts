@@ -69,7 +69,7 @@ import { contentParamsCalculator } from './openapi3.description.content'
 import { examplesParamsCalculator } from './openapi3.description.examples'
 import { headerParamsCalculator } from './openapi3.description.header'
 import { encodingParamsCalculator } from './openapi3.description.encoding'
-import { openApiSpecificationExtensionRules } from './openapi3.compare.rules'
+import { openApiSpecificationExtensionRulesFunction } from './openapi3.compare.rules'
 
 const documentAnnotationRule: CompareRules = { $: allAnnotation }
 const operationAnnotationRule: CompareRules = { $: allAnnotation }
@@ -100,10 +100,10 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
             mapping: deepEqualsUniqueItemsArrayMappingResolver,
             '/*': { ignoreKeyDifference: true },
           },
-          ...openApiSpecificationExtensionRules,
+          ...openApiSpecificationExtensionRulesFunction(),
         },
       },
-      ...openApiSpecificationExtensionRules,
+      ...openApiSpecificationExtensionRulesFunction(),
     },
     '/**': {
       $: allAnnotation,
@@ -112,7 +112,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const externalDocumentationRules: CompareRules = {
     $: allAnnotation,
-    ...openApiSpecificationExtensionRules,
+    ...openApiSpecificationExtensionRulesFunction(allAnnotation),
     '/*': {
       $: allAnnotation,
     },
@@ -144,7 +144,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
           description: diffDescription(resolveExamplesDescriptionTemplates()),
         }
       },
-      ...openApiSpecificationExtensionRules,
+      ...openApiSpecificationExtensionRulesFunction(allAnnotation),
     },
     '/**': { $: allAnnotation },
   }
@@ -205,7 +205,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         $: allBreaking,
         description: diffDescription(resolveParameterDescriptionTemplates('delimited style'))
       },
-      ...openApiSpecificationExtensionRules,
+      ...openApiSpecificationExtensionRulesFunction(),
     },
   }
 
@@ -256,7 +256,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         $: allUnclassified,
         description: diffDescription(resolveHeaderDescriptionTemplates('delimited style')),
       },
-      ...openApiSpecificationExtensionRules,
+      ...openApiSpecificationExtensionRulesFunction(),
     },
   }
 
@@ -282,7 +282,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         $: [nonBreaking, breaking, breaking],
         description: diffDescription(resolveEncodingDescriptionTemplates())
       },
-      ...openApiSpecificationExtensionRules,
+      ...openApiSpecificationExtensionRulesFunction(),
     },
   }
 
@@ -319,7 +319,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         $: allBreaking,
         ...isResponseSchema(path) ? responseSchemaRules : requestSchemaRules,
       }),
-      ...openApiSpecificationExtensionRules,
+      ...openApiSpecificationExtensionRulesFunction(),
     },
   }
 
@@ -337,7 +337,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       $: [breaking, nonBreaking, breakingIfAfterTrue],
       description: diffDescription(resolveRequestDescriptionTemplates('required status'))
     },
-    ...openApiSpecificationExtensionRules,
+    ...openApiSpecificationExtensionRulesFunction(),
   }
 
   const responseRules: CompareRules = {
@@ -353,7 +353,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       ]),
     },
     '/headers': headersRules,
-    ...openApiSpecificationExtensionRules,
+    ...openApiSpecificationExtensionRulesFunction(),
   }
 
   const operationRule: CompareRules = {
@@ -375,7 +375,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       $: [nonBreaking, breaking, breaking],
       [START_NEW_COMPARE_SCOPE_RULE]: COMPARE_SCOPE_RESPONSE,
       mapping: apihubCaseInsensitiveKeyMappingResolver,
-      ...openApiSpecificationExtensionRules,
+      ...openApiSpecificationExtensionRulesFunction(),
       '/*': responseRules,
     },
     '/security': {
@@ -401,25 +401,25 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         [IGNORE_DIFFERENCE_IN_KEYS_RULE]: true,
       },
     },
-    ...openApiSpecificationExtensionRules,
+    ...openApiSpecificationExtensionRulesFunction(),
     '/*': operationAnnotationRule,
   }
 
   const oAuthFlowObjectRules: CompareRules = {
     $: [breaking, nonBreaking, breaking],
-    ...openApiSpecificationExtensionRules,
+    ...openApiSpecificationExtensionRulesFunction(),
   }
 
   const oAuthFlowsObjectRules: CompareRules = {
     $: [breaking, nonBreaking, breaking],
-    ...openApiSpecificationExtensionRules,
+    ...openApiSpecificationExtensionRulesFunction(),
     '/*': oAuthFlowObjectRules,
   }
 
   const tagObjectCompareRules: CompareRules = {
     $: allAnnotation,
     '/externalDocs': externalDocumentationRules,
-    ...openApiSpecificationExtensionRules,
+    ...openApiSpecificationExtensionRulesFunction(allAnnotation),
     '/*': { $: allAnnotation },
   }
   const pathItemObjectRules = (options: OpenApi3RulesOptions): CompareRules => ({
@@ -433,7 +433,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     },
     '/servers': serversRules,
     '/summary': { $: allAnnotation },
-    ...openApiSpecificationExtensionRules,
+    ...openApiSpecificationExtensionRulesFunction(),
     '/*': operationRule,
   })
 
@@ -477,23 +477,23 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         '/openIdConnectUrl': { $: allAnnotation },
         '/scheme': { $: [breaking, nonBreaking, breaking] },
         '/type': { $: [breaking, nonBreaking, breaking] },
-        ...openApiSpecificationExtensionRules,
+        ...openApiSpecificationExtensionRulesFunction(),
       },
     },
-    ...openApiSpecificationExtensionRules,
+    ...openApiSpecificationExtensionRulesFunction(),
   }
 
   return {
-    ...openApiSpecificationExtensionRules,
+    ...openApiSpecificationExtensionRulesFunction(),
     '/openapi': documentAnnotationRule,
     '/info': {
       ...documentAnnotationRule,
-      ...openApiSpecificationExtensionRules,
+      ...openApiSpecificationExtensionRulesFunction(allAnnotation),
       '/contact': {
-        ...openApiSpecificationExtensionRules,
+        ...openApiSpecificationExtensionRulesFunction(allAnnotation),
       },
       '/license': {
-        ...openApiSpecificationExtensionRules,
+        ...openApiSpecificationExtensionRulesFunction(allAnnotation),
       },
       '/**': documentAnnotationRule,
     },
@@ -502,7 +502,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       $: allUnclassified,
       mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
       '/*': pathItemObjectRules(options),
-      ...openApiSpecificationExtensionRules,
+      ...openApiSpecificationExtensionRulesFunction(),
     },
     '/components': componentsRule,
     '/security': {

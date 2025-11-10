@@ -125,14 +125,14 @@ describe('Real Data', () => {
         afterDeclarationPaths: [['components', 'schemas', 'DictionaryItem', 'x-entity']],
         afterValue: 'DictionaryItem',
         action: DiffAction.add,
-        type: annotation,
+        type: unclassified,
         scope: 'response',
       }),
       expect.objectContaining({
         afterDeclarationPaths: [['components', 'schemas', 'DictionaryItem', 'x-entity']],
         afterValue: 'DictionaryItem',
         action: DiffAction.add,
-        type: annotation,
+        type: unclassified,
         scope: 'components',
       }),
       expect.objectContaining({

@@ -1,12 +1,17 @@
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper'
-import { CompareOptions } from '../src/types'
+import { CompareOptions, DiffType } from '../src/types'
 import { apiDiff } from '../src/api'
-import { DiffAction, annotation } from '../src/core/constants'
+import { DiffAction, annotation, unclassified } from '../src/core/constants'
 import { diffsMatcher } from './helper/matchers'
 import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 import base from './helper/resources/openapi-specification-extensions/base.json'
 
-const OPTIONS: CompareOptions = {  
+type PathWithExpectedType = {
+  path: JsonPath
+  expectedType: DiffType
+}
+
+const OPTIONS: CompareOptions = {
   originsFlag: TEST_ORIGINS_FLAG,
   metaKey: TEST_DIFF_FLAG,
   validate: true,
@@ -22,9 +27,9 @@ function clone(obj: any): any {
 
 // Helper function to set a value at a specific path in an object
 // creates a new object or array if some parts of the path are missing
-function setValueAtPath(obj: any, path: JsonPath, value: any): void {  
+function setValueAtPath(obj: any, path: JsonPath, value: any): void {
   if (path.length === 0) return
-  
+
   let current = obj
   for (let i = 0; i < path.length - 1; i++) {
     const key = path[i]
@@ -43,84 +48,84 @@ function setValueAtPath(obj: any, path: JsonPath, value: any): void {
 function prepareSpecsForComparison(extensionPath: JsonPath, beforeValue?: any, afterValue?: any): { before: any, after: any } {
   const before = clone(base)
   const after = clone(base)
-  
+
   setValueAtPath(before, extensionPath, beforeValue)
   setValueAtPath(after, extensionPath, afterValue)
-  
+
   return { before, after }
 }
 
-const serverObjectPaths: JsonPath[] = [
-  ['servers', 0],
-  ['paths', '/somePath', 'servers', 0],
-  ['paths', '/somePath', 'get', 'servers', 0],
+const serverObjectPaths: PathWithExpectedType[] = [
+  { path: ['servers', 0], expectedType: unclassified },
+  { path: ['paths', '/somePath', 'servers', 0], expectedType: unclassified },
+  { path: ['paths', '/somePath', 'get', 'servers', 0], expectedType: unclassified },
 ]
 
-const operationObjectPaths: JsonPath[] = [
-  ['paths', '/somePath', 'get'],
+const operationObjectPaths: PathWithExpectedType[] = [
+  { path: ['paths', '/somePath', 'get'], expectedType: unclassified },
 ]
 
-const tagObjectPaths: JsonPath[] = [
-  ['tags', 0],
+const tagObjectPaths: PathWithExpectedType[] = [
+  { path: ['tags', 0], expectedType: annotation },
 ]
 
-const responseObjectPaths: JsonPath[] = [
-  ['components', 'responses', 'someResponse'],
-  ['paths', '/somePath', 'get', 'responses', '200'],
+const responseObjectPaths: PathWithExpectedType[] = [
+  { path: ['components', 'responses', 'someResponse'], expectedType: unclassified },
+  { path: ['paths', '/somePath', 'get', 'responses', '200'], expectedType: unclassified },
 ]
 
-const requestBodyObjectPaths: JsonPath[] = [
-  ['paths', '/somePath', 'get', 'requestBody'],
-  ['components', 'requestBodies', 'someRequestBody'],
+const requestBodyObjectPaths: PathWithExpectedType[] = [
+  { path: ['paths', '/somePath', 'get', 'requestBody'], expectedType: unclassified },
+  { path: ['components', 'requestBodies', 'someRequestBody'], expectedType: unclassified },
 ]
 
-const parameterObjectPaths: JsonPath[] = [
-  ['components', 'parameters', 'someParameter'],
-  ['paths', '/somePath', 'parameters', 0],
-  ['paths', '/somePath', 'get', 'parameters', 0],
+const parameterObjectPaths: PathWithExpectedType[] = [
+  { path: ['components', 'parameters', 'someParameter'], expectedType: unclassified },
+  { path: ['paths', '/somePath', 'parameters', 0], expectedType: unclassified },
+  { path: ['paths', '/somePath', 'get', 'parameters', 0], expectedType: unclassified },
 ]
 
 const contentEncodingHeaderSuffix = ['content', 'application/json', 'encoding', 'someProperty', 'headers', 'someHeader']
 
-const headerObjectPaths: JsonPath[] = [
-  ['components', 'headers', 'someHeader'],
-  ['components', 'responses', 'someResponse', 'headers', 'someHeader'],
-  ['paths', '/somePath', 'get', 'responses', '200', 'headers', 'someHeader'],
+const headerObjectPaths: PathWithExpectedType[] = [
+  { path: ['components', 'headers', 'someHeader'], expectedType: unclassified },
+  { path: ['components', 'responses', 'someResponse', 'headers', 'someHeader'], expectedType: unclassified },
+  { path: ['paths', '/somePath', 'get', 'responses', '200', 'headers', 'someHeader'], expectedType: unclassified },
   // 'content' not supported for Parameter Object in classification rules yet
-  //...parameterObjectPaths.map(path => [...path, ...contentEncodingHeaderSuffix]),
-  ...requestBodyObjectPaths.map(path => [...path, ...contentEncodingHeaderSuffix]), 
-  ...responseObjectPaths.map(path => [...path, ...contentEncodingHeaderSuffix])
+  //...parameterObjectPaths.map(item => ({ path: [...item.path, ...contentEncodingHeaderSuffix], expectedType: unclassified })),
+  ...requestBodyObjectPaths.map(item => ({ path: [...item.path, ...contentEncodingHeaderSuffix], expectedType: unclassified })),
+  ...responseObjectPaths.map(item => ({ path: [...item.path, ...contentEncodingHeaderSuffix], expectedType: unclassified }))
 ]
 
-const headerObjectPathsWithRecursionFirstLevel: JsonPath[] = [
+const headerObjectPathsWithRecursionFirstLevel: PathWithExpectedType[] = [
   ...headerObjectPaths,
   // 'content' not supported for Header Object in classification rules yet
-  // ...headerObjectPaths.map(path => [...path, ...contentEncodingHeaderSuffix])
+  // ...headerObjectPaths.map(item => ({ path: [...item.path, ...contentEncodingHeaderSuffix], expectedType: unclassified }))
 ]
 
-const mediaTypeObjectPaths: JsonPath[] = [
+const mediaTypeObjectPaths: PathWithExpectedType[] = [
   // 'content' not supported for Parameter Object in classification rules yet
-  //...parameterObjectPaths.map(path => [...path, 'content', 'application/json']),
+  //...parameterObjectPaths.map(item => ({ path: [...item.path, 'content', 'application/json'], expectedType: unclassified })),
   // 'content' not supported for Header Object in classification rules yet
-  //...headerObjectPathsWithRecursionFirstLevel.map(path => [...path, 'content', 'application/json']),
-  ...requestBodyObjectPaths.map(path => [...path, 'content', 'application/json']),
-  ...responseObjectPaths.map(path => [...path, 'content', 'application/json']),
+  //...headerObjectPathsWithRecursionFirstLevel.map(item => ({ path: [...item.path, 'content', 'application/json'], expectedType: unclassified })),
+  ...requestBodyObjectPaths.map(item => ({ path: [...item.path, 'content', 'application/json'], expectedType: unclassified })),
+  ...responseObjectPaths.map(item => ({ path: [...item.path, 'content', 'application/json'], expectedType: unclassified })),
 ]
 
-const encodingObjectPaths: JsonPath[] = [
-  ...mediaTypeObjectPaths.map(path => [...path, 'encoding', 'someProperty']),
+const encodingObjectPaths: PathWithExpectedType[] = [
+  ...mediaTypeObjectPaths.map(item => ({ path: [...item.path, 'encoding', 'someProperty'], expectedType: unclassified })),
 ]
 
-const schemaObjectPaths: JsonPath[] = [
-  ['components', 'schemas', 'someSchema'],
-  ...parameterObjectPaths.map(path => [...path, 'schema']),
-  ...headerObjectPathsWithRecursionFirstLevel.map(path => [...path, 'schema']),
-  ...mediaTypeObjectPaths.map(path => [...path, 'schema']),
+const schemaObjectPaths: PathWithExpectedType[] = [
+  { path: ['components', 'schemas', 'someSchema'], expectedType: unclassified },
+  ...parameterObjectPaths.map(item => ({ path: [...item.path, 'schema'], expectedType: unclassified })),
+  ...headerObjectPathsWithRecursionFirstLevel.map(item => ({ path: [...item.path, 'schema'], expectedType: unclassified })),
+  ...mediaTypeObjectPaths.map(item => ({ path: [...item.path, 'schema'], expectedType: unclassified })),
 ]
 
-const schemaInSchemaPathSuffixes: JsonPath[] = [  
+const schemaInSchemaPathSuffixes: JsonPath[] = [
     ['items'],
-    ['properties', 'someProperty'],    
+    ['properties', 'someProperty'],
     ['allOf', 0],
     ['oneOf', 0],
     ['anyOf', 0],
@@ -131,89 +136,89 @@ const schemaInSchemaPathSuffixes: JsonPath[] = [
     // add addition places for OAS 3.1, like 'patternProperties', $defs, etc.
 ]
 
-const schemaObjectPathsWithRecursionFirstLevel: JsonPath[] = [
+const schemaObjectPathsWithRecursionFirstLevel: PathWithExpectedType[] = [
   ...schemaObjectPaths,
-  ...schemaObjectPaths.flatMap(basePath => 
-    schemaInSchemaPathSuffixes.map(suffix => [...basePath, ...suffix])
+  ...schemaObjectPaths.flatMap(item =>
+    schemaInSchemaPathSuffixes.map(suffix => ({ path: [...item.path, ...suffix], expectedType: unclassified }))
   )
 ]
 
-const externalDocumentationObjectPaths: JsonPath[] = [
-  ['externalDocs'],
-  ...operationObjectPaths.map(path => [...path, 'externalDocs']),
-  ...tagObjectPaths.map(path => [...path, 'externalDocs']), 
-  ...schemaObjectPathsWithRecursionFirstLevel.map(path => [...path, 'externalDocs']),
+const externalDocumentationObjectPaths: PathWithExpectedType[] = [
+  { path: ['externalDocs'], expectedType: annotation },
+  ...operationObjectPaths.map(item => ({ path: [...item.path, 'externalDocs'], expectedType: annotation })),
+  ...tagObjectPaths.map(item => ({ path: [...item.path, 'externalDocs'], expectedType: annotation })),
+  ...schemaObjectPathsWithRecursionFirstLevel.map(item => ({ path: [...item.path, 'externalDocs'], expectedType: annotation })),
 ]
 
-const xmlObjectPaths: JsonPath[] = [
-  ...schemaObjectPathsWithRecursionFirstLevel.map(path => [...path, 'xml']),
+const xmlObjectPaths: PathWithExpectedType[] = [
+  ...schemaObjectPathsWithRecursionFirstLevel.map(item => ({ path: [...item.path, 'xml'], expectedType: unclassified })),
 ]
 
-const linkObjectPaths: JsonPath[] = [
+const linkObjectPaths: PathWithExpectedType[] = [
   // Link Object classification rules are not implemented yet
-  //['components', 'links', 'someLink'],
-  //...responseObjectPaths.map(path => [...path, 'links', 'someLink']),
+  //{ path: ['components', 'links', 'someLink'], expectedType: unclassified },
+  //...responseObjectPaths.map(item => ({ path: [...item.path, 'links', 'someLink'], expectedType: unclassified })),
 ]
 
-const callbackObjectPaths: JsonPath[] = [
+const callbackObjectPaths: PathWithExpectedType[] = [
   // Callback Object classification rules are not implemented yet
-  //['components', 'callbacks', 'someCallback'],
-  //...operationObjectPaths.map(path => [...path, 'callbacks', 'someCallback']),
+  //{ path: ['components', 'callbacks', 'someCallback'], expectedType: unclassified },
+  //...operationObjectPaths.map(item => ({ path: [...item.path, 'callbacks', 'someCallback'], expectedType: unclassified })),
 ]
 
-const pathItemObjectPaths: JsonPath[] = [
-  ['paths', '/somePath'],
-  ...callbackObjectPaths.map(path => [...path, 'someExpression']),
-  // ['components', 'pathItems', 'somePathItem'], // support path items in components for OAS 3.1
+const pathItemObjectPaths: PathWithExpectedType[] = [
+  { path: ['paths', '/somePath'], expectedType: unclassified },
+  //{ path: ['components', 'pathItems', 'somePathItem'], expectedType: unclassified }, // support path items in components for OAS 3.1
+  ...callbackObjectPaths.map(item => ({ path: [...item.path, 'someExpression'], expectedType: unclassified })),
 ]
 
-const securitySchemeObjectPaths: JsonPath[] = [
-  ['components', 'securitySchemes', 'oauth2'],
+const securitySchemeObjectPaths: PathWithExpectedType[] = [
+  { path: ['components', 'securitySchemes', 'oauth2'], expectedType: unclassified },
 ]
 
-const oAuthFlowsObjectPaths: JsonPath[] = [
-  ['components', 'securitySchemes', 'oauth2', 'flows'],
+const oAuthFlowsObjectPaths: PathWithExpectedType[] = [
+  { path: ['components', 'securitySchemes', 'oauth2', 'flows'], expectedType: unclassified },
 ]
 
-const oAuthFlowObjectPaths: JsonPath[] = [
-  ['components', 'securitySchemes', 'oauth2', 'flows', 'implicit'],
-  ['components', 'securitySchemes', 'oauth2', 'flows', 'password'],
-  ['components', 'securitySchemes', 'oauth2', 'flows', 'clientCredentials'],
-  ['components', 'securitySchemes', 'oauth2', 'flows', 'authorizationCode'],
+const oAuthFlowObjectPaths: PathWithExpectedType[] = [
+  { path: ['components', 'securitySchemes', 'oauth2', 'flows', 'implicit'], expectedType: unclassified },
+  { path: ['components', 'securitySchemes', 'oauth2', 'flows', 'password'], expectedType: unclassified },
+  { path: ['components', 'securitySchemes', 'oauth2', 'flows', 'clientCredentials'], expectedType: unclassified },
+  { path: ['components', 'securitySchemes', 'oauth2', 'flows', 'authorizationCode'], expectedType: unclassified },
 ]
 
-const exampleObjectPaths: JsonPath[] = [
-  ['components', 'examples', 'someExample'],
-  ...parameterObjectPaths.map(path => [...path, 'examples', 'someExample']),
-  ...headerObjectPathsWithRecursionFirstLevel.map(path => [...path, 'examples', 'someExample']),
-  ...mediaTypeObjectPaths.map(path => [...path, 'examples', 'someExample']),  
+const exampleObjectPaths: PathWithExpectedType[] = [
+  { path: ['components', 'examples', 'someExample'], expectedType: annotation },
+  ...parameterObjectPaths.map(item => ({ path: [...item.path, 'examples', 'someExample'], expectedType: annotation })),
+  ...headerObjectPathsWithRecursionFirstLevel.map(item => ({ path: [...item.path, 'examples', 'someExample'], expectedType: annotation })),
+  ...mediaTypeObjectPaths.map(item => ({ path: [...item.path, 'examples', 'someExample'], expectedType: annotation })),
 ]
 
 // Paths where OpenAPI specification extensions can be added
-const specificationExtensionObjectPaths: JsonPath[] = [
-  
+const specificationExtensionObjectPaths: PathWithExpectedType[] = [
+
   // OpenAPI Object
-  [],
-  
+  { path: [], expectedType: unclassified },
+
   // Info Object and its nested objects
-  ['info'],
-  ['info', 'contact'],
-  ['info', 'license'],  
+  { path: ['info'], expectedType: annotation },
+  { path: ['info', 'contact'], expectedType: annotation },
+  { path: ['info', 'license'], expectedType: annotation },
 
   // Components Object
-  ['components'],
+  { path: ['components'], expectedType: unclassified },
 
   // Server Object
   ...serverObjectPaths,
 
   // Server variables
-  ...serverObjectPaths.map(path => [...path, 'variables', 'someVariable']),
+  ...serverObjectPaths.map(item => ({ path: [...item.path, 'variables', 'someVariable'], expectedType: unclassified })),
 
   // Paths Object
-  ['paths'],
+  { path: ['paths'], expectedType: unclassified },
 
-  // Path Item Object 
-  ...pathItemObjectPaths,  
+  // Path Item Object
+  ...pathItemObjectPaths,
 
   // Operation Object
   ...operationObjectPaths,
@@ -234,25 +239,25 @@ const specificationExtensionObjectPaths: JsonPath[] = [
   ...encodingObjectPaths,
 
   // Responses Object
-  ['paths', '/somePath', 'get', 'responses'],
+  { path: ['paths', '/somePath', 'get', 'responses'], expectedType: unclassified },
 
   // Response Object
   ...responseObjectPaths,
 
   // Callback Object
-  ...callbackObjectPaths, 
- 
+  ...callbackObjectPaths,
+
   // Example Object
   ...exampleObjectPaths,
 
   // Link Object
-  ...linkObjectPaths, 
+  ...linkObjectPaths,
 
   //Header Object
   ...headerObjectPathsWithRecursionFirstLevel,
 
   // Tag Object
-  ...tagObjectPaths, 
+  ...tagObjectPaths,
 
   // Schema Object
   ...schemaObjectPathsWithRecursionFirstLevel,
@@ -267,15 +272,15 @@ const specificationExtensionObjectPaths: JsonPath[] = [
   ...oAuthFlowsObjectPaths,
 
   // OAuth Flow Object
-  ...oAuthFlowObjectPaths,  
+  ...oAuthFlowObjectPaths,
 ]
 
 // Common extension name used in all tests
 const extensionName = 'x-custom-extension'
 
 describe('OpenAPI specification extensions changes classification', () => {
-  
-  describe('Template check', () => {  
+
+  describe('Template check', () => {
     it('should not detect any changes in a base specification with no extensions', () => {
       const { before, after } = prepareSpecsForComparison([], undefined, undefined)
       const { diffs } = apiDiff(before, after, OPTIONS)
@@ -283,24 +288,24 @@ describe('OpenAPI specification extensions changes classification', () => {
     })
   })
 
-  //const testPaths: JsonPath[] = [['paths']] // use for debugging specific case
-  //testPaths.forEach(path => {
-  specificationExtensionObjectPaths.forEach(path => {
-    const pathDescription = path.length > 0 ? path.join('.') : '[]'
-    const fullExtensionPath = [...path, extensionName]
-    
+  //const testPaths: PathWithExpectedType[] = [{ path: ['paths'], expectedType: unclassified }] // use for debugging specific case
+  //testPaths.forEach(item => {
+  specificationExtensionObjectPaths.forEach(item => {
+    const pathDescription = item.path.length > 0 ? item.path.join('.') : '[]'
+    const fullExtensionPath = [...item.path, extensionName]
+
     describe(`Extensions in '${pathDescription}'`, () => {
 
-      const expectedType = annotation
-      
+      const expectedType = item.expectedType
+
       it(`add specification extension with primitive value`, () => {
         const { before, after } = prepareSpecsForComparison(fullExtensionPath, undefined, 'primitive value')
-        
+
         const { diffs } = apiDiff(before, after, OPTIONS)
-        
+
         expect(diffs).toEqual(diffsMatcher([
           expect.objectContaining({
-            afterDeclarationPaths: [fullExtensionPath],            
+            afterDeclarationPaths: [fullExtensionPath],
             action: DiffAction.add,
             type: expectedType,
             afterValue: 'primitive value',
@@ -310,9 +315,9 @@ describe('OpenAPI specification extensions changes classification', () => {
 
       it(`add specification extension with complex value`, () => {
         const { before, after } = prepareSpecsForComparison(fullExtensionPath, undefined, { key: 'value' })
-        
+
         const { diffs } = apiDiff(before, after, OPTIONS)
-        
+
         expect(diffs).toEqual(diffsMatcher([
           expect.objectContaining({
             afterDeclarationPaths: [fullExtensionPath],
@@ -325,9 +330,9 @@ describe('OpenAPI specification extensions changes classification', () => {
 
       it(`remove specification extension with primitive value`, () => {
         const { before, after } = prepareSpecsForComparison(fullExtensionPath, 'primitive value', undefined)
-        
+
         const { diffs } = apiDiff(before, after, OPTIONS)
-        
+
         expect(diffs).toEqual(diffsMatcher([
           expect.objectContaining({
             beforeDeclarationPaths: [fullExtensionPath],
@@ -340,9 +345,9 @@ describe('OpenAPI specification extensions changes classification', () => {
 
       it(`remove specification extension with complex value`, () => {
         const { before, after } = prepareSpecsForComparison(fullExtensionPath, { key: 'value' }, undefined)
-        
+
         const { diffs } = apiDiff(before, after, OPTIONS)
-        
+
         expect(diffs).toEqual(diffsMatcher([
           expect.objectContaining({
             beforeDeclarationPaths: [fullExtensionPath],
@@ -355,9 +360,9 @@ describe('OpenAPI specification extensions changes classification', () => {
 
       it(`change specification extension with primitive value`, () => {
         const { before, after } = prepareSpecsForComparison(fullExtensionPath, 'original value', 'changed value')
-        
+
         const { diffs } = apiDiff(before, after, OPTIONS)
-        
+
         expect(diffs).toEqual(diffsMatcher([
           expect.objectContaining({
             beforeDeclarationPaths: [fullExtensionPath],
@@ -372,14 +377,14 @@ describe('OpenAPI specification extensions changes classification', () => {
 
       it(`add property to complex value of specification extension`, () => {
         const { before, after } = prepareSpecsForComparison(fullExtensionPath, { nested: {} }, { nested: {property: 'value'} })
-        
+
         const { diffs } = apiDiff(before, after, OPTIONS)
-        
+
         expect(diffs).toEqual(diffsMatcher([
-          expect.objectContaining({            
+          expect.objectContaining({
             afterDeclarationPaths: [[...fullExtensionPath, 'nested', 'property']],
             action: DiffAction.add,
-            type: expectedType,            
+            type: expectedType,
             afterValue: 'value',
           })
         ]))
@@ -387,14 +392,14 @@ describe('OpenAPI specification extensions changes classification', () => {
 
       it(`delete property from complex value of specification extension`, () => {
         const { before, after } = prepareSpecsForComparison(fullExtensionPath, { nested: {property: 'value'} }, { nested: {} })
-        
+
         const { diffs } = apiDiff(before, after, OPTIONS)
-        
+
         expect(diffs).toEqual(diffsMatcher([
-          expect.objectContaining({            
+          expect.objectContaining({
             beforeDeclarationPaths: [[...fullExtensionPath, 'nested', 'property']],
             action: DiffAction.remove,
-            type: expectedType,            
+            type: expectedType,
             beforeValue: 'value',
           })
         ]))
@@ -402,9 +407,9 @@ describe('OpenAPI specification extensions changes classification', () => {
 
       it(`change property in complex value of specification extension`, () => {
         const { before, after } = prepareSpecsForComparison(fullExtensionPath, { nested: {property: 'original'} }, { nested: {property: 'modified'} })
-        
+
         const { diffs } = apiDiff(before, after, OPTIONS)
-        
+
         expect(diffs).toEqual(diffsMatcher([
           expect.objectContaining({
             beforeDeclarationPaths: [[...fullExtensionPath, 'nested', 'property']],
@@ -419,9 +424,9 @@ describe('OpenAPI specification extensions changes classification', () => {
 
       it(`change specification extension from simple to complex value`, () => {
         const { before, after } = prepareSpecsForComparison (fullExtensionPath, 'simple value', { nested: 'modified' })
-        
+
         const { diffs } = apiDiff(before, after, OPTIONS)
-        
+
         expect(diffs).toEqual(diffsMatcher([
           expect.objectContaining({
             beforeDeclarationPaths: [fullExtensionPath],
@@ -432,7 +437,7 @@ describe('OpenAPI specification extensions changes classification', () => {
             afterValue: { nested: 'modified' },
           })
         ]))
-      })      
+      })
     })
   })
 })
