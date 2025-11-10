@@ -49,7 +49,7 @@ import {
   parameterAllowReservedClassifyRule,
   parameterExplodeClassifyRule,
   parameterNameClassifyRule,
-  parameterRequiredClassifyRule,  
+  parameterRequiredClassifyRule,
   pathChangeClassifyRule,
 } from './openapi3.classify'
 import {
@@ -192,14 +192,14 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       '/name': {
         $: parameterNameClassifyRule,
         description: diffDescription(`[{{${TEMPLATE_PARAM_ACTION}}}] {{${TEMPLATE_PARAM_PARAMETER_LOCATION}}} parameter '{{${GREP_TEMPLATE_PARAM_PARAMETER_NAME}}}'`),
-      },      
+      },
       '/required': {
         $: parameterRequiredClassifyRule,
         description: diffDescription(resolveParameterDescriptionTemplates('required status'))
       },
       '/schema': () => ({
         $: allBreaking,
-        ...requestSchemaRules,        
+        ...requestSchemaRules,
       }),
       '/style': {
         $: allBreaking,
@@ -243,11 +243,11 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       '/explode': {
         $: allUnclassified,
         description: diffDescription(resolveHeaderDescriptionTemplates('explode status')),
-      },      
+      },
       '/required': {
         $: [breaking, nonBreaking, breakingIfAfterTrue],
         description: diffDescription(resolveHeaderDescriptionTemplates('required status')),
-      },      
+      },
       '/schema': ({ path }) => ({
         $: allBreaking,
         ...isResponseSchema(path) ? responseSchemaRules : requestSchemaRules,
@@ -327,7 +327,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     $: [nonBreaking, breaking, breaking],
     description: diffDescription(`[{{${TEMPLATE_PARAM_ACTION}}}] request body`),
     descriptionParamCalculator: requestParamsCalculator,
-    [START_NEW_COMPARE_SCOPE_RULE]: COMPARE_SCOPE_REQUEST,    
+    [START_NEW_COMPARE_SCOPE_RULE]: COMPARE_SCOPE_REQUEST,
     '/content': contentRules,
     '/description': {
       $: allAnnotation,
@@ -370,14 +370,14 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       mapping: paramMappingResolver(2),
       ...parametersRules,
     },
-    '/requestBody': requestBodiesRules,    
+    '/requestBody': requestBodiesRules,
     '/responses': {
       $: [nonBreaking, breaking, breaking],
       [START_NEW_COMPARE_SCOPE_RULE]: COMPARE_SCOPE_RESPONSE,
       mapping: apihubCaseInsensitiveKeyMappingResolver,
       ...openApiSpecificationExtensionRules,
       '/*': responseRules,
-    },    
+    },
     '/security': {
       $: operationSecurityClassifyRule,
       '/*': {
@@ -422,6 +422,20 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     ...openApiSpecificationExtensionRules,
     '/*': { $: allAnnotation },
   }
+  const pathItemObjectRules = (options: OpenApi3RulesOptions): CompareRules => ({
+    $: pathChangeClassifyRule,
+    mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
+    '/description': { $: allAnnotation },
+    '/parameters': {
+      $: [nonBreaking, breaking, breaking],
+      mapping: paramMappingResolver(1),
+      ...parametersRules,
+    },
+    '/servers': serversRules,
+    '/summary': { $: allAnnotation },
+    ...openApiSpecificationExtensionRules,
+    '/*': operationRule,
+  })
 
   const componentsRule: CompareRules = {
     $: allNonBreaking,
@@ -431,7 +445,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/parameters': {
       $: [nonBreaking, breaking, breaking],
       ...parametersRules,
-    },    
+    },
     '/requestBodies': {
       $: [nonBreaking, breaking, breaking],
       '/*': requestBodiesRules,
@@ -446,6 +460,10 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         $: allUnclassified,/*for mode One operation*/
         ...requestSchemaRules,
       }),
+    },
+    '/pathItems': {
+      $: [nonBreaking, breaking, breaking],
+      '/*': pathItemObjectRules(options),
     },
     '/securitySchemes': {
       $: [breaking, nonBreaking, breaking],
@@ -483,20 +501,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/paths': {
       $: allUnclassified,
       mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
-      '/*': {
-        $: pathChangeClassifyRule,
-        mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
-        '/description': { $: allAnnotation },
-        '/parameters': {
-          $: [nonBreaking, breaking, breaking],
-          mapping: paramMappingResolver(1),
-          ...parametersRules,          
-        },
-        '/servers': serversRules,
-        '/summary': { $: allAnnotation },
-        ...openApiSpecificationExtensionRules,
-        '/*': operationRule,
-      },
+      '/*': pathItemObjectRules(options),
       ...openApiSpecificationExtensionRules,
     },
     '/components': componentsRule,
@@ -504,7 +509,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       $: globalSecurityClassifyRule,
       '/*': { $: globalSecurityItemClassifyRule },
     },
-    '/tags': { 
+    '/tags': {
       $: allAnnotation,
       '/*': tagObjectCompareRules,
     },
