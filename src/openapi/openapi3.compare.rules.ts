@@ -3,6 +3,10 @@ import { DIFF_ACTION_TO_ACTION_MAP, DIFF_ACTION_TO_PREPOSITION_MAP, getDeclarati
 import { ClassifyRule, CompareRules, Diff } from '../types'
 import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 
+type SplitExtensionPath = {
+  extensionPath: string
+  remainingPath: string | undefined
+}
 
 const calculateOasExtensionDiffDescription = (diff: Diff) => {
   const declarationPaths = getDeclarationPathsForDiff(diff)
@@ -28,7 +32,7 @@ const calculateOasExtensionDiffDescription = (diff: Diff) => {
   return `[${action}] extension '${extensionPath}' ${preposition} ${place}`
 }
 
-const splitPathAtExtension = (path: JsonPath): { extensionPath: string, remainingPath: string | undefined } => {
+const splitPathAtExtension = (path: JsonPath): SplitExtensionPath => {
   // Find the extension name (starts with 'x-') in the path
   let extensionIndex = -1
   for (let i = 0; i < path.length; i++) {
