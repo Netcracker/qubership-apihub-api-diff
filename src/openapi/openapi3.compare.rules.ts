@@ -1,7 +1,7 @@
+import { CrawlPrefixRules, JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 import { allUnclassified } from '../core'
 import { DIFF_ACTION_TO_ACTION_MAP, DIFF_ACTION_TO_PREPOSITION_MAP, getDeclarationPathsForDiff } from '../core/description'
-import { ClassifyRule, CompareRules, Diff } from '../types'
-import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
+import { ClassifyRule, CompareRule, CompareRules, Diff } from '../types'
 
 type SplitExtensionPath = {
   extensionPath: string
@@ -60,20 +60,20 @@ const splitPathAtExtension = (path: JsonPath): SplitExtensionPath => {
 }
 
 export const openApiSpecificationExtensionRulesFunction = (classification: ClassifyRule = allUnclassified): CompareRules => {
-  return {
-    '/^': {
-      'x-': {
+  const oasExtensionPrefixRules: CrawlPrefixRules<CompareRule> = {
+    'x-': {
+      $: classification,
+      description: calculateOasExtensionDiffDescription,
+      '/*': {
         $: classification,
         description: calculateOasExtensionDiffDescription,
-        '/*': {
-          $: classification,
-          description: calculateOasExtensionDiffDescription,
-        },
-        '/**': {
-          $: classification,
-          description: calculateOasExtensionDiffDescription,
-        },
       },
-    }
-  } as CompareRules
+      '/**': {
+        $: classification,
+        description: calculateOasExtensionDiffDescription,
+      },
+    },
+  }
+
+  return { '/^': oasExtensionPrefixRules }
 }
