@@ -20,11 +20,6 @@ const OPTIONS: CompareOptions = {
   allowNotValidSyntheticChanges: true,
 }
 
-// Helper function to deep clone an object using JSON serialization
-function clone(obj: any): any {
-  return JSON.parse(JSON.stringify(obj))
-}
-
 // Helper function to set a value at a specific path in an object
 // creates a new object or array if some parts of the path are missing
 function setValueAtPath(obj: any, path: JsonPath, value: any): void {
@@ -46,8 +41,8 @@ function setValueAtPath(obj: any, path: JsonPath, value: any): void {
 
 // Helper function to prepare before and after specifications
 function prepareSpecsForComparison(extensionPath: JsonPath, beforeValue?: any, afterValue?: any): { before: any, after: any } {
-  const before = clone(base)
-  const after = clone(base)
+  const before = structuredClone(base)
+  const after = structuredClone(base)
 
   setValueAtPath(before, extensionPath, beforeValue)
   setValueAtPath(after, extensionPath, afterValue)
