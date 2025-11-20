@@ -1,4 +1,13 @@
-import { annotation, apiDiff, breaking, ClassifierType, CompareOptions, DiffAction, nonBreaking, unclassified } from '../src'
+import {
+  annotation,
+  apiDiff,
+  breaking,
+  ClassifierType,
+  CompareOptions,
+  DiffAction,
+  nonBreaking,
+  unclassified,
+} from '../src'
 import offeringQualificationBefore from './helper/resources/api-v2-offeringqualification-qualification-post/before.json'
 import offeringQualificationAfter from './helper/resources/api-v2-offeringqualification-qualification-post/after.json'
 import readDefaultValueOfRequiredBefore from './helper/resources/read-default-value-of-required-field/before.json'
@@ -30,8 +39,16 @@ import spearedParamsAfter from './helper/resources/speared-parameters/after.json
 import wildcardContentSchemaMediaTypeCombinedWithSpecificMediaTypeBefore from './helper/resources/wildcard-content-schema-media-type-combined-with-specific-media-type/before.json'
 import wildcardContentSchemaMediaTypeCombinedWithSpecificMediaTypeAfter from './helper/resources/wildcard-content-schema-media-type-combined-with-specific-media-type/after.json'
 
+import parameterReuseOnPathItemAndOperationLevel from './helper/resources/parameter-reuse-on-path-item-and-operation-level/specification.json'
+
 import shouldNotMissRemoveDiffForEnumEntryInOneOfBefore from './helper/resources/should-not-miss-remove-diff-for-enum-entry-in-oneOf/before.json'
 import shouldNotMissRemoveDiffForEnumEntryInOneOfAfter from './helper/resources/should-not-miss-remove-diff-for-enum-entry-in-oneOf/after.json'
+
+import shouldReportSingleDiffWhenRequiredPropertyIsChangedForTheCombinerBefore from './helper/resources/should-report-single-diff-when-required-property-is-changed-for-the-combiner/before.json'
+import shouldReportSingleDiffWhenRequiredPropertyIsChangedForTheCombinerAfter from './helper/resources/should-report-single-diff-when-required-property-is-changed-for-the-combiner/after.json'
+
+import duplicateParametersBefore from './helper/resources/duplicate-parameters/before.json'
+import duplicateParametersAfter from './helper/resources/duplicate-parameters/after.json'
 
 import { diffsMatcher } from './helper/matchers'
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper'
@@ -103,7 +120,7 @@ describe('Real Data', () => {
     const after: any = infinityAfter
     const { diffs } = apiDiff(before, after, OPTIONS)
     const responseContentPath = ['paths', '/api/v1/dictionaries/dictionary/item', 'get', 'responses', '200', 'content']
-    expect(diffs).toEqual(diffsMatcher([      
+    expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         afterDeclarationPaths: [['components', 'schemas', 'DictionaryItem', 'x-entity']],
         afterValue: 'DictionaryItem',
@@ -220,7 +237,7 @@ describe('Real Data', () => {
     const before: any = wildcardContentSchemaMediaTypeCombinedWithSpecificMediaTypeBefore
     const after: any = wildcardContentSchemaMediaTypeCombinedWithSpecificMediaTypeAfter
     const { diffs } = apiDiff(before, after, OPTIONS)
-    
+
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
@@ -231,6 +248,13 @@ describe('Real Data', () => {
     ]))
   })
 
+  // TODO: fix
+  it.skip('should not detect any changes - parameter reuse on path item and operation level', () => {
+    const before: any = parameterReuseOnPathItemAndOperationLevel
+    const after: any = parameterReuseOnPathItemAndOperationLevel
+    const { diffs } = apiDiff(before, after, OPTIONS)
+    expect(diffs).toBeEmpty()
+  })
   it('should not miss remove diff for enum entry in oneOf', () => {
     const before: any = shouldNotMissRemoveDiffForEnumEntryInOneOfBefore
     const after: any = shouldNotMissRemoveDiffForEnumEntryInOneOfAfter
@@ -258,6 +282,49 @@ describe('Real Data', () => {
         afterValue: 'annotation',
         action: DiffAction.add,
         type: nonBreaking,
+      }),
+    ]))
+  })
+
+  // check diffUniquenessCache works correctly for oneOf
+  it('should report single diff when required property is changed for the combiner', () => {
+    const before: any = shouldReportSingleDiffWhenRequiredPropertyIsChangedForTheCombinerBefore
+    const after: any = shouldReportSingleDiffWhenRequiredPropertyIsChangedForTheCombinerAfter
+    const { diffs } = apiDiff(before, after, OPTIONS)
+
+    expect(diffs).toHaveLength(1)
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.add,
+        afterValue: "eventType",
+        afterNormalizedValue: "eventType",
+        afterDeclarationPaths: [[
+          "paths",
+          "/path1",
+          "get",
+          "responses",
+          "200",
+          "content",
+          "application/json",
+          "schema",
+          "required",
+          0
+        ]],
+        type: nonBreaking,
+      }),
+    ]))
+  })
+
+
+  it('should not report diffs for duplicated parameters', () => {
+    const { diffs } = apiDiff(duplicateParametersBefore, duplicateParametersAfter, OPTIONS)
+
+    expect(diffs).toHaveLength(1)
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.add,
+        afterDeclarationPaths: [['paths', '/api/v1/user-management/user-federations/{id}/mappers/{id}', 'get', 'description']],
+        type: annotation,
       }),
     ]))
   })
