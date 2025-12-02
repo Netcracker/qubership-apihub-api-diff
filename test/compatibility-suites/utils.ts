@@ -1,5 +1,5 @@
 import { apiDiff, CompareOptions, CompareResult, Diff } from '../../src'
-import { load } from 'js-yaml'
+import { load, JSON_SCHEMA } from 'js-yaml'
 import {
   getCompatibilitySuite,
   TEST_SPEC_TYPE_GRAPH_QL,
@@ -41,8 +41,8 @@ export async function compareFilesWithMerge(suiteId: string, testId: string, typ
 
   switch (type) {
     case TEST_SPEC_TYPE_OPEN_API: {
-      beforeObject = load(before) as object
-      afterObject = load(after) as object
+      beforeObject = load(before, { schema: JSON_SCHEMA }) as object
+      afterObject = load(after, { schema: JSON_SCHEMA }) as object
       break
     }
     case TEST_SPEC_TYPE_GRAPH_QL: {
