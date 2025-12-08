@@ -82,6 +82,7 @@ export const COMPARE_MODE_DEFAULT = 'default'
 export const COMPARE_MODE_OPERATION = 'operation'
 
 export type CompareMode = typeof COMPARE_MODE_DEFAULT | typeof COMPARE_MODE_OPERATION
+export type NoBackwardCompatibility = (path: PropertyKey[]) => boolean
 
 export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   mode?: CompareMode
@@ -92,6 +93,7 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   onCreateDiffError?: (message: string, diff: Diff, ctx: CompareContext) => void
   beforeValueNormalizedProperty?: symbol
   afterValueNormalizedProperty?: symbol
+  isNoApiBackwardCompatibility?: NoBackwardCompatibility
 }
 
 export type DiffCallback = (diff: Diff/*, ctx: CompareContext*/) => void
@@ -118,6 +120,15 @@ export type CompareEngine = (before: unknown, after: unknown, options: StrictCom
 export type NodeRoot = { [JSO_ROOT]: any }
 export type KeyMapping = Record<PropertyKey, PropertyKey>
 
+export const API_KIND = {
+  BWC: 'bwc',
+  NO_BWC: 'no-bwc',
+  EXPERIMENTAL: 'experimental',
+} as const
+
+export type KeyOfConstType<T> = T[keyof T]
+export type ApiKind = KeyOfConstType<typeof API_KIND>
+
 export interface MergeState<T extends PropertyKey = string> {
   parentContext: CompareContext | undefined
   keyMap: KeyMapping            // parent keys mappings
@@ -133,6 +144,7 @@ export interface MergeState<T extends PropertyKey = string> {
   diffUniquenessCache: EvaluationCacheService,
   createdMergedJso: Set<JsonNode>,
   compareScope: CompareScope
+  noApiBackwardCompatibility?: boolean
 }
 
 export type JsonNode<Key extends PropertyKey = string> = Key extends (string | symbol) ? Record<string | symbol, unknown> : Record<number, unknown> | Array<unknown>

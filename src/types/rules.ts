@@ -44,6 +44,7 @@ export interface CompareContext {
   mergeKey: PropertyKey
   rules: CompareRules
   options: InternalCompareOptions
+  noApiBackwardCompatibility?: boolean
 }
 
 export interface AdapterContext<T> {

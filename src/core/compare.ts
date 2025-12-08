@@ -16,6 +16,8 @@ import { deepEqual } from 'fast-equals'
 import {
   AdapterContext,
   AdapterResolver,
+  API_KIND,
+  ApiKind,
   CompareContext,
   CompareResult,
   CompareRule,
@@ -75,6 +77,7 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     rules,
     compareScope,
     parentContext,
+    noApiBackwardCompatibility,
   } = data
   return {
     parentContext: parentContext,
@@ -84,6 +87,7 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     mergeKey,
     rules,
     options,
+    noApiBackwardCompatibility,
   }
 }
 
@@ -203,7 +207,7 @@ const adaptValues = (beforeJso: JsonNode, beforeKey: PropertyKey, afterJso: Json
 }
 
 const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions): SyncCrawlHook<MergeState, CompareRule> => {
-  const { metaKey } = options
+  const { metaKey, isNoApiBackwardCompatibility } = options
   const diffs: Set<Diff> = new Set()
   const addDiff: (diff: Diff) => void = (diff) => {
     const oldSize = diffs.size
@@ -229,6 +233,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       diffUniquenessCache,
       createdMergedJso,
       compareScope,
+      noApiBackwardCompatibility,
     } = state
 
     if (typeof unsafeKey === 'symbol') {
@@ -261,12 +266,28 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       mergeKey,
       rules,
       compareScope: newCompareScope ?? compareScope,
+      noApiBackwardCompatibility,
     }, options)
 
     const beforeDeclarativePathsId = buildPathsIdentifier(cleanUpRecursive(ctx.before).declarativePaths)
     const afterDeclarativePathsId = buildPathsIdentifier(cleanUpRecursive(ctx.after).declarativePaths)
+    const apiKind: ApiKind = noApiBackwardCompatibility ? API_KIND.NO_BWC : API_KIND.BWC
 
-    const reuseResult: ReusableMergeResult = mergedJsoCache.cacheEvaluationResultByFootprint<[typeof ctx.before.value, typeof ctx.after.value, typeof beforeDeclarativePathsId, typeof afterDeclarativePathsId, CompareScope], ReusableMergeResult>([ctx.before.value, ctx.after.value, beforeDeclarativePathsId, afterDeclarativePathsId, ctx.scope], ([beforeValue, afterValue]) => {
+    const reuseResult: ReusableMergeResult = mergedJsoCache.cacheEvaluationResultByFootprint<[
+      typeof ctx.before.value,
+      typeof ctx.after.value,
+      typeof beforeDeclarativePathsId,
+      typeof afterDeclarativePathsId,
+      CompareScope,
+      ApiKind
+    ], ReusableMergeResult>([
+      ctx.before.value,
+      ctx.after.value,
+      beforeDeclarativePathsId,
+      afterDeclarativePathsId,
+      ctx.scope,
+      apiKind,
+    ], ([beforeValue, afterValue]) => {
       if (!ignoreKeyDifference && beforeKey !== afterKey) {
         const diffEntry = createDiffEntry(ctx, diffFactory.renamed(ctx))
         addDiff(diffEntry.diff)
@@ -363,6 +384,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
         afterJso: afterValueAdapted as JsonNode/*safe cause it only happens for object*/,
         mergedJso: mergedValue,
         compareScope: newCompareScope ?? compareScope,
+        noApiBackwardCompatibility: isNoApiBackwardCompatibility?.(crawlContext.path),
       }
       return { value: reuseResult.nextValue, state: childState, exitHook: reuseResult.exitHook }
     } else {
@@ -439,7 +461,7 @@ function addNormalizedValuesToDenormalizedDiff(
   denormalizedDiffs: Diff[],
   rawDiffs: Diff[],
   beforeValueNormalizedProperty?: symbol,
-  afterValueNormalizedProperty?: symbol
+  afterValueNormalizedProperty?: symbol,
 ) {
   for (let i = 0; i < denormalizedDiffs.length && i < rawDiffs.length; i++) {
     const denormalizedDiff = denormalizedDiffs[i]
@@ -507,7 +529,7 @@ export const compare = (before: unknown, after: unknown, options: InternalCompar
     denormalizedDiffs,
     rawDiffs,
     options.beforeValueNormalizedProperty,
-    options.afterValueNormalizedProperty
+    options.afterValueNormalizedProperty,
   )
   return {
     diffs: denormalizedDiffs,

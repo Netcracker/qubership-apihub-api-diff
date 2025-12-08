@@ -6,6 +6,7 @@ import {
   allUnclassified,
   breaking,
   breakingIfAfterTrue,
+  deepEqualsUniqueItemsArrayMappingResolver,
   diffDescription,
   GREP_TEMPLATE_PARAM_ENCODING_NAME,
   GREP_TEMPLATE_PARAM_EXAMPLE_NAME,
@@ -14,6 +15,7 @@ import {
   GREP_TEMPLATE_PARAM_PARAMETER_NAME,
   GREP_TEMPLATE_PARAM_RESPONSE_NAME,
   nonBreaking,
+  risky,
   TEMPLATE_PARAM_ACTION,
   TEMPLATE_PARAM_COMPONENT_PATH,
   TEMPLATE_PARAM_EXAMPLE_PATH,
@@ -27,7 +29,6 @@ import {
   TEMPLATE_PARAM_RESPONSE_PATH,
   TEMPLATE_PARAM_SCOPE,
   unclassified,
-  deepEqualsUniqueItemsArrayMappingResolver,
 } from '../core'
 import {
   COMPARE_MODE_OPERATION,
@@ -62,7 +63,7 @@ import {
 import { isResponseSchema } from './openapi3.utils'
 import { apihubCaseInsensitiveKeyMappingResolver } from './mapping'
 import { nonBreakingIf } from '../utils'
-import { COMPARE_SCOPE_COMPONENTS, COMPARE_SCOPE_RESPONSE, COMPARE_SCOPE_REQUEST } from './openapi3.const'
+import { COMPARE_SCOPE_COMPONENTS, COMPARE_SCOPE_REQUEST, COMPARE_SCOPE_RESPONSE } from './openapi3.const'
 import { parameterParamsCalculator } from './openapi3.description.parameter'
 import { requestParamsCalculator } from './openapi3.description.request'
 import { responseParamsCalculator } from './openapi3.description.response'
@@ -342,7 +343,11 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
   }
 
   const responseRules: CompareRules = {
-    $: [nonBreaking, breaking, (ctx) => nonBreakingIf(ctx.before.key.toString().toLocaleLowerCase() === ctx.after.key.toString().toLocaleLowerCase())],
+    $: [
+      nonBreaking,
+      (ctx) => (ctx.noApiBackwardCompatibility ? risky : breaking),
+      (ctx) => (ctx.noApiBackwardCompatibility ? risky : nonBreakingIf(ctx.before.key.toString().toLocaleLowerCase() === ctx.after.key.toString().toLocaleLowerCase()))
+    ],
     description: diffDescription(`[{{${TEMPLATE_PARAM_ACTION}}}] response '{{${GREP_TEMPLATE_PARAM_RESPONSE_NAME}}}'`),
     descriptionParamCalculator: responseParamsCalculator,
     '/content': contentRules,
