@@ -23,10 +23,10 @@ import type { ClassifyRule } from '../types'
 export const typeClassifier: ClassifyRule = [
   breaking,//not tested
   breaking,//not tested
-  ({ before, after, noApiBackwardCompatibility }) => (noApiBackwardCompatibility ? risky : nonBreakingIf(isTypeAssignable(before.value, after.value, false))),
+  ({ before, after }) => (nonBreakingIf(isTypeAssignable(before.value, after.value, false))),
   breaking,//not tested
   breaking,//not tested
-  ({ before, after, noApiBackwardCompatibility}) => (noApiBackwardCompatibility ? risky : nonBreakingIf(isTypeAssignable(before.value, after.value, true))),
+  ({ before, after }) => (nonBreakingIf(isTypeAssignable(before.value, after.value, true))),
 ]
 
 export const maxClassifier: ClassifyRule = [

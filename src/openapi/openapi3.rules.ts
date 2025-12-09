@@ -6,6 +6,7 @@ import {
   allUnclassified,
   breaking,
   breakingIfAfterTrue,
+  classifyRiskyRuleTransformer,
   deepEqualsUniqueItemsArrayMappingResolver,
   diffDescription,
   GREP_TEMPLATE_PARAM_ENCODING_NAME,
@@ -15,7 +16,6 @@ import {
   GREP_TEMPLATE_PARAM_PARAMETER_NAME,
   GREP_TEMPLATE_PARAM_RESPONSE_NAME,
   nonBreaking,
-  risky,
   TEMPLATE_PARAM_ACTION,
   TEMPLATE_PARAM_COMPONENT_PATH,
   TEMPLATE_PARAM_EXAMPLE_PATH,
@@ -28,6 +28,7 @@ import {
   TEMPLATE_PARAM_REQUEST_PATH,
   TEMPLATE_PARAM_RESPONSE_PATH,
   TEMPLATE_PARAM_SCOPE,
+  transformCompareRules,
   unclassified,
 } from '../core'
 import {
@@ -90,8 +91,11 @@ const operationAnnotationRule: CompareRules = { $: allAnnotation }
 ***/
 
 export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
-  const requestSchemaRules = openApiSchemaRules(options)
-  const responseSchemaRules = openApiSchemaRules({ ...options, response: true })
+  const requestSchemaRules = transformCompareRules(openApiSchemaRules(options), classifyRiskyRuleTransformer)
+  const responseSchemaRules = transformCompareRules(openApiSchemaRules({
+    ...options,
+    response: true,
+  }), classifyRiskyRuleTransformer)
 
   const serversRules: CompareRules = {
     $: allAnnotation,
@@ -343,11 +347,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
   }
 
   const responseRules: CompareRules = {
-    $: [
-      nonBreaking,
-      (ctx) => (ctx.noApiBackwardCompatibility ? risky : breaking),
-      (ctx) => (ctx.noApiBackwardCompatibility ? risky : nonBreakingIf(ctx.before.key.toString().toLocaleLowerCase() === ctx.after.key.toString().toLocaleLowerCase()))
-    ],
+    $: [nonBreaking, breaking, (ctx) => nonBreakingIf(ctx.before.key.toString().toLocaleLowerCase() === ctx.after.key.toString().toLocaleLowerCase())],
     description: diffDescription(`[{{${TEMPLATE_PARAM_ACTION}}}] response '{{${GREP_TEMPLATE_PARAM_RESPONSE_NAME}}}'`),
     descriptionParamCalculator: responseParamsCalculator,
     '/content': contentRules,
