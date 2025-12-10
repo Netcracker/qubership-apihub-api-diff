@@ -17,6 +17,9 @@ export { apiDiff } from './api'
 export type {
   CompareResult,
   CompareOptions,
+  ApiKind,
+  BwcScopeFunction,
+  BackwardCompatibilityState,
   DiffType,
   ActionType,
   Diff,
@@ -26,6 +29,7 @@ export type {
   DiffRename,
   DiffMetaRecord,
 } from './types'
+export { API_KIND } from './types'
 
 export {
   isDiffAdd,

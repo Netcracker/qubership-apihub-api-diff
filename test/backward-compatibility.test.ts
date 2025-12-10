@@ -1,4 +1,4 @@
-import { apiDiff, breaking, DiffAction, risky } from '../src'
+import { API_KIND, apiDiff, breaking, BwcScopeFunction, DiffAction, risky } from '../src'
 
 import case2Before from './helper/resources/backward-compatibility/case2/before.json'
 import case2After from './helper/resources/backward-compatibility/case2/after.json'
@@ -21,15 +21,20 @@ type PATH_ENTRY = [string, string, string]
 
 const GET_PATH1: PATH_ENTRY = ['paths', '/path1', 'get']
 
-function createNoApiBackwardCompatibilityFn(data: PATH_ENTRY[]): (path: PropertyKey[]) => boolean {
-  return (path) => data.some(entry =>
-    entry.every((el, i) => path[i] === el),
-  )
+function createBwcScopeFunction(data: PATH_ENTRY[]): BwcScopeFunction {
+  return (path?: PropertyKey[]) => {
+    if (path?.length !== 3) {
+      return undefined
+    }
+    return data.some(entry =>
+      entry.every((el, i) => path?.[i] === el),
+    ) ? API_KIND.NOT_BACKWARD_COMPATIBLE : undefined
+  }
 }
 
 describe('Backward compatibility tests', () => {
   it('should diff from get has risky type with NoApiBackwardCompatibility', async () => {
-    const { diffs } = apiDiff(case2Before, case2After, { isNoApiBackwardCompatibility: () => true })
+    const { diffs } = apiDiff(case2Before, case2After, { bwcScopeFunction: () => API_KIND.NOT_BACKWARD_COMPATIBLE })
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         scope: 'response',
@@ -44,7 +49,7 @@ describe('Backward compatibility tests', () => {
       case3Before,
       case3After,
       {
-        isNoApiBackwardCompatibility: createNoApiBackwardCompatibilityFn([GET_PATH1]),
+        bwcScopeFunction: createBwcScopeFunction([GET_PATH1]),
       })
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -65,7 +70,7 @@ describe('Backward compatibility tests', () => {
       case4Before,
       case4After,
       {
-        isNoApiBackwardCompatibility: createNoApiBackwardCompatibilityFn([GET_PATH1]),
+        bwcScopeFunction: createBwcScopeFunction([GET_PATH1]),
       })
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -91,7 +96,7 @@ describe('Backward compatibility tests', () => {
       case5Before,
       case5After,
       {
-        isNoApiBackwardCompatibility: createNoApiBackwardCompatibilityFn([GET_PATH1]),
+        bwcScopeFunction: createBwcScopeFunction([GET_PATH1]),
       })
     expect(diffs).toEqual(diffsMatcher([
       // post
@@ -131,7 +136,7 @@ describe('Backward compatibility tests', () => {
       case6Before,
       case6After,
       {
-        isNoApiBackwardCompatibility: createNoApiBackwardCompatibilityFn([GET_PATH1]),
+        bwcScopeFunction: createBwcScopeFunction([GET_PATH1]),
       })
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({

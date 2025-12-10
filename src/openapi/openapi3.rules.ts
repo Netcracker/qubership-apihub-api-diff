@@ -6,7 +6,6 @@ import {
   allUnclassified,
   breaking,
   breakingIfAfterTrue,
-  classifyRiskyRuleTransformer,
   deepEqualsUniqueItemsArrayMappingResolver,
   diffDescription,
   GREP_TEMPLATE_PARAM_ENCODING_NAME,
@@ -28,7 +27,6 @@ import {
   TEMPLATE_PARAM_REQUEST_PATH,
   TEMPLATE_PARAM_RESPONSE_PATH,
   TEMPLATE_PARAM_SCOPE,
-  transformCompareRules,
   unclassified,
 } from '../core'
 import {
@@ -91,11 +89,8 @@ const operationAnnotationRule: CompareRules = { $: allAnnotation }
 ***/
 
 export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
-  const requestSchemaRules = transformCompareRules(openApiSchemaRules(options), classifyRiskyRuleTransformer)
-  const responseSchemaRules = transformCompareRules(openApiSchemaRules({
-    ...options,
-    response: true,
-  }), classifyRiskyRuleTransformer)
+  const requestSchemaRules = openApiSchemaRules(options)
+  const responseSchemaRules = openApiSchemaRules({ ...options, response: true })
 
   const serversRules: CompareRules = {
     $: allAnnotation,

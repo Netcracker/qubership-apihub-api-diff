@@ -1,7 +1,20 @@
 import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 
-import { CompareContext, Diff, DiffAdd, DiffRemove, DiffReplace, DiffRename, DiffEntry, DiffFactory, DiffMetaRecord, NodeContext } from '../types'
-import { allUnclassified, DiffAction, unclassified } from './constants'
+import {
+  API_KIND,
+  CompareContext,
+  Diff,
+  DiffAdd,
+  DiffEntry,
+  DiffFactory,
+  DiffMetaRecord,
+  DiffRemove,
+  DiffRename,
+  DiffReplace,
+  DiffType,
+  NodeContext,
+} from '../types'
+import { allUnclassified, breaking, DiffAction, risky, unclassified } from './constants'
 import { getKeyValue, isFunc } from '../utils'
 import { calculateDefaultDiffDescription } from './description'
 
@@ -18,7 +31,8 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
     const changeType = classifier[index]
 
     try {
-      mutableDiffCopy.type = isFunc(changeType) ? changeType(ctx) : changeType
+      const type = isFunc(changeType) ? changeType(ctx) : changeType
+      mutableDiffCopy.type = reclassifyTypeToRisky(type, ctx)
     } catch (error) {
       ctx.options.onCreateDiffError?.(`Unable to find diff type. ${error instanceof Error ? error.message : ''}`, mutableDiffCopy, ctx)
     }
@@ -29,6 +43,10 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
     ctx.options.onCreateDiffError?.(`Unable to create description for diff. ${error instanceof Error ? error.message : ''}`, mutableDiffCopy, ctx)
   }
   return mutableDiffCopy
+}
+
+export const reclassifyTypeToRisky = (type: DiffType, ctx: CompareContext): DiffType => {
+  return  type === breaking && ctx.backwardCompatibility === API_KIND.NOT_BACKWARD_COMPATIBLE ? risky : type
 }
 
 export function createDiffEntry(ctx: CompareContext, diff: Diff): DiffEntry<Diff> {

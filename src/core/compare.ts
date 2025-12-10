@@ -77,7 +77,7 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     rules,
     compareScope,
     parentContext,
-    noApiBackwardCompatibility,
+    backwardCompatibility,
   } = data
   return {
     parentContext: parentContext,
@@ -87,7 +87,7 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     mergeKey,
     rules,
     options,
-    noApiBackwardCompatibility,
+    backwardCompatibility,
   }
 }
 
@@ -137,6 +137,7 @@ export const createChildContext = (
     ) ?? {},
     options,
     scope: scope,
+    backwardCompatibility: ctx.backwardCompatibility,
   }
 }
 
@@ -207,7 +208,7 @@ const adaptValues = (beforeJso: JsonNode, beforeKey: PropertyKey, afterJso: Json
 }
 
 const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions): SyncCrawlHook<MergeState, CompareRule> => {
-  const { metaKey, isNoApiBackwardCompatibility } = options
+  const { metaKey, bwcScopeFunction } = options
   const diffs: Set<Diff> = new Set()
   const addDiff: (diff: Diff) => void = (diff) => {
     const oldSize = diffs.size
@@ -233,7 +234,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       diffUniquenessCache,
       createdMergedJso,
       compareScope,
-      noApiBackwardCompatibility,
+      backwardCompatibility: currentBackwardCompatibility,
     } = state
 
     if (typeof unsafeKey === 'symbol') {
@@ -257,6 +258,8 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       afterValueAdapted,
     ] = adaptValues(beforeJso, beforeKey, afterJso, afterKey, adapter, options)
 
+    const backwardCompatibility = bwcScopeFunction?.(crawlContext.path) ?? currentBackwardCompatibility
+
     const ctx = createContext({
       ...state,
       beforeValue: beforeValueAdapted,
@@ -266,12 +269,12 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       mergeKey,
       rules,
       compareScope: newCompareScope ?? compareScope,
-      noApiBackwardCompatibility,
+      backwardCompatibility,
     }, options)
 
     const beforeDeclarativePathsId = buildPathsIdentifier(cleanUpRecursive(ctx.before).declarativePaths)
     const afterDeclarativePathsId = buildPathsIdentifier(cleanUpRecursive(ctx.after).declarativePaths)
-    const apiKind: ApiKind = noApiBackwardCompatibility ? API_KIND.NO_BWC : API_KIND.BWC
+    const apiKind: ApiKind = backwardCompatibility
 
     const reuseResult: ReusableMergeResult = mergedJsoCache.cacheEvaluationResultByFootprint<[
       typeof ctx.before.value,
@@ -384,7 +387,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
         afterJso: afterValueAdapted as JsonNode/*safe cause it only happens for object*/,
         mergedJso: mergedValue,
         compareScope: newCompareScope ?? compareScope,
-        noApiBackwardCompatibility: isNoApiBackwardCompatibility?.(crawlContext.path),
+        backwardCompatibility,
       }
       return { value: reuseResult.nextValue, state: childState, exitHook: reuseResult.exitHook }
     } else {
@@ -570,6 +573,7 @@ const compareInternal = (before: unknown, after: unknown, onDiff: DiffCallback, 
     diffUniquenessCache: options.diffUniquenessCache,
     createdMergedJso: options.createdMergedJso,
     compareScope: options.compareScope,
+    backwardCompatibility: API_KIND.BACKWARD_COMPATIBLE,
   }
   syncCrawl<MergeState, CompareRule>(before, [hook], { state: rootState, rules: options.rules })
   return root.merged[JSO_ROOT]

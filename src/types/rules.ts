@@ -1,7 +1,7 @@
 import { CrawlRules, JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 
 import type { CompareResult, Diff, DiffType } from './compare'
-import { CompareScope, InternalCompareOptions } from './compare'
+import { BackwardCompatibilityState, CompareScope, InternalCompareOptions } from './compare'
 import { DiffAction } from '../core'
 import { OriginLeafs } from '@netcracker/qubership-apihub-api-unifier'
 
@@ -44,7 +44,7 @@ export interface CompareContext {
   mergeKey: PropertyKey
   rules: CompareRules
   options: InternalCompareOptions
-  noApiBackwardCompatibility?: boolean
+  backwardCompatibility: BackwardCompatibilityState
 }
 
 export interface AdapterContext<T> {
