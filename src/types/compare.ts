@@ -88,9 +88,7 @@ export enum ApiCompatibilityKind {
   NOT_BACKWARD_COMPATIBLE = 'NOT_BACKWARD_COMPATIBLE'
 }
 
-export type BwcState =
-  | ApiCompatibilityKind.BACKWARD_COMPATIBLE
-  | ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE
+export type BwcState = keyof typeof ApiCompatibilityKind
 
 export type BwcScopeFunction = (path?: JsonPath, beforeJso?: unknown, afterJso?: unknown) => BwcState | undefined
 
@@ -129,8 +127,6 @@ export type CompareEngine = (before: unknown, after: unknown, options: StrictCom
 
 export type NodeRoot = { [JSO_ROOT]: any }
 export type KeyMapping = Record<PropertyKey, PropertyKey>
-
-export type ApiKind = ApiCompatibilityKind
 
 export interface MergeState<T extends PropertyKey = string> {
   parentContext: CompareContext | undefined

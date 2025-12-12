@@ -7,21 +7,22 @@
   "paths": {
     "/path1": {
       "get": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "number"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "field1": {
-                      "type": "number"
-                    },
-                    "field2": {
-                      "type": "string"
-                    }
-                  }
+                  "type": "number"
                 }
               }
             }

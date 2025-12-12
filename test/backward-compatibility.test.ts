@@ -1,25 +1,34 @@
-import { API_KIND, apiDiff, breaking, BwcScopeFunction, DiffAction, risky } from '../src'
+import { ApiCompatibilityKind, apiDiff, breaking, BwcScopeFunction, DiffAction, risky } from '../src'
 
-import case2Before from './helper/resources/backward-compatibility/case2/before.json'
-import case2After from './helper/resources/backward-compatibility/case2/after.json'
+import singleMethodResponseBefore from './helper/resources/backward-compatibility/single-method-response/before.json'
+import singleMethodResponseAfter from './helper/resources/backward-compatibility/single-method-response/after.json'
 
-import case3Before from './helper/resources/backward-compatibility/case3/before.json'
-import case3After from './helper/resources/backward-compatibility/case3/after.json'
+import singleMethodRequestResponseBefore
+  from './helper/resources/backward-compatibility/single-method-request-response/before.json'
+import singleMethodRequestResponseAfter
+  from './helper/resources/backward-compatibility/single-method-request-response/after.json'
 
-import case4Before from './helper/resources/backward-compatibility/case4/before.json'
-import case4After from './helper/resources/backward-compatibility/case4/after.json'
+import multipleMethodsResponseBefore
+  from './helper/resources/backward-compatibility/multiple-methods-response/before.json'
+import multipleMethodsResponseAfter
+  from './helper/resources/backward-compatibility/multiple-methods-response/after.json'
 
-import case5Before from './helper/resources/backward-compatibility/case5/before.json'
-import case5After from './helper/resources/backward-compatibility/case5/after.json'
+import multipleMethodsResponseRefBefore
+  from './helper/resources/backward-compatibility/multiple-methods-response-ref/before.json'
+import multipleMethodsResponseRefAfter
+  from './helper/resources/backward-compatibility/multiple-methods-response-ref/after.json'
 
-import case6Before from './helper/resources/backward-compatibility/case6/before.json'
-import case6After from './helper/resources/backward-compatibility/case6/after.json'
+import multipleMethodsRequestResponseRefBefore
+  from './helper/resources/backward-compatibility/multiple-methods-request-response-ref/before.json'
+import multipleMethodsRequestResponseRefAfter
+  from './helper/resources/backward-compatibility/multiple-methods-request-response-ref/after.json'
 
 import { diffsMatcher } from './helper/matchers'
 
 type PATH_ENTRY = [string, string, string]
 
 const GET_PATH1: PATH_ENTRY = ['paths', '/path1', 'get']
+const POST_PATH1: PATH_ENTRY = ['paths', '/path1', 'post']
 
 function createBwcScopeFunction(data: PATH_ENTRY[]): BwcScopeFunction {
   return (path?: PropertyKey[]) => {
@@ -28,13 +37,17 @@ function createBwcScopeFunction(data: PATH_ENTRY[]): BwcScopeFunction {
     }
     return data.some(entry =>
       entry.every((el, i) => path?.[i] === el),
-    ) ? API_KIND.NOT_BACKWARD_COMPATIBLE : undefined
+    ) ? ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE : undefined
   }
 }
 
 describe('Backward compatibility tests', () => {
-  it('should diff from get has risky type with NoApiBackwardCompatibility', async () => {
-    const { diffs } = apiDiff(case2Before, case2After, { bwcScopeFunction: () => API_KIND.NOT_BACKWARD_COMPATIBLE })
+  it('should diff from get has risky type with not backward compatible', async () => {
+    const { diffs } = apiDiff(
+      singleMethodResponseBefore,
+      singleMethodResponseAfter,
+      { bwcScopeFunction: () => ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE },
+    )
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         scope: 'response',
@@ -44,13 +57,31 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  it('3', async () => {
+  it('should mark both request and response as risky for single method with not backward compatible', async () => {
     const { diffs } = apiDiff(
-      case3Before,
-      case3After,
-      {
-        bwcScopeFunction: createBwcScopeFunction([GET_PATH1]),
-      })
+      singleMethodRequestResponseBefore,
+      singleMethodRequestResponseAfter,
+      { bwcScopeFunction: () => ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE },
+    )
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        scope: 'response',
+        action: DiffAction.replace,
+        type: risky,
+      }),
+      expect.objectContaining({
+        scope: 'request',
+        action: DiffAction.replace,
+        type: risky,
+      }),
+    ]))
+  })
+
+  it('should mark GET method as risky and POST as breaking when only GET is in scope', async () => {
+    const { diffs } = apiDiff(
+      multipleMethodsResponseBefore,
+      multipleMethodsResponseAfter,
+      { bwcScopeFunction: createBwcScopeFunction([GET_PATH1]) })
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         scope: 'response',
@@ -65,19 +96,57 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  it('4', async () => {
+  it('should mark POST method as breaking and GET as risky when only POST is in scope', async () => {
     const { diffs } = apiDiff(
-      case4Before,
-      case4After,
-      {
-        bwcScopeFunction: createBwcScopeFunction([GET_PATH1]),
-      })
+      multipleMethodsResponseBefore,
+      multipleMethodsResponseAfter,
+      { bwcScopeFunction: createBwcScopeFunction([POST_PATH1]) })
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         scope: 'response',
         action: DiffAction.replace,
         type: breaking,
       }),
+      expect.objectContaining({
+        scope: 'response',
+        action: DiffAction.replace,
+        type: risky,
+      }),
+    ]))
+  })
+
+  it('should mark both GET and POST methods as risky when both are in scope', async () => {
+    const { diffs } = apiDiff(
+      multipleMethodsResponseBefore,
+      multipleMethodsResponseAfter,
+      { bwcScopeFunction: createBwcScopeFunction([GET_PATH1, POST_PATH1]) })
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        scope: 'response',
+        action: DiffAction.replace,
+        type: risky,
+      }),
+      expect.objectContaining({
+        scope: 'response',
+        action: DiffAction.replace,
+        type: risky,
+      }),
+    ]))
+  })
+
+  it('should have two response diffs and one components diff when only GET is in scope with refs', async () => {
+    const { diffs } = apiDiff(
+      multipleMethodsResponseRefBefore,
+      multipleMethodsResponseRefAfter,
+      { bwcScopeFunction: createBwcScopeFunction([GET_PATH1]) })
+    expect(diffs).toEqual(diffsMatcher([
+      // post
+      expect.objectContaining({
+        scope: 'response',
+        action: DiffAction.replace,
+        type: breaking,
+      }),
+      // get
       expect.objectContaining({
         scope: 'response',
         action: DiffAction.replace,
@@ -91,13 +160,31 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  it('5', async () => {
+  it('should have one response diff and one components diff when both methods are in scope with refs', async () => {
     const { diffs } = apiDiff(
-      case5Before,
-      case5After,
-      {
-        bwcScopeFunction: createBwcScopeFunction([GET_PATH1]),
-      })
+      multipleMethodsResponseRefBefore,
+      multipleMethodsResponseRefAfter,
+      { bwcScopeFunction: createBwcScopeFunction([GET_PATH1, POST_PATH1]) })
+    expect(diffs).toEqual(diffsMatcher([
+      // get + post
+      expect.objectContaining({
+        scope: 'response',
+        action: DiffAction.replace,
+        type: risky,
+      }),
+      expect.objectContaining({
+        scope: 'components',
+        action: DiffAction.replace,
+        type: breaking,
+      }),
+    ]))
+  })
+
+  it('should mark POST as breaking and GET as risky for both request and response when only GET is in scope with refs', async () => {
+    const { diffs } = apiDiff(
+      multipleMethodsRequestResponseRefBefore,
+      multipleMethodsRequestResponseRefAfter,
+      { bwcScopeFunction: createBwcScopeFunction([GET_PATH1]) })
     expect(diffs).toEqual(diffsMatcher([
       // post
       expect.objectContaining({
@@ -131,27 +218,28 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  it('6', async () => {
+  it('should mark both request and response as risky when both methods are in scope with refs', async () => {
     const { diffs } = apiDiff(
-      case6Before,
-      case6After,
-      {
-        bwcScopeFunction: createBwcScopeFunction([GET_PATH1]),
-      })
+      multipleMethodsRequestResponseRefBefore,
+      multipleMethodsRequestResponseRefAfter,
+      { bwcScopeFunction: createBwcScopeFunction([GET_PATH1, POST_PATH1]) })
     expect(diffs).toEqual(diffsMatcher([
+      // get + post
       expect.objectContaining({
-        beforeValue: 'number',
-        afterValue: 'string',
+        scope: 'request',
+        action: DiffAction.replace,
+        type: risky,
+      }),
+      // get + post
+      expect.objectContaining({
         scope: 'response',
         action: DiffAction.replace,
         type: risky,
       }),
       expect.objectContaining({
-        beforeValue: 'string',
-        afterValue: 'number',
-        scope: 'response',
+        scope: 'components',
         action: DiffAction.replace,
-        type: risky,
+        type: breaking,
       }),
     ]))
   })

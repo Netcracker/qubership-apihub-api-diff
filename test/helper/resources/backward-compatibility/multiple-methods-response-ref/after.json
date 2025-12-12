@@ -14,17 +14,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "price": {
-                      "type": "object",
-                      "properties": {
-                        "prop1": {
-                          "$ref": "#/components/schemas/componentsValue"
-                        }
-                      }
-                    }
-                  }
+                  "$ref": "#/components/schemas/componentsValue"
                 }
               }
             }
@@ -38,17 +28,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "price": {
-                      "type": "object",
-                      "properties": {
-                        "prop1": {
-                          "$ref": "#/components/schemas/componentsValue"
-                        }
-                      }
-                    }
-                  }
+                  "$ref": "#/components/schemas/componentsValue"
                 }
               }
             }
@@ -63,7 +43,7 @@
         "type": "object",
         "properties": {
           "value": {
-            "type": "number"
+            "type": "string"
           },
           "currency": {
             "type": "string"
