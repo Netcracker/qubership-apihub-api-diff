@@ -32,7 +32,7 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
 
     try {
       const type = isFunc(changeType) ? changeType(ctx) : changeType
-      mutableDiffCopy.type = reclassifyTypeToRisky(type, ctx)
+      mutableDiffCopy.type = reclassifyBreakingToRisky(type, ctx)
     } catch (error) {
       ctx.options.onCreateDiffError?.(`Unable to find diff type. ${error instanceof Error ? error.message : ''}`, mutableDiffCopy, ctx)
     }
@@ -45,7 +45,7 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
   return mutableDiffCopy
 }
 
-export const reclassifyTypeToRisky = (type: DiffType, ctx: CompareContext): DiffType => {
+export const reclassifyBreakingToRisky = (type: DiffType, ctx: CompareContext): DiffType => {
   return type === breaking && ctx.backwardCompatibility === ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE ? risky : type
 }
 

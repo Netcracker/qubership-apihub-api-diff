@@ -494,7 +494,7 @@ function addNormalizedValuesToDenormalizedDiff(
   denormalizedDiffs: Diff[],
   rawDiffs: Diff[],
   beforeValueNormalizedProperty?: symbol,
-  afterValueNormalizedProperty?: symbol,
+  afterValueNormalizedProperty?: symbol
 ) {
   for (let i = 0; i < denormalizedDiffs.length && i < rawDiffs.length; i++) {
     const denormalizedDiff = denormalizedDiffs[i]
@@ -562,7 +562,7 @@ export const compare = (before: unknown, after: unknown, options: InternalCompar
     denormalizedDiffs,
     rawDiffs,
     options.beforeValueNormalizedProperty,
-    options.afterValueNormalizedProperty,
+    options.afterValueNormalizedProperty
   )
   return {
     diffs: denormalizedDiffs,
