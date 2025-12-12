@@ -19,7 +19,7 @@ export type {
   CompareOptions,
   ApiKind,
   BwcScopeFunction,
-  BackwardCompatibilityState,
+  BwcState,
   DiffType,
   ActionType,
   Diff,
@@ -29,7 +29,7 @@ export type {
   DiffRename,
   DiffMetaRecord,
 } from './types'
-export { API_KIND } from './types'
+export { ApiCompatibilityKind } from './types'
 
 export {
   isDiffAdd,

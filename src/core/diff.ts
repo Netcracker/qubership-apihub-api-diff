@@ -1,7 +1,7 @@
 import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 
 import {
-  API_KIND,
+  ApiCompatibilityKind,
   CompareContext,
   Diff,
   DiffAdd,
@@ -46,7 +46,7 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
 }
 
 export const reclassifyTypeToRisky = (type: DiffType, ctx: CompareContext): DiffType => {
-  return  type === breaking && ctx.backwardCompatibility === API_KIND.NOT_BACKWARD_COMPATIBLE ? risky : type
+  return type === breaking && ctx.backwardCompatibility === ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE ? risky : type
 }
 
 export function createDiffEntry(ctx: CompareContext, diff: Diff): DiffEntry<Diff> {
