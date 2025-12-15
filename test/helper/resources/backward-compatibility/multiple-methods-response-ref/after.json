@@ -44,9 +44,6 @@
         "properties": {
           "value": {
             "type": "string"
-          },
-          "currency": {
-            "type": "string"
           }
         }
       }

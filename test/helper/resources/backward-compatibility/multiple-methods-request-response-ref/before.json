@@ -62,9 +62,6 @@
         "properties": {
           "value": {
             "type": "number"
-          },
-          "currency": {
-            "type": "string"
           }
         }
       }
