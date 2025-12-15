@@ -101,6 +101,15 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   onCreateDiffError?: (message: string, diff: Diff, ctx: CompareContext) => void
   beforeValueNormalizedProperty?: symbol
   afterValueNormalizedProperty?: symbol
+  /**
+   * Function that marks specific paths/values as backward compatible
+   * or non-backward compatible. Use it to mark a specific path or object,
+   * so diffs under it are treated as risky when needed.
+   * Returns
+   * `NOT_BACKWARD_COMPATIBLE` when any change under the matched path must be considered risky.
+   * `BACKWARD_COMPATIBLE` when it should inherit/allow backward-compatible way.
+   * `undefined` to inherit the parent scope.
+   */
   apiCompatibilityScopeFunction?: ApiCompatibilityScopeFunction
 }
 
