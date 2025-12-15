@@ -17,8 +17,8 @@ export { apiDiff } from './api'
 export type {
   CompareResult,
   CompareOptions,
-  BwcScopeFunction,
-  BwcState,
+  ApiCompatibilityScopeFunction,
+  ApiCompatibilityScope,
   DiffType,
   ActionType,
   Diff,

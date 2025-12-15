@@ -88,9 +88,9 @@ export enum ApiCompatibilityKind {
   NOT_BACKWARD_COMPATIBLE = 'NOT_BACKWARD_COMPATIBLE'
 }
 
-export type BwcState = keyof typeof ApiCompatibilityKind
+export type ApiCompatibilityScope = keyof typeof ApiCompatibilityKind
 
-export type BwcScopeFunction = (path?: JsonPath, beforeJso?: unknown, afterJso?: unknown) => BwcState | undefined
+export type ApiCompatibilityScopeFunction = (path?: JsonPath, beforeJso?: unknown, afterJso?: unknown) => ApiCompatibilityScope | undefined
 
 export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   mode?: CompareMode
@@ -101,7 +101,7 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   onCreateDiffError?: (message: string, diff: Diff, ctx: CompareContext) => void
   beforeValueNormalizedProperty?: symbol
   afterValueNormalizedProperty?: symbol
-  bwcScopeFunction?: BwcScopeFunction
+  apiCompatibilityScopeFunction?: ApiCompatibilityScopeFunction
 }
 
 export type DiffCallback = (diff: Diff/*, ctx: CompareContext*/) => void
@@ -143,7 +143,7 @@ export interface MergeState<T extends PropertyKey = string> {
   diffUniquenessCache: EvaluationCacheService,
   createdMergedJso: Set<JsonNode>,
   compareScope: CompareScope
-  backwardCompatibility: BwcState
+  apiCompatibilityScope: ApiCompatibilityScope
 }
 
 export type JsonNode<Key extends PropertyKey = string> = Key extends (string | symbol) ? Record<string | symbol, unknown> : Record<number, unknown> | Array<unknown>

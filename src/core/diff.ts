@@ -46,7 +46,7 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
 }
 
 export const reclassifyBreakingToRisky = (type: DiffType, ctx: CompareContext): DiffType => {
-  return type === breaking && ctx.backwardCompatibility === ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE ? risky : type
+  return type === breaking && ctx.apiCompatibilityScope === ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE ? risky : type
 }
 
 export function createDiffEntry(ctx: CompareContext, diff: Diff): DiffEntry<Diff> {
