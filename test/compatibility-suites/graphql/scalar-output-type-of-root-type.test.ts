@@ -1,6 +1,6 @@
 import { compareFiles, TEST_DEFAULTS_DECLARATION_PATHS } from '../utils'
 import { diffsMatcher } from '../../helper/matchers'
-import { annotation, breaking, DiffAction, nonBreaking, unclassified } from '../../../src'
+import { annotation, breaking, DiffAction, nonBreaking, risky, unclassified } from '../../../src'
 import { TEST_SPEC_TYPE_GRAPH_QL } from '@netcracker/qubership-apihub-compatibility-suites'
 import { COMPARE_SCOPE_OUTPUT } from '../../../src/graphapi'
 
@@ -89,7 +89,7 @@ describe('GraphQL Scalar output type of root type', () => {
       expect.objectContaining({
         action: DiffAction.add,
         afterDeclarationPaths: [[...FRUIT_PATH, 'type', 'values', 'orange']],
-        type: breaking,
+        type: risky,
         scope: COMPARE_SCOPE_OUTPUT
       }),
     ]))
