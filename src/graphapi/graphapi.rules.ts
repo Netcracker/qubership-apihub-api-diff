@@ -15,8 +15,7 @@ import {
   deprecated,
   annotation,
   optionalResolveValueFromContext,
-  deepEqualsUniqueItemsArrayMappingResolver,
-  riskyIf
+  deepEqualsUniqueItemsArrayMappingResolver
 } from '../core'
 import { resolveSchemaDescriptionTemplates } from '../jsonSchema'
 import type { ClassifyRule, CompareRules, DescriptionTemplates, MappingResolver } from '../types'
@@ -185,7 +184,7 @@ const directiveLocationClassifier: ClassifyRule = [
   ({ before, after }) => {
     const wasRuntime = isRuntimeDirectiveLocations(strictResolveValueFromContext(before, PARENT_JUMP))
     const willRuntime = isRuntimeDirectiveLocations(strictResolveValueFromContext(after, PARENT_JUMP))
-    return wasRuntime !== willRuntime ? unclassified : nonBreaking
+    return wasRuntime !== willRuntime ?  unclassified : nonBreaking
   },
   ({ before, after }) => {
     const wasRuntime = isRuntimeDirectiveLocations(strictResolveValueFromContext(before, PARENT_JUMP))
@@ -254,7 +253,7 @@ const typeDefinitionRules: CompareRules = {
       '/*': {
         ...baseRules,
         $: [
-          ({ scope }) => riskyIf(scope === COMPARE_SCOPE_OUTPUT),
+          ({ scope }) => breakingIf(scope === COMPARE_SCOPE_OUTPUT),
           ({ scope }) => breakingIf(scope === COMPARE_SCOPE_ARGS),
           unclassified
         ]
@@ -269,7 +268,7 @@ const typeDefinitionRules: CompareRules = {
           breaking,
           unclassified
         ]
-      }),  //only scalar, input, enum, and array with it
+      }),  //only scalar, input, enum, and array with it 
     },
     //interface object
     '/methods': {
