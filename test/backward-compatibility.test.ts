@@ -77,30 +77,28 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  const aa =
-
-    it('should mark GET method as risky and POST as breaking when only GET is in scope', async () => {
-      const { diffs } = apiDiff(
-        multipleMethodsResponseBefore,
-        multipleMethodsResponseAfter,
-        { apiCompatibilityScopeFunction: createApiCompatibilityScopeFunction([GET_PATH1]) })
-      expect(diffs).toEqual(diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.replace,
-          afterDeclarationPaths: [[...GET_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-          beforeDeclarationPaths: [[...GET_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-          scope: 'response',
-          type: risky,
-        }),
-        expect.objectContaining({
-          action: DiffAction.replace,
-          afterDeclarationPaths: [[...POST_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-          beforeDeclarationPaths: [[...POST_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-          scope: 'response',
-          type: breaking,
-        }),
-      ]))
-    })
+  it('should mark GET method as risky and POST as breaking when only GET is in scope', async () => {
+    const { diffs } = apiDiff(
+      multipleMethodsResponseBefore,
+      multipleMethodsResponseAfter,
+      { apiCompatibilityScopeFunction: createApiCompatibilityScopeFunction([GET_PATH1]) })
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.replace,
+        afterDeclarationPaths: [[...GET_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
+        beforeDeclarationPaths: [[...GET_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
+        scope: 'response',
+        type: risky,
+      }),
+      expect.objectContaining({
+        action: DiffAction.replace,
+        afterDeclarationPaths: [[...POST_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
+        beforeDeclarationPaths: [[...POST_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
+        scope: 'response',
+        type: breaking,
+      }),
+    ]))
+  })
 
   it('should mark both GET and POST methods as risky when both are in scope', async () => {
     const { diffs } = apiDiff(
