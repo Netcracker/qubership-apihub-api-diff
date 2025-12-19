@@ -360,7 +360,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
           keyToRemove.forEach((keyToBefore) => {
             const removalBwc = computedApiCompatibilityScope === ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE
               ? computedApiCompatibilityScope
-              : apiCompatibilityScopeFunction?.(crawlContext.path, beforeValue[keyToBefore])
+              : apiCompatibilityScopeFunction?.([...crawlContext.path, keyToBefore], beforeValue[keyToBefore])
             const childCtx = createChildContext(ctx, keyToBefore, keyToBefore, undefined, removalBwc)
             jsoDiffEntries.push(getOrCreateChildDiffRemove(diffUniquenessCache, childCtx))
           })
@@ -368,7 +368,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
           keysToAdd.forEach((keyInAfter) => {
             const additionBwc = computedApiCompatibilityScope === ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE
               ? computedApiCompatibilityScope
-              : apiCompatibilityScopeFunction?.(crawlContext.path, undefined, afterJso[keyInAfter])
+              : apiCompatibilityScopeFunction?.([...crawlContext.path, keyInAfter], undefined, afterJso[keyInAfter])
             const keyInMerge = isArray(mergedJsoValue) ? mergedJsoValue.length : keyInAfter
             const childCtx = createChildContext(ctx, keyInMerge, undefined, keyInAfter, additionBwc)
             jsoDiffEntries.push(getOrCreateChildDiffAdd(diffUniquenessCache, childCtx))
