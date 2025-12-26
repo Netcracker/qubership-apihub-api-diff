@@ -12,7 +12,7 @@ import {
   DiffReplace,
   DiffType,
   NodeContext,
-  NOT_BACKWARD_COMPATIBLE,
+  API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE,
 } from '../types'
 import { allUnclassified, breaking, DiffAction, risky, unclassified } from './constants'
 import { getKeyValue, isFunc } from '../utils'
@@ -46,7 +46,7 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
 }
 
 export const reclassifyBreakingToRisky = (type: DiffType, ctx: CompareContext): DiffType => {
-  return type === breaking && ctx.apiCompatibilityScope === NOT_BACKWARD_COMPATIBLE ? risky : type
+  return type === breaking && ctx.apiCompatibilityScope === API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE ? risky : type
 }
 
 export function createDiffEntry(ctx: CompareContext, diff: Diff): DiffEntry<Diff> {

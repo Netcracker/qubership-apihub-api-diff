@@ -24,7 +24,7 @@ import multipleMethodsRequestResponseRefAfter
   from './helper/resources/backward-compatibility/multiple-methods-request-response-ref/after.json'
 
 import { diffsMatcher } from './helper/matchers'
-import { NOT_BACKWARD_COMPATIBLE } from '../src/types'
+import { API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE } from '../src/types'
 
 type PATH_ENTRY = [string, string, string]
 
@@ -38,7 +38,7 @@ function createApiCompatibilityScopeFunction(data: PATH_ENTRY[]): ApiCompatibili
     }
     return data.some(entry =>
       entry.every((el, i) => path?.[i] === el),
-    ) ? NOT_BACKWARD_COMPATIBLE : undefined
+    ) ? API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE : undefined
   }
 }
 
@@ -47,7 +47,7 @@ describe('Backward compatibility tests', () => {
     const { diffs } = apiDiff(
       singleMethodResponseBefore,
       singleMethodResponseAfter,
-      { apiCompatibilityScopeFunction: () => NOT_BACKWARD_COMPATIBLE },
+      { apiCompatibilityScopeFunction: () => API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE },
     )
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -62,7 +62,7 @@ describe('Backward compatibility tests', () => {
     const { diffs } = apiDiff(
       singleMethodRequestResponseBefore,
       singleMethodRequestResponseAfter,
-      { apiCompatibilityScopeFunction: () => NOT_BACKWARD_COMPATIBLE },
+      { apiCompatibilityScopeFunction: () => API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE },
     )
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({

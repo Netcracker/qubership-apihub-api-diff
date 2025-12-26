@@ -1,4 +1,4 @@
-export { COMPARE_MODE_DEFAULT, COMPARE_MODE_OPERATION, BACKWARD_COMPATIBLE, NOT_BACKWARD_COMPATIBLE } from './types'
+export { COMPARE_MODE_DEFAULT, COMPARE_MODE_OPERATION, API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE, API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE } from './types'
 
 export {
   ClassifierType,
@@ -18,7 +18,7 @@ export type {
   CompareResult,
   CompareOptions,
   ApiCompatibilityScopeFunction,
-  ApiCompatibilityScope,
+  ApiCompatibilityKind,
   DiffType,
   ActionType,
   Diff,

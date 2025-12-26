@@ -83,13 +83,13 @@ export const COMPARE_MODE_OPERATION = 'operation'
 
 export type CompareMode = typeof COMPARE_MODE_DEFAULT | typeof COMPARE_MODE_OPERATION
 
-export const BACKWARD_COMPATIBLE = 'BACKWARD_COMPATIBLE'
-export const NOT_BACKWARD_COMPATIBLE = 'NOT_BACKWARD_COMPATIBLE'
+export const API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE = 'BACKWARD_COMPATIBLE'
+export const API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE = 'NOT_BACKWARD_COMPATIBLE'
 
-export type ApiCompatibilityScope = typeof BACKWARD_COMPATIBLE
-  | typeof NOT_BACKWARD_COMPATIBLE
+export type ApiCompatibilityKind = typeof API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE
+  | typeof API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE
 
-export type ApiCompatibilityScopeFunction = (path?: JsonPath, beforeJso?: unknown, afterJso?: unknown) => ApiCompatibilityScope | undefined
+export type ApiCompatibilityScopeFunction = (path?: JsonPath, beforeJso?: unknown, afterJso?: unknown) => ApiCompatibilityKind | undefined
 
 export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   mode?: CompareMode
@@ -151,7 +151,7 @@ export interface MergeState<T extends PropertyKey = string> {
   diffUniquenessCache: EvaluationCacheService,
   createdMergedJso: Set<JsonNode>,
   compareScope: CompareScope
-  apiCompatibilityScope: ApiCompatibilityScope
+  apiCompatibilityScope: ApiCompatibilityKind
 }
 
 export type JsonNode<Key extends PropertyKey = string> = Key extends (string | symbol) ? Record<string | symbol, unknown> : Record<number, unknown> | Array<unknown>

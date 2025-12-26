@@ -16,8 +16,9 @@ import { deepEqual } from 'fast-equals'
 import {
   AdapterContext,
   AdapterResolver,
-  ApiCompatibilityScope,
-  BACKWARD_COMPATIBLE,
+  API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE,
+  API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE,
+  ApiCompatibilityKind,
   CompareContext,
   CompareResult,
   CompareRule,
@@ -32,7 +33,6 @@ import {
   JsonNode,
   MergeState,
   NodeContext,
-  NOT_BACKWARD_COMPATIBLE,
   ValueTransformer,
 } from '../types'
 import { getObjectValue, isArray, isDiffAdd, isDiffRemove, isDiffReplace, isNumber, isObject, typeOf } from '../utils'
@@ -97,7 +97,7 @@ export const createChildContext = (
   mergedKey: PropertyKey,
   beforeChildKey: PropertyKey | undefined,
   afterChildKey: PropertyKey | undefined,
-  apiCompatibilityScope: ApiCompatibilityScope = ctx.apiCompatibilityScope,
+  apiCompatibilityScope: ApiCompatibilityKind = ctx.apiCompatibilityScope,
 ): CompareContext => {
   const { before, after, rules, options, scope } = ctx
   let beforeContext: NodeContext
@@ -168,7 +168,7 @@ export const getOrCreateChildDiffAdd = (diffUniquenessCache: EvaluationCacheServ
     string,
     CompareScope,
     typeof DiffAction.add,
-    ApiCompatibilityScope
+    ApiCompatibilityKind
   ], DiffAdd>([
     childCtx.after.value,
     buildPathsIdentifier(childCtx.after.declarativePaths),
@@ -191,7 +191,7 @@ export const getOrCreateChildDiffRemove = (diffUniquenessCache: EvaluationCacheS
     string,
     CompareScope,
     typeof DiffAction.remove,
-    ApiCompatibilityScope
+    ApiCompatibilityKind
   ], DiffRemove>([
     childCtx.before.value,
     buildPathsIdentifier(childCtx.before.declarativePaths),
@@ -307,7 +307,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       typeof beforeDeclarativePathsId,
       typeof afterDeclarativePathsId,
       CompareScope,
-      ApiCompatibilityScope
+      ApiCompatibilityKind
     ], ReusableMergeResult>([
       ctx.before.value,
       ctx.after.value,
@@ -359,7 +359,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
           once = true
 
           keyToRemove.forEach((keyToBefore) => {
-            const removalBwc = computedApiCompatibilityScope === NOT_BACKWARD_COMPATIBLE
+            const removalBwc = computedApiCompatibilityScope === API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE
               ? computedApiCompatibilityScope
               : apiCompatibilityScopeFunction?.([...crawlContext.path, keyToBefore], beforeValue[keyToBefore])
             const childCtx = createChildContext(ctx, keyToBefore, keyToBefore, undefined, removalBwc)
@@ -367,7 +367,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
           })
 
           keysToAdd.forEach((keyInAfter) => {
-            const additionBwc = computedApiCompatibilityScope === NOT_BACKWARD_COMPATIBLE
+            const additionBwc = computedApiCompatibilityScope === API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE
               ? computedApiCompatibilityScope
               : apiCompatibilityScopeFunction?.([...crawlContext.path, keyInAfter], undefined, afterJso[keyInAfter])
             const keyInMerge = isArray(mergedJsoValue) ? mergedJsoValue.length : keyInAfter
@@ -588,7 +588,7 @@ const compareInternal = (before: unknown, after: unknown, onDiff: DiffCallback, 
   const beforeRootJso = root.before
   const afterRootJso = root.after
 
-  const apiCompatibilityScope = options?.apiCompatibilityScopeFunction?.() || BACKWARD_COMPATIBLE
+  const apiCompatibilityScope = options?.apiCompatibilityScopeFunction?.() || API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE
 
   if (!isObject(beforeRootJso) || !isObject(afterRootJso)) {
     // TODO
