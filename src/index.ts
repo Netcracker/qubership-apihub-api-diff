@@ -28,7 +28,6 @@ export type {
   DiffRename,
   DiffMetaRecord,
 } from './types'
-export { ApiCompatibilityKind } from './types'
 
 export {
   isDiffAdd,

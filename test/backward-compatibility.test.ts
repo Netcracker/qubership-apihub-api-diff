@@ -1,4 +1,4 @@
-import { ApiCompatibilityKind, ApiCompatibilityScopeFunction, apiDiff, breaking, DiffAction, risky } from '../src'
+import { ApiCompatibilityScopeFunction, apiDiff, breaking, DiffAction, risky } from '../src'
 
 import singleMethodResponseBefore from './helper/resources/backward-compatibility/single-method-response/before.json'
 import singleMethodResponseAfter from './helper/resources/backward-compatibility/single-method-response/after.json'
@@ -24,6 +24,7 @@ import multipleMethodsRequestResponseRefAfter
   from './helper/resources/backward-compatibility/multiple-methods-request-response-ref/after.json'
 
 import { diffsMatcher } from './helper/matchers'
+import { NOT_BACKWARD_COMPATIBLE } from '../src/types'
 
 type PATH_ENTRY = [string, string, string]
 
@@ -37,16 +38,16 @@ function createApiCompatibilityScopeFunction(data: PATH_ENTRY[]): ApiCompatibili
     }
     return data.some(entry =>
       entry.every((el, i) => path?.[i] === el),
-    ) ? ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE : undefined
+    ) ? NOT_BACKWARD_COMPATIBLE : undefined
   }
 }
 
 describe('Backward compatibility tests', () => {
-  it('should diff from get has risky type with not backward compatible', async () => {
+  it('should diff from GET has risky type with not backward compatible', async () => {
     const { diffs } = apiDiff(
       singleMethodResponseBefore,
       singleMethodResponseAfter,
-      { apiCompatibilityScopeFunction: () => ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE },
+      { apiCompatibilityScopeFunction: () => NOT_BACKWARD_COMPATIBLE },
     )
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -61,7 +62,7 @@ describe('Backward compatibility tests', () => {
     const { diffs } = apiDiff(
       singleMethodRequestResponseBefore,
       singleMethodRequestResponseAfter,
-      { apiCompatibilityScopeFunction: () => ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE },
+      { apiCompatibilityScopeFunction: () => NOT_BACKWARD_COMPATIBLE },
     )
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({

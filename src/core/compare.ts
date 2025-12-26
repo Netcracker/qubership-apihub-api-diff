@@ -17,6 +17,7 @@ import {
   AdapterContext,
   AdapterResolver,
   ApiCompatibilityScope,
+  BACKWARD_COMPATIBLE,
   CompareContext,
   CompareResult,
   CompareRule,
@@ -31,7 +32,7 @@ import {
   JsonNode,
   MergeState,
   NodeContext,
-  ApiCompatibilityKind,
+  NOT_BACKWARD_COMPATIBLE,
   ValueTransformer,
 } from '../types'
 import { getObjectValue, isArray, isDiffAdd, isDiffRemove, isDiffReplace, isNumber, isObject, typeOf } from '../utils'
@@ -358,7 +359,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
           once = true
 
           keyToRemove.forEach((keyToBefore) => {
-            const removalBwc = computedApiCompatibilityScope === ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE
+            const removalBwc = computedApiCompatibilityScope === NOT_BACKWARD_COMPATIBLE
               ? computedApiCompatibilityScope
               : apiCompatibilityScopeFunction?.([...crawlContext.path, keyToBefore], beforeValue[keyToBefore])
             const childCtx = createChildContext(ctx, keyToBefore, keyToBefore, undefined, removalBwc)
@@ -366,7 +367,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
           })
 
           keysToAdd.forEach((keyInAfter) => {
-            const additionBwc = computedApiCompatibilityScope === ApiCompatibilityKind.NOT_BACKWARD_COMPATIBLE
+            const additionBwc = computedApiCompatibilityScope === NOT_BACKWARD_COMPATIBLE
               ? computedApiCompatibilityScope
               : apiCompatibilityScopeFunction?.([...crawlContext.path, keyInAfter], undefined, afterJso[keyInAfter])
             const keyInMerge = isArray(mergedJsoValue) ? mergedJsoValue.length : keyInAfter
@@ -587,6 +588,8 @@ const compareInternal = (before: unknown, after: unknown, onDiff: DiffCallback, 
   const beforeRootJso = root.before
   const afterRootJso = root.after
 
+  const apiCompatibilityScope = options?.apiCompatibilityScopeFunction?.() || BACKWARD_COMPATIBLE
+
   if (!isObject(beforeRootJso) || !isObject(afterRootJso)) {
     // TODO
     throw new Error('Not ready to compare primitive')
@@ -603,7 +606,7 @@ const compareInternal = (before: unknown, after: unknown, onDiff: DiffCallback, 
     diffUniquenessCache: options.diffUniquenessCache,
     createdMergedJso: options.createdMergedJso,
     compareScope: options.compareScope,
-    apiCompatibilityScope: ApiCompatibilityKind.BACKWARD_COMPATIBLE,
+    apiCompatibilityScope: apiCompatibilityScope,
   }
   syncCrawl<MergeState, CompareRule>(before, [hook], { state: rootState, rules: options.rules })
   return root.merged[JSO_ROOT]

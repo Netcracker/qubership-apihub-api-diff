@@ -83,12 +83,11 @@ export const COMPARE_MODE_OPERATION = 'operation'
 
 export type CompareMode = typeof COMPARE_MODE_DEFAULT | typeof COMPARE_MODE_OPERATION
 
-export enum ApiCompatibilityKind {
-  BACKWARD_COMPATIBLE = 'BACKWARD_COMPATIBLE',
-  NOT_BACKWARD_COMPATIBLE = 'NOT_BACKWARD_COMPATIBLE'
-}
+export const BACKWARD_COMPATIBLE = 'BACKWARD_COMPATIBLE'
+export const NOT_BACKWARD_COMPATIBLE = 'NOT_BACKWARD_COMPATIBLE'
 
-export type ApiCompatibilityScope = keyof typeof ApiCompatibilityKind
+export type ApiCompatibilityScope = typeof BACKWARD_COMPATIBLE
+  | typeof NOT_BACKWARD_COMPATIBLE
 
 export type ApiCompatibilityScopeFunction = (path?: JsonPath, beforeJso?: unknown, afterJso?: unknown) => ApiCompatibilityScope | undefined
 
