@@ -17,7 +17,6 @@ import {
   AdapterContext,
   AdapterResolver,
   API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE,
-  API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE,
   ApiCompatibilityKind,
   CompareContext,
   CompareResult,
@@ -35,7 +34,17 @@ import {
   NodeContext,
   ValueTransformer,
 } from '../types'
-import { getObjectValue, isArray, isDiffAdd, isDiffRemove, isDiffReplace, isNumber, isObject, typeOf } from '../utils'
+import {
+  getObjectValue,
+  isArray,
+  isDiffAdd,
+  isDiffRemove,
+  isDiffReplace,
+  isNumber,
+  isObject,
+  prepareAfterForPerOperationPathDiffs,
+  typeOf,
+} from '../utils'
 import { ANY_COMBINER_PATH, DiffAction, JSO_ROOT } from './constants'
 import { addDiffObjectToContainer, createDiffEntry, diffFactory, NEVER_KEY } from './diff'
 import { arrayMappingResolver, objectMappingResolver } from './mapping'
@@ -516,11 +525,15 @@ function addNormalizedValuesToDenormalizedDiff(
 }
 
 export const compare = (before: unknown, after: unknown, options: InternalCompareOptions): CompareResult => {
+  const preparedAfter = options.openApiPathItemPerOperationDiffs
+    ? prepareAfterForPerOperationPathDiffs(before, after)
+    : after
+
   const beforeFullyResolved = normalize(before, {
     ...options,
     source: options.beforeSource,
   })
-  const afterFullyResolved = normalize(after, {
+  const afterFullyResolved = normalize(preparedAfter, {
     ...options,
     source: options.afterSource,
   })

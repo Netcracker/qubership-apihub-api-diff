@@ -339,3 +339,76 @@ export const extractOperationBasePath = (servers?: OpenAPIV3.ServerObject[]): st
     return ''
   }
 }
+
+const HTTP_METHODS_SET = new Set(Object.values(OpenAPIV3.HttpMethods) as string[])
+
+const isValidHttpMethod = (method: string): method is OpenAPIV3.HttpMethods => {
+  return HTTP_METHODS_SET.has(method)
+}
+
+/**
+ * OpenAPI-specific helper.
+ *
+ * When a whole PathItem (e.g. `/pets`) is removed, we generate
+ * separate diffs for each HTTP operation (get/post/...) instead of a single
+ * diff for the whole PathItem.
+ *
+ * To achieve this we:
+ * 1. Detect removed paths that actually contain HTTP operations.
+ * 2. Synthesize an empty PathItem for the same key in `after`.
+ *
+ * The generic compare engine will then naturally walk into the PathItem and
+ * produce per-operation diffs.
+ */
+export function prepareAfterForPerOperationPathDiffs(before: unknown, after: unknown): unknown {
+  if (!isObject(before) || !isObject(after)) {
+    return after
+  }
+
+  const beforeAsRecord = before as Record<PropertyKey, unknown>
+  const afterAsRecord = after as Record<PropertyKey, unknown>
+
+  const beforePaths = beforeAsRecord['paths']
+  const afterPaths = afterAsRecord['paths']
+
+  if (!isObject(beforePaths) || !isObject(afterPaths)) {
+    return after
+  }
+
+  const beforePathsRecord = beforePaths as Record<string, unknown>
+  const afterPathsRecord = afterPaths as Record<string, unknown>
+
+  let changed = false
+  const newAfterPaths: Record<string, unknown> = {...afterPathsRecord}
+
+  for (const pathKey of Object.keys(beforePathsRecord)) {
+    if (pathKey in newAfterPaths) {
+      continue
+    }
+
+    const beforePathItem = beforePathsRecord[pathKey]
+    if (!isObject(beforePathItem)) {
+      continue
+    }
+
+    const beforePathItemRecord = beforePathItem as Record<string, unknown>
+    const hasHttpOperations = Object.keys(beforePathItemRecord)
+      .some(propertyKey => isValidHttpMethod(propertyKey))
+
+    if (!hasHttpOperations) {
+      continue
+    }
+
+    newAfterPaths[pathKey] = {}
+    changed = true
+  }
+
+  if (!changed) {
+    return after
+  }
+
+  return {
+    ...afterAsRecord,
+    paths: newAfterPaths,
+  }
+}

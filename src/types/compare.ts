@@ -110,6 +110,14 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
    * `undefined` to inherit the parent scope.
    */
   apiCompatibilityScopeFunction?: ApiCompatibilityScopeFunction
+  /**
+   * For OpenAPI specs:
+   * If a whole PathItem is removed, generate separate diffs for each HTTP operation (get/post/...)
+   * instead of a single diff for the whole PathItem.
+   * 
+   * Default: `false`
+   */
+  openApiPathItemPerOperationDiffs?: boolean
 }
 
 export type DiffCallback = (diff: Diff/*, ctx: CompareContext*/) => void
