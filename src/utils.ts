@@ -342,73 +342,63 @@ export const extractOperationBasePath = (servers?: OpenAPIV3.ServerObject[]): st
 
 const HTTP_METHODS_SET = new Set(Object.values(OpenAPIV3.HttpMethods) as string[])
 
-const isValidHttpMethod = (method: string): method is OpenAPIV3.HttpMethods => {
+export const isValidHttpMethod = (method: string): method is OpenAPIV3.HttpMethods => {
   return HTTP_METHODS_SET.has(method)
 }
 
 /**
- * OpenAPI-specific helper.
- *
- * When a whole PathItem (e.g. `/pets`) is removed, we generate
- * separate diffs for each HTTP operation (get/post/...) instead of a single
- * diff for the whole PathItem.
+ * Special handling for OpenAPI `paths`:
+ * when a whole PathItem (e.g. `/pets`) is removed, we want to
+ * generate separate diffs for each HTTP operation (get/post/...)
+ * instead of a single diff for the whole PathItem.
  *
  * To achieve this we:
  * 1. Detect removed paths that actually contain HTTP operations.
- * 2. Synthesize an empty PathItem for the same key in `after`.
- *
- * The generic compare engine will then naturally walk into the PathItem and
- * produce per-operation diffs.
+ * 2. Synthesize an empty PathItem for the same key in `afterValue`.
+ * 3. Mark that key as "mapped" so the comparer will go inside it.
+ * 4. Remove that key from `removedKeys` so no PathItem-level diff is created.
  */
-export function prepareAfterForPerOperationPathDiffs(before: unknown, after: unknown): unknown {
-  if (!isObject(before) || !isObject(after)) {
-    return after
+export function handleOpenApiPathItemPerOperationDiffs(
+  path: JsonPath | undefined,
+  beforeValue: unknown,
+  afterValue: unknown,
+  removedKeys: PropertyKey[],
+  mappedKeys: Record<PropertyKey, PropertyKey>
+): PropertyKey[] {
+  if (path?.length !== 1 || path[0] !== 'paths') {
+    return removedKeys
   }
 
-  const beforeAsRecord = before as Record<PropertyKey, unknown>
-  const afterAsRecord = after as Record<PropertyKey, unknown>
+  const removedPathItemsWithOperations: string[] = []
+  for (const removedKey of removedKeys as string[]) {
+    const beforePaths = beforeValue as Record<string, unknown>
+    const beforePathItem = beforePaths[removedKey]
 
-  const beforePaths = beforeAsRecord['paths']
-  const afterPaths = afterAsRecord['paths']
-
-  if (!isObject(beforePaths) || !isObject(afterPaths)) {
-    return after
-  }
-
-  const beforePathsRecord = beforePaths as Record<string, unknown>
-  const afterPathsRecord = afterPaths as Record<string, unknown>
-
-  let changed = false
-  const newAfterPaths: Record<string, unknown> = {...afterPathsRecord}
-
-  for (const pathKey of Object.keys(beforePathsRecord)) {
-    if (pathKey in newAfterPaths) {
-      continue
-    }
-
-    const beforePathItem = beforePathsRecord[pathKey]
     if (!isObject(beforePathItem)) {
       continue
     }
 
-    const beforePathItemRecord = beforePathItem as Record<string, unknown>
-    const hasHttpOperations = Object.keys(beforePathItemRecord)
+    const hasHttpOperations = Object.keys(beforePathItem as Record<string, unknown>)
       .some(propertyKey => isValidHttpMethod(propertyKey))
 
     if (!hasHttpOperations) {
       continue
     }
 
-    newAfterPaths[pathKey] = {}
-    changed = true
+    removedPathItemsWithOperations.push(removedKey)
+
+    const afterPaths = afterValue as Record<string, unknown>
+    if (!isObject(afterPaths[removedKey])) {
+      afterPaths[removedKey] = {}
+    }
+
+    (mappedKeys as Record<string, PropertyKey>)[removedKey] = removedKey
   }
 
-  if (!changed) {
-    return after
+  if (removedPathItemsWithOperations.length > 0) {
+    return (removedKeys as string[])
+      .filter(key => !removedPathItemsWithOperations.includes(key))
   }
 
-  return {
-    ...afterAsRecord,
-    paths: newAfterPaths,
-  }
+  return removedKeys
 }

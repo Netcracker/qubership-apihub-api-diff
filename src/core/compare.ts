@@ -36,13 +36,13 @@ import {
 } from '../types'
 import {
   getObjectValue,
+  handleOpenApiPathItemPerOperationDiffs,
   isArray,
   isDiffAdd,
   isDiffRemove,
   isDiffReplace,
   isNumber,
   isObject,
-  prepareAfterForPerOperationPathDiffs,
   typeOf,
 } from '../utils'
 import { ANY_COMBINER_PATH, DiffAction, JSO_ROOT } from './constants'
@@ -241,7 +241,6 @@ const adaptValues = (beforeJso: JsonNode, beforeKey: PropertyKey, afterJso: Json
   })
   return [beforeValueAdapted, afterValueAdapted]
 }
-
 const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions): SyncCrawlHook<MergeState, CompareRule> => {
   const { metaKey, apiCompatibilityScopeFunction } = options
   const diffs: Set<Diff> = new Set()
@@ -351,9 +350,20 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
         const mapKeys = mapping ?? (isArray(beforeValue) ? arrayMappingResolver : objectMappingResolver)
         const {
           added: addedKeys,
-          removed: removedKeys,
+          removed: initialRemovedKeys,
           mapped: mappedKeys,
         } = mapKeys(beforeValue as any, afterValue as any, ctx)
+
+        const removedKeys = options.openApiPathItemPerOperationDiffs
+          ? handleOpenApiPathItemPerOperationDiffs(
+            crawlContext.path,
+            beforeValue,
+            afterValue,
+            initialRemovedKeys,
+            mappedKeys,
+          )
+          : initialRemovedKeys
+
         const jsoDiffEntries: DiffEntry<Diff>[] = []
         const keyToRemove = removedKeys
           .filter(key => !isDefaultValue(beforeValue, key, options.defaultsFlag))
@@ -525,15 +535,11 @@ function addNormalizedValuesToDenormalizedDiff(
 }
 
 export const compare = (before: unknown, after: unknown, options: InternalCompareOptions): CompareResult => {
-  const preparedAfter = options.openApiPathItemPerOperationDiffs
-    ? prepareAfterForPerOperationPathDiffs(before, after)
-    : after
-
   const beforeFullyResolved = normalize(before, {
     ...options,
     source: options.beforeSource,
   })
-  const afterFullyResolved = normalize(preparedAfter, {
+  const afterFullyResolved = normalize(after, {
     ...options,
     source: options.afterSource,
   })
