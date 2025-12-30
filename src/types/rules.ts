@@ -59,6 +59,7 @@ export type AdapterResolver<T = unknown> = (value: T, reference: T, ctx: Adapter
 export type MappingResolver<T extends PropertyKey> = T extends (string | symbol) ? MappingObjectResolver<T> : MappingArrayResolver
 export type MappingObjectResolver<T extends Exclude<PropertyKey, number>> = (before: Record<T, unknown>, after: Record<T, unknown>, ctx: CompareContext) => MapKeysResult<T>
 export type MappingArrayResolver = (before: Array<unknown>, after: Array<unknown>, ctx: CompareContext) => MapKeysResult<number>
+export type SyntheticDiffsResolver<T extends PropertyKey> = (mapKeysResult: MapKeysResult<T>, before: Record<T, unknown>, after: Record<T, unknown>) => void
 
 export type DescriptionTemplate = string
 export type DescriptionTemplates = DescriptionTemplate[]
@@ -83,6 +84,7 @@ export const DIFF_DESCRIPTION_PARAM_CALCULATOR_RULE = 'descriptionParamCalculato
 export const IGNORE_DIFFERENCE_IN_KEYS_RULE = 'ignoreKeyDifference'
 //not happy to do this, but introduce covariant support on core level too hard. If you can change it, feel free
 export const START_NEW_COMPARE_SCOPE_RULE = 'newCompareScope'
+export const SYNTHETIC_DIFF = 'syntheticDiffs'
 
 export type CompareRule = {
   [CLASSIFIER_RULE]?: ClassifyRule                           // classifier for current node
@@ -93,6 +95,7 @@ export type CompareRule = {
   [DIFF_DESCRIPTION_PARAM_CALCULATOR_RULE]?: DiffTemplateParamsCalculator               // rule for description calculation
   [IGNORE_DIFFERENCE_IN_KEYS_RULE]?: boolean                 // rule for ignore keys as values, it is relevant for arrays as sets
   [START_NEW_COMPARE_SCOPE_RULE]?: CompareScope // rule for star a new scope
+  [SYNTHETIC_DIFF]?: SyntheticDiffsResolver<PropertyKey>
 }
 
 export type CompareRules = CrawlRules<CompareRule>

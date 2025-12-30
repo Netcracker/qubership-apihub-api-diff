@@ -58,6 +58,7 @@ import {
   paramMappingResolver,
   pathMappingResolver,
   singleOperationPathMappingResolver,
+  syntheticDiffsResolver,
 } from './openapi3.mapping'
 import { isResponseSchema } from './openapi3.utils'
 import { apihubCaseInsensitiveKeyMappingResolver } from './mapping'
@@ -502,6 +503,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/paths': {
       $: allUnclassified,
       mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
+      syntheticDiffs: options.operationSyntheticDiffs && syntheticDiffsResolver,
       '/*': pathItemObjectRules(options),
       ...openApiSpecificationExtensionRulesFunction(),
     },

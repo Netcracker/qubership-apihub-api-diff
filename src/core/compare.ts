@@ -34,17 +34,7 @@ import {
   NodeContext,
   ValueTransformer,
 } from '../types'
-import {
-  getObjectValue,
-  handleOpenApiPathItemPerOperationDiffs,
-  isArray,
-  isDiffAdd,
-  isDiffRemove,
-  isDiffReplace,
-  isNumber,
-  isObject,
-  typeOf,
-} from '../utils'
+import { getObjectValue, isArray, isDiffAdd, isDiffRemove, isDiffReplace, isNumber, isObject, typeOf } from '../utils'
 import { ANY_COMBINER_PATH, DiffAction, JSO_ROOT } from './constants'
 import { addDiffObjectToContainer, createDiffEntry, diffFactory, NEVER_KEY } from './diff'
 import { arrayMappingResolver, objectMappingResolver } from './mapping'
@@ -257,6 +247,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       compare,
       mapping,
       ignoreKeyDifference,
+      syntheticDiffs,
       newCompareScope,
     } = rules
     const {
@@ -348,21 +339,13 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       if (isObject(beforeValue) && isObject(afterValue)) {
         const mergedJsoValue: JsonNode = isArray(beforeValue) ? [] as JsonNode<number> : {} as JsonNode<string | symbol>
         const mapKeys = mapping ?? (isArray(beforeValue) ? arrayMappingResolver : objectMappingResolver)
+        const mappingData = mapKeys(beforeValue as any, afterValue as any, ctx)
+        syntheticDiffs && syntheticDiffs(mappingData, beforeValue, afterValue)
         const {
           added: addedKeys,
-          removed: initialRemovedKeys,
+          removed: removedKeys,
           mapped: mappedKeys,
-        } = mapKeys(beforeValue as any, afterValue as any, ctx)
-
-        const removedKeys = options.openApiPathItemPerOperationDiffs
-          ? handleOpenApiPathItemPerOperationDiffs(
-            crawlContext.path,
-            beforeValue,
-            afterValue,
-            initialRemovedKeys,
-            mappedKeys,
-          )
-          : initialRemovedKeys
+        } = mappingData
 
         const jsoDiffEntries: DiffEntry<Diff>[] = []
         const keyToRemove = removedKeys
