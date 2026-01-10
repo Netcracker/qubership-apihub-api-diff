@@ -1,8 +1,8 @@
 import { loadYaml, OriginLeafs } from '@netcracker/qubership-apihub-api-unifier'
 import {
   getCompatibilitySuite,
-  getOpenApiCompatibilitySuiteVersionPairs,
-  OpenApiVersionPair,
+  getCompatibilitySuiteSpecificationVersionPairs,
+  SpecificationVersionPair,
   TEST_SPEC_TYPE_GRAPH_QL,
   TEST_SPEC_TYPE_OPEN_API,
   TestSpecType,
@@ -16,7 +16,7 @@ import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG, TEST_SYNTHETIC_TITLE_FLAG } from '..
 
 const toMajorMinor = (v: string): string => (v.startsWith('3.1') ? '3.1' : '3.0')
 
-const pairTag = (pair: OpenApiVersionPair): string => `${toMajorMinor(pair[0])}-${toMajorMinor(pair[1])}`
+const pairTag = (pair: SpecificationVersionPair): string => `${toMajorMinor(pair[0])}-${toMajorMinor(pair[1])}`
 
 type OpenApiVersionPairCaseContext = {
   suiteId: string
@@ -63,7 +63,7 @@ function runCaseForOpenApiVersionPairs(
   testId: string,
   fn: (ctx: OpenApiVersionPairCaseContext) => Promise<void> | void,
 ): void {
-  const pairs = getOpenApiCompatibilitySuiteVersionPairs(suiteId, testId)
+  const pairs = getCompatibilitySuiteSpecificationVersionPairs(TEST_SPEC_TYPE_OPEN_API, suiteId, testId)
 
   if (pairs.length === 0) {
     jestTest(`${testId} (no OpenAPI version pairs)`, () => {
@@ -110,16 +110,16 @@ export const TEST_DEFAULTS_DECLARATION_PATHS = [[TEST_DEFAULTS_ORIGINS[0].value]
  * @param suiteId - Suite identifier (e.g., 'parameters-schema')
  * @param testId - Test case identifier (e.g., 'add-union-type')
  * @param type - Spec type (defaults to OpenAPI)
- * @param openApiVersionPair - Optional OpenAPI version pair for multi-pair cases
+ * @param specificationVersionPair - Optional specification version pair for multi-pair cases (OpenAPI only)
  * @returns Array of diffs
  */
 export async function compareFiles(
   suiteId: string,
   testId: string,
   type: TestSpecType = TEST_SPEC_TYPE_OPEN_API,
-  openApiVersionPair?: OpenApiVersionPair,
+  specificationVersionPair?: SpecificationVersionPair,
 ): Promise<Array<Diff>> {
-  const result = await compareFilesWithMerge(suiteId, testId, type, openApiVersionPair)
+  const result = await compareFilesWithMerge(suiteId, testId, type, specificationVersionPair)
   return result.diffs
 }
 
@@ -128,16 +128,16 @@ export async function compareFiles(
  * @param suiteId - Suite identifier (e.g., 'parameters-schema')
  * @param testId - Test case identifier (e.g., 'add-union-type')
  * @param type - Spec type (defaults to OpenAPI)
- * @param openApiVersionPair - Optional OpenAPI version pair for multi-pair cases
+ * @param specificationVersionPair - Optional specification version pair for multi-pair cases (OpenAPI only)
  * @returns Full compare result including diffs and merge info
  */
 export async function compareFilesWithMerge(
   suiteId: string,
   testId: string,
   type: TestSpecType = TEST_SPEC_TYPE_OPEN_API,
-  openApiVersionPair?: OpenApiVersionPair,
+  specificationVersionPair?: SpecificationVersionPair,
 ): Promise<CompareResult> {
-  const [before, after] = getCompatibilitySuite(type, suiteId, testId, openApiVersionPair)
+  const [before, after] = getCompatibilitySuite(type, suiteId, testId, specificationVersionPair)
 
   let beforeObject: object
   let afterObject: object
