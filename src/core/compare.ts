@@ -247,7 +247,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       compare,
       mapping,
       ignoreKeyDifference,
-      syntheticDiffs,
+      syntheticDiffs: mappingSyntheticDiffsPostProcessor,
       newCompareScope,
     } = rules
     const {
@@ -340,7 +340,10 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
         const mergedJsoValue: JsonNode = isArray(beforeValue) ? [] as JsonNode<number> : {} as JsonNode<string | symbol>
         const mapKeys = mapping ?? (isArray(beforeValue) ? arrayMappingResolver : objectMappingResolver)
         const mappingData = mapKeys(beforeValue as any, afterValue as any, ctx)
-        syntheticDiffs && syntheticDiffs(mappingData, beforeValue, afterValue)
+
+        // Adding synthetic diffs if necessary
+        mappingSyntheticDiffsPostProcessor?.(mappingData, beforeValue, afterValue)
+
         const {
           added: addedKeys,
           removed: removedKeys,

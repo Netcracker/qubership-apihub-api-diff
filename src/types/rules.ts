@@ -59,7 +59,8 @@ export type AdapterResolver<T = unknown> = (value: T, reference: T, ctx: Adapter
 export type MappingResolver<T extends PropertyKey> = T extends (string | symbol) ? MappingObjectResolver<T> : MappingArrayResolver
 export type MappingObjectResolver<T extends Exclude<PropertyKey, number>> = (before: Record<T, unknown>, after: Record<T, unknown>, ctx: CompareContext) => MapKeysResult<T>
 export type MappingArrayResolver = (before: Array<unknown>, after: Array<unknown>, ctx: CompareContext) => MapKeysResult<number>
-export type SyntheticDiffsResolver<T extends PropertyKey> = (mapKeysResult: MapKeysResult<T>, before: Record<T, unknown>, after: Record<T, unknown>) => void
+export type SyntheticDiffsResolver<T extends PropertyKey> =
+  (mapKeysResult: MapKeysResult<T>, before: Record<T, unknown>, after: Record<T, unknown>) => void
 
 export type DescriptionTemplate = string
 export type DescriptionTemplates = DescriptionTemplate[]

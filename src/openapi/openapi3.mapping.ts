@@ -230,7 +230,6 @@ export function hidePathParamNames(path: string): string {
 const PATH_PARAMETER_REGEXP = /\{.*?\}/g
 const PATH_PARAM_UNIFIED_PLACEHOLDER = '*'
 
-
 /**
  * Special resolver for OpenAPI `paths`:
  * when a whole PathItem (e.g. `/pets`) is removed, we want to
@@ -246,9 +245,9 @@ const PATH_PARAM_UNIFIED_PLACEHOLDER = '*'
 export const syntheticDiffsResolver: SyntheticDiffsResolver<string> = <T extends Exclude<PropertyKey, number>>(
   mapKeysResult: MapKeysResult<T>,
   beforeValue: Record<T, unknown>,
-  afterValue: Record<T, unknown>
+  afterValue: Record<T, unknown>,
 ): void => {
-  const {removed: removedKeys, mapped:mappedKeys } = mapKeysResult
+  const { removed: removedKeys, mapped: mappedKeys } = mapKeysResult
   const removedPathItemsWithOperations: string[] = []
   for (const removedKey of removedKeys as string[]) {
     const beforePaths = beforeValue as Record<string, unknown>
