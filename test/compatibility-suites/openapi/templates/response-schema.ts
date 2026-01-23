@@ -1,11 +1,14 @@
-import { compareFiles, TEST_DEFAULTS_DECLARATION_PATHS } from '../../utils'
-import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
-import { annotation, breaking, DiffAction, nonBreaking } from '../../../../src'
-import { diffsMatcher, expectOpenApiVersionChange } from '../../../helper/matchers'
 import { JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY } from '@netcracker/qubership-apihub-api-unifier'
+import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
+import { annotation, breaking, DiffAction, nonBreaking, risky } from '../../../../src'
+import { diffsMatcher, expectOpenApiVersionChange } from '../../../helper/matchers'
+import { compareFiles, compareFilesWithMerge, TEST_DEFAULTS_DECLARATION_PATHS } from '../../utils'
 
-export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): void {
-  describe('Common schema tests', () => {
+/**
+ * Runs common response-schema tests for OpenAPI 3.0 suites.
+ */
+export function runCommonResponseSchemaTests(suiteId: string, commonPath: JsonPath): void {
+  describe('Common response schema tests', () => {
     test('Add schema title', async () => {
       const testId = 'add-schema-title'
       const result = await compareFiles(suiteId, testId)
@@ -43,7 +46,6 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
       ]))
     })
 
-    //todo TEMP SKIP where are redundant diffs with exclusiveMin(max)
     test('Update schema type', async () => {
       const testId = 'update-schema-type'
       const result = await compareFiles(suiteId, testId)
@@ -60,7 +62,6 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
     test('Update schema type from specific type to any type', async () => {
       const testId = 'update-schema-type-from-specific-type-to-any-type'
       const result = await compareFiles(suiteId, testId)
-
       expect(result).toEqual(diffsMatcher([
         expect.objectContaining({
           action: DiffAction.replace,
@@ -68,7 +69,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           afterValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
           beforeDeclarationPaths: [[...commonPath, 'type']],
           afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -79,41 +80,49 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
       expect(result).toEqual([])
     })
 
-    test.caseForOpenApiVersionPairs('mark-schema-value-as-nullable', suiteId, async ({ beforeVersion, afterVersion, diffs }) => {
-      expect(diffs).toEqual(diffsMatcher([
-        expectOpenApiVersionChange(beforeVersion, afterVersion),
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-          afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'nullable']],
-          type: nonBreaking,
-        }),
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'nullable']],
-          afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'nullable']],
-          type: nonBreaking,
-        }),
-      ]))
-    })
+    test.caseForOpenApiVersionPairs(
+      'mark-schema-value-as-nullable',
+      suiteId,
+      async ({ beforeVersion, afterVersion, diffs }) => {
+        expect(diffs).toEqual(diffsMatcher([
+          expectOpenApiVersionChange(beforeVersion, afterVersion),
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
+            afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'nullable']],
+            type: breaking,
+          }),
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'nullable']],
+            afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'nullable']],
+            type: breaking,
+          }),
+        ]))
+      },
+    )
 
-    test.caseForOpenApiVersionPairs('mark-schema-value-as-non-nullable', suiteId, async ({ beforeVersion, afterVersion, diffs }) => {
-      expect(diffs).toEqual(diffsMatcher([
-        expectOpenApiVersionChange(beforeVersion, afterVersion),
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'nullable']],
-          afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-          type: breaking,
-        }),
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'nullable']],
-          afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'nullable']],
-          type: breaking,
-        }),
-      ]))
-    })
+    test.caseForOpenApiVersionPairs(
+      'mark-schema-value-as-non-nullable',
+      suiteId,
+      async ({ beforeVersion, afterVersion, diffs }) => {
+        expect(diffs).toEqual(diffsMatcher([
+          expectOpenApiVersionChange(beforeVersion, afterVersion),
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'nullable']],
+            afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
+            type: nonBreaking,
+          }),
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'nullable']],
+            afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'nullable']],
+            type: nonBreaking,
+          }),
+        ]))
+      },
+    )
 
     test('Add enum', async () => {
       const testId = 'add-enum'
@@ -122,7 +131,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'enum']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -134,7 +143,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'enum']],
-          type: nonBreaking,
+          type: risky,
         }),
       ]))
     })
@@ -146,7 +155,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'enum', 2]],
-          type: nonBreaking,
+          type: risky,
         }),
       ]))
     })
@@ -155,18 +164,17 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
       const testId = 'update-enum-value'
       const result = await compareFiles(suiteId, testId)
       expect(result).toEqual(diffsMatcher([
-          expect.objectContaining({
-            action: DiffAction.remove,
-            beforeDeclarationPaths: [[...commonPath, 'enum', 1]],
-            type: breaking,
-          }),
-          expect.objectContaining({
-            action: DiffAction.add,
-            afterDeclarationPaths: [[...commonPath, 'enum', 1]],
-            type: nonBreaking,
-          }),
-        ],
-      ))
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [[...commonPath, 'enum', 1]],
+          type: nonBreaking,
+        }),
+        expect.objectContaining({
+          action: DiffAction.add,
+          afterDeclarationPaths: [[...commonPath, 'enum', 1]],
+          type: risky,
+        }),
+      ]))
     })
 
     test('Remove enum value', async () => {
@@ -176,7 +184,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'enum', 2]],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -188,7 +196,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'format']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -213,7 +221,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'format']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -226,13 +234,13 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'minLength']],
           afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'minLength']],
-          type: breaking,
+          type: nonBreaking,
         }),
         expect.objectContaining({
           action: DiffAction.replace,
           beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
           afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'minLength']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -245,7 +253,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'minLength']],
           afterDeclarationPaths: [[...commonPath, 'minLength']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -258,7 +266,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'minLength']],
           afterDeclarationPaths: [[...commonPath, 'minLength']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -271,14 +279,14 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'minLength']],
           afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'minLength']],
-          type: nonBreaking,
+          type: breaking,
         }),
         expect.objectContaining({
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'minLength']],
           afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-          type: nonBreaking,
-        })
+          type: breaking,
+        }),
       ]))
     })
 
@@ -289,7 +297,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'maxLength']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -302,7 +310,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'maxLength']],
           afterDeclarationPaths: [[...commonPath, 'maxLength']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -315,7 +323,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'maxLength']],
           afterDeclarationPaths: [[...commonPath, 'maxLength']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -327,7 +335,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'maxLength']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -339,7 +347,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'pattern']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -364,7 +372,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'pattern']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -376,7 +384,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'format']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -401,7 +409,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'format']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -413,7 +421,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'minimum']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -426,7 +434,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'minimum']],
           afterDeclarationPaths: [[...commonPath, 'minimum']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -439,7 +447,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'minimum']],
           afterDeclarationPaths: [[...commonPath, 'minimum']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -451,7 +459,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'minimum']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -459,18 +467,19 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
     test('Mark minimum value as exclusive for number property', async () => {
       const testId = 'mark-minimum-value-as-exclusive-for-number-property'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
+      expect(result).toEqual(diffsMatcher(
+        [
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
             afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'exclusiveMinimum']],
-            type: breaking,
+            type: nonBreaking,
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMinimum']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMinimum']],
-            type: breaking,
+            type: nonBreaking,
           }),
         ],
       ))
@@ -479,18 +488,19 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
     test('Mark minimum value as inclusive for number property', async () => {
       const testId = 'mark-minimum-value-as-inclusive-for-number-property'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
+      expect(result).toEqual(diffsMatcher(
+        [
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'exclusiveMinimum']],
             afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-            type: nonBreaking,
+            type: breaking,
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMinimum']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMinimum']],
-            type: nonBreaking,
+            type: breaking,
           }),
         ],
       ))
@@ -503,7 +513,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'maximum']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -516,7 +526,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'maximum']],
           afterDeclarationPaths: [[...commonPath, 'maximum']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -529,7 +539,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'maximum']],
           afterDeclarationPaths: [[...commonPath, 'maximum']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -541,7 +551,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'maximum']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -549,18 +559,19 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
     test('Mark maximum value as exclusive for number property', async () => {
       const testId = 'mark-maximum-value-as-exclusive-for-number-property'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
+      expect(result).toEqual(diffsMatcher(
+        [
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
             afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'exclusiveMaximum']],
-            type: breaking,
+            type: nonBreaking,
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMaximum']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMaximum']],
-            type: breaking,
+            type: nonBreaking,
           }),
         ],
       ))
@@ -569,18 +580,19 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
     test('Mark maximum value as inclusive for number property', async () => {
       const testId = 'mark-maximum-value-as-inclusive-for-number-property'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
+      expect(result).toEqual(diffsMatcher(
+        [
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'exclusiveMaximum']],
             afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-            type: nonBreaking,
+            type: breaking,
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMaximum']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMaximum']],
-            type: nonBreaking,
+            type: breaking,
           }),
         ],
       ))
@@ -600,12 +612,12 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
-            type: breaking,
+            type: nonBreaking,
           }),
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
-            type: breaking,
+            type: nonBreaking,
           }),
         ],
       ))
@@ -618,7 +630,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'multipleOf']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -643,7 +655,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'multipleOf']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -656,8 +668,8 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
           afterDeclarationPaths: [[...commonPath, 'minItems']],
-          type: breaking,
-        })
+          type: nonBreaking,
+        }),
       ]))
     })
 
@@ -669,7 +681,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'minItems']],
           afterDeclarationPaths: [[...commonPath, 'minItems']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -682,7 +694,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'minItems']],
           afterDeclarationPaths: [[...commonPath, 'minItems']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -695,8 +707,8 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'minItems']],
           afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-          type: nonBreaking,
-        })
+          type: breaking,
+        }),
       ]))
     })
 
@@ -707,7 +719,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'maxItems']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -720,7 +732,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'maxItems']],
           afterDeclarationPaths: [[...commonPath, 'maxItems']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -733,7 +745,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'maxItems']],
           afterDeclarationPaths: [[...commonPath, 'maxItems']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -745,7 +757,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'maxItems']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -753,39 +765,43 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
     test('Prohibit non-unique items for array property', async () => {
       const testId = 'prohibit-non-unique-items-for-array-property'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-          afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'uniqueItems']],
-          type: breaking,
-        }),
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
-          afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
-          type: breaking,
-        }),
-      ]))
+      expect(result).toEqual(diffsMatcher(
+        [
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
+            afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'uniqueItems']],
+            type: nonBreaking,
+          }),
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
+            afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
+            type: nonBreaking,
+          }),
+        ],
+      ))
     })
 
     test('Allow non-unique items for array property', async () => {
       const testId = 'allow-non-unique-items-for-array-property'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'uniqueItems']],
-          afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-          type: nonBreaking,
-        }),
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
-          afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
-          type: nonBreaking,
-        }),
-      ]))
+      expect(result).toEqual(diffsMatcher(
+        [
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'uniqueItems']],
+            afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
+            type: breaking,
+          }),
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
+            afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
+            type: breaking,
+          }),
+        ],
+      ))
     })
 
     test('Add new property (compliance)', async () => {
@@ -807,25 +823,24 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'properties', 'prop2']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
 
     test('Add required property', async () => {
-
       const testId = 'add-required-property'
       const result = await compareFiles(suiteId, testId)
       expect(result).toEqual(diffsMatcher([
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'required', 0]],
-          type: breaking,
+          type: nonBreaking,
         }),
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'required', 1]],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -854,7 +869,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'required', 0]],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -866,42 +881,42 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'required', 0]],
-          type: nonBreaking,
+          type: breaking,
         }),
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'required', 0]],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
 
     test('Mark object property as readOnly', async () => {
-
       const testId = 'mark-object-property-as-read-only'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
+      expect(result).toEqual(diffsMatcher(
+        [
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'readOnly']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'readOnly']],
-            type: breaking,
+            type: nonBreaking,
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
             afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'readOnly']],
-            type: breaking,
+            type: nonBreaking,
           }),
         ],
       ))
     })
 
     test('Mark object property as not readOnly', async () => {
-
       const testId = 'mark-object-property-as-not-read-only'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
+      expect(result).toEqual(diffsMatcher(
+        [
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'readOnly']],
@@ -921,7 +936,8 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
     test('Mark object property as writeOnly', async () => {
       const testId = 'mark-object-property-as-write-only'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
+      expect(result).toEqual(diffsMatcher(
+        [
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
@@ -941,7 +957,8 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
     test('Mark object property as not writeOnly', async () => {
       const testId = 'mark-object-property-as-not-write-only'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
+      expect(result).toEqual(diffsMatcher(
+        [
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'writeOnly']],
@@ -966,8 +983,8 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
           afterDeclarationPaths: [[...commonPath, 'minProperties']],
-          type: breaking,
-        })
+          type: nonBreaking,
+        }),
       ]))
     })
 
@@ -979,7 +996,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'minProperties']],
           afterDeclarationPaths: [[...commonPath, 'minProperties']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -992,7 +1009,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'minProperties']],
           afterDeclarationPaths: [[...commonPath, 'minProperties']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -1005,8 +1022,8 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'minProperties']],
           afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-          type: nonBreaking,
-        })
+          type: breaking,
+        }),
       ]))
     })
 
@@ -1017,7 +1034,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'maxProperties']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -1030,12 +1047,11 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
           afterDeclarationPaths: [[...commonPath, 'maxProperties']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
 
-    // TODO: fixme
     test('Decrease maxProperties for object property', async () => {
       const testId = 'decrease-max-properties-for-object-property'
       const result = await compareFiles(suiteId, testId)
@@ -1044,7 +1060,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
           afterDeclarationPaths: [[...commonPath, 'maxProperties']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -1056,35 +1072,34 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
 
     test('Update definition of free-form object', async () => {
-
       const testId = 'update-definition-of-free-form-object'
-      const diffs = await compareFiles(suiteId, testId)
-      expect(diffs).toBeEmpty()
+      const result = await compareFilesWithMerge(suiteId, testId)
+      expect(result.merged).not.toHaveProperty([...commonPath, 'properties', 'option1', 'additionalProperties'])
+      expect(result.merged).not.toHaveProperty([...commonPath, 'properties', 'option2', 'additionalProperties'])
+      expect(result.merged).not.toHaveProperty([...commonPath, 'additionalProperties'])
+      expect(result.diffs).toEqual([])
     })
 
     test('Add non-boolean additionalProperties', async () => {
-
       const testId = 'add-non-boolean-additional-properties'
       const result = await compareFiles(suiteId, testId)
-
       expect(result).toEqual(
         diffsMatcher([
-            expect.objectContaining({
-              action: DiffAction.replace,
-              beforeValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
-              afterValue: 'string',
-              beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-              afterDeclarationPaths: [[...commonPath, 'additionalProperties', 'type']],
-              type: breaking,
-            }),
-          ],
-        ),
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
+            afterValue: 'string',
+            beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
+            afterDeclarationPaths: [[...commonPath, 'additionalProperties', 'type']],
+            type: nonBreaking,
+          }),
+        ]),
       )
     })
 
@@ -1106,16 +1121,15 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
       const result = await compareFiles(suiteId, testId)
       expect(result).toEqual(
         diffsMatcher([
-            expect.objectContaining({
-              action: DiffAction.replace,
-              beforeValue: 'string',
-              afterValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
-              beforeDeclarationPaths: [[...commonPath, 'additionalProperties', 'type']],
-              afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-              type: nonBreaking,
-            }),
-          ],
-        ),
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeValue: 'string',
+            afterValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
+            beforeDeclarationPaths: [[...commonPath, 'additionalProperties', 'type']],
+            afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
+            type: breaking,
+          }),
+        ]),
       )
     })
 
@@ -1126,7 +1140,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'oneOf', 1]],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -1138,7 +1152,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'oneOf', 2]],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -1150,7 +1164,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'oneOf', 2]],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -1162,7 +1176,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'oneOf', 1]],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -1175,7 +1189,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'discriminator']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -1188,7 +1202,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'discriminator']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -1202,7 +1216,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'discriminator', 'propertyName']],
           afterDeclarationPaths: [[...commonPath, 'discriminator', 'propertyName']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -1214,7 +1228,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'anyOf', 1]],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -1226,7 +1240,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'anyOf', 2]],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -1238,7 +1252,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'anyOf', 2]],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -1250,7 +1264,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'anyOf', 1]],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -1263,7 +1277,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [[...commonPath, 'discriminator']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -1276,7 +1290,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'discriminator']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -1290,7 +1304,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'discriminator', 'propertyName']],
           afterDeclarationPaths: [[...commonPath, 'discriminator', 'propertyName']],
-          type: nonBreaking,
+          type: breaking,
         }),
       ]))
     })
@@ -1319,7 +1333,6 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
       ]))
     })
 
-    //should be breaking if additionalProperties=true
     test('Remove allOf option', async () => {
       const testId = 'remove-all-of-option'
       const result = await compareFiles(suiteId, testId)
@@ -1327,12 +1340,11 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'allOf', 2, 'properties', 'prop3']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
 
-    //should be breaking if additionalProperties=true
     test('Remove allOf', async () => {
       const testId = 'remove-all-of'
       const result = await compareFiles(suiteId, testId)
@@ -1340,7 +1352,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
         expect.objectContaining({
           action: DiffAction.remove,
           beforeDeclarationPaths: [[...commonPath, 'allOf', 1, 'properties', 'prop2']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
@@ -1429,38 +1441,42 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
     test.skip('Mark property as xml attribute', async () => {
       const testId = 'mark-property-as-xml-attribute'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.add,
-          afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'xml', 'attribute']],
-          type: breaking,
-        }),
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'xml', 'attribute']],
-          afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'xml', 'attribute']],
-          type: breaking,
-        }),
-      ]))
+      expect(result).toEqual(diffsMatcher(
+        [
+          expect.objectContaining({
+            action: DiffAction.add,
+            afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'xml', 'attribute']],
+            type: breaking,
+          }),
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'xml', 'attribute']],
+            afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'xml', 'attribute']],
+            type: breaking,
+          }),
+        ],
+      ))
     })
 
     // TODO: fixme
     test.skip('Mark property as xml element', async () => {
       const testId = 'mark-property-as-xml-element'
       const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual(diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.remove,
-          beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'xml', 'attribute']],
-          type: breaking,
-        }),
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'xml', 'attribute']],
-          afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'xml', 'attribute']],
-          type: breaking,
-        }),
-      ]))
+      expect(result).toEqual(diffsMatcher(
+        [
+          expect.objectContaining({
+            action: DiffAction.remove,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'xml', 'attribute']],
+            type: breaking,
+          }),
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'xml', 'attribute']],
+            afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'xml', 'attribute']],
+            type: breaking,
+          }),
+        ],
+      ))
     })
 
     // TODO: fixme
@@ -1516,7 +1532,7 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
       ]))
     })
 
-    // TODO: fixme
+    // TODO: fixme only for openapi.rules and think about expected with Diana for all xml cases
     test.skip('Remove xml:wrapped for array property', async () => {
       const testId = 'remove-xml-wrapped-for-array-property'
       const result = await compareFiles(suiteId, testId)
@@ -1529,111 +1545,43 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
       ]))
     })
 
-    // TODO: fixme
     test.skip('Update schema type from any type to specific type', async () => {
       const testId = 'update-schema-type-from-any-type-to-specific-type'
       const result = await compareFiles(suiteId, testId)
       expect(result).toEqual(diffsMatcher([
         expect.objectContaining({
           action: DiffAction.replace,
-          beforeDeclarationPaths: [TEST_DEFAULTS_DECLARATION_PATHS], //check
+          beforeDeclarationPaths: [TEST_DEFAULTS_DECLARATION_PATHS], // check
           afterDeclarationPaths: [[...commonPath, 'type']],
-          type: breaking,
+          type: nonBreaking,
         }),
       ]))
     })
 
-    // TODO: fixme
-    test.skip('Update schema type from specific type to nothing', async () => {
+    test.skip('Update schema type from specific type to nothing type', async () => {
       const testId = 'update-schema-type-from-specific-type-to-nothing'
       const result = await compareFiles(suiteId, testId)
       expect(result).toEqual(diffsMatcher([
         expect.objectContaining({
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...commonPath, 'type']],
-          afterDeclarationPaths: [[...commonPath, 'allOf',]], //check
+          afterDeclarationPaths: [[...commonPath, 'allOf']], // check
           type: breaking,
         }),
       ]))
     })
 
-    // TODO: fixme
-    test.skip('Update schema type from nothing to specific type', async () => {
+    test.skip('Update schema type from nothing type to specific type', async () => {
       const testId = 'update-schema-type-from-nothing-to-specific-type'
       const result = await compareFiles(suiteId, testId)
       expect(result).toEqual(diffsMatcher([
         expect.objectContaining({
           action: DiffAction.replace,
-          beforeDeclarationPaths: [[...commonPath, 'allOf']], //check
+          beforeDeclarationPaths: [[...commonPath, 'allOf']], // check
           afterDeclarationPaths: [[...commonPath, 'type']],
           type: nonBreaking,
         }),
       ]))
     })
   })
-}
-
-export function runAddRemoveDefaultValuesSchemaTests(suiteId: string): void {
-  describe('Add/remove default values', () => {
-
-    test('Add minItems with default value for array property', async () => {
-      const testId = 'add-minItems-with-default-value-for-array-property'
-      const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual([])
-    })
-
-    test('Remove minItems with default value for array property', async () => {
-      const testId = 'remove-minItems-with-default-value-for-array-property'
-      const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual([])
-    })
-
-    test('Add uniqueItems with default value for array property', async () => {
-      const testId = 'add-uniqueItems-with-default-value-for-array-property'
-      const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual([])
-    })
-
-    test('Remove uniqueItems with default value for array property', async () => {
-      const testId = 'remove-uniqueItems-with-default-value-for-array-property'
-      const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual([])
-    })
-
-    test('Add minProperties with default value for object property', async () => {
-      const testId = 'add-minProperties-with-default-value-for-object-property'
-      const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual([])
-    })
-
-    test('Remove minProperties with default value for object property', async () => {
-      const testId = 'remove-minProperties-with-default-value-for-object-property'
-      const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual([])
-    })
-
-    test('Add attribute with default value for xml', async () => {
-      const testId = 'add-attribute-with-default-value-for-xml'
-      const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual([])
-    })
-
-    test('Remove attribute with default value for xml', async () => {
-      const testId = 'remove-attribute-with-default-value-for-xml'
-      const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual([])
-    })
-
-    test('Add xml:wrapped with default value for array property', async () => {
-      const testId = 'add-xml-wrapped-with-default-value-for-array-property'
-      const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual([])
-    })
-
-    test('Remove xml:wrapped with default value for array property', async () => {
-      const testId = 'remove-xml-wrapped-with-default-value-for-array-property'
-      const result = await compareFiles(suiteId, testId)
-      expect(result).toEqual([])
-    })
-  })  
 }
