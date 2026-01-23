@@ -73,26 +73,16 @@ describe('Openapi3 ResponseBody.Schema ', () => {
   test('Update schema type from specific type to any type', async () => {
     const testId = 'update-schema-type-from-specific-type-to-any-type'
     const result = await compareFiles(SUITE_ID, testId)
-    expect(result).toEqual(diffsMatcher(
-      [
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeValue: 'string',
-          afterValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
-          beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option1', 'type']],
-          afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-          type: breaking,
-        }),
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeValue: 'string',
-          afterValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
-          afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-          beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option2', 'type']],
-          type: breaking,
-        }),
-      ],
-    ))
+    expect(result).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.replace,
+        beforeValue: 'string',
+        afterValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
+        beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'type']],
+        afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
+        type: breaking,
+      }),
+    ]))
   })
 
   test('Update schema type to an equivalent value', async () => {
@@ -125,13 +115,13 @@ describe('Openapi3 ResponseBody.Schema ', () => {
       expect.objectContaining({
         action: DiffAction.replace,
         beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option1', 'nullable']],
-        afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option1', 'nullable']],
+        afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
         type: nonBreaking,
       }),
       expect.objectContaining({
         action: DiffAction.replace,
         beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option2', 'nullable']],
-        afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
+        afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option2', 'nullable']],
         type: nonBreaking,
       }),
     ]))
@@ -924,13 +914,13 @@ describe('Openapi3 ResponseBody.Schema ', () => {
       [
         expect.objectContaining({
           action: DiffAction.replace,
-          beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
+          beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option1', 'readOnly']],
           afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option1', 'readOnly']],
           type: nonBreaking,
         }),
         expect.objectContaining({
           action: DiffAction.replace,
-          beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option2', 'readOnly']],
+          beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
           afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option2', 'readOnly']],
           type: nonBreaking,
         }),
@@ -946,13 +936,13 @@ describe('Openapi3 ResponseBody.Schema ', () => {
         expect.objectContaining({
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option1', 'readOnly']],
-          afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
+          afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option1', 'readOnly']],
           type: nonBreaking,
         }),
         expect.objectContaining({
           action: DiffAction.replace,
           beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option2', 'readOnly']],
-          afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'properties', 'option2', 'readOnly']],
+          afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
           type: nonBreaking,
         }),
       ],
@@ -1598,8 +1588,8 @@ describe('Openapi3 ResponseBody.Schema ', () => {
     ]))
   })
 
-  test.skip('Update schema type from string type to nothing type', async () => {
-    const testId = 'update-schema-type-from-string-type-to-nothing-type'
+  test.skip('Update schema type from specific type to nothing type', async () => {
+    const testId = 'update-schema-type-from-specific-type-to-nothing'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -1611,13 +1601,13 @@ describe('Openapi3 ResponseBody.Schema ', () => {
     ]))
   })
 
-  test.skip('Update schema type from nothing type to string type', async () => {
-    const testId = 'update-schema-type-from-nothing-type-to-string-type'
+  test.skip('Update schema type from nothing type to specific type', async () => {
+    const testId = 'update-schema-type-from-nothing-to-specific-type'
     const result = await compareFiles(SUITE_ID, testId)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'allOf']],//check
+        beforeDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'allOf']], //check
         afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'type']],
         type: nonBreaking,
       }),

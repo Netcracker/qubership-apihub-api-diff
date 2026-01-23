@@ -62,24 +62,15 @@ export function runCommonSchemaTests(suiteId: string, commonPath: JsonPath): voi
       const result = await compareFiles(suiteId, testId)
 
       expect(result).toEqual(diffsMatcher([
-          expect.objectContaining({
-            action: DiffAction.replace,
-            beforeValue: 'string',
-            afterValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
-            beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'type']],
-            afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-            type: nonBreaking,
-          }),
-          expect.objectContaining({
-            action: DiffAction.replace,
-            beforeValue: 'string',
-            afterValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
-            afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-            beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'type']],
-            type: nonBreaking,
-          }),
-        ],
-      ))
+        expect.objectContaining({
+          action: DiffAction.replace,
+          beforeValue: 'string',
+          afterValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
+          beforeDeclarationPaths: [[...commonPath, 'type']],
+          afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
+          type: nonBreaking,
+        }),
+      ]))
     })
 
     test('Update schema type to an equivalent value', async () => {
