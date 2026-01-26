@@ -10,7 +10,7 @@ import {
   normalize,
   OriginsMetaRecord,
   pathItemToFullPath,
-  resolveOrigins,
+  resolveOrigins, resolveSpec, Spec,
 } from '@netcracker/qubership-apihub-api-unifier'
 import { deepEqual } from 'fast-equals'
 import {
@@ -430,7 +430,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
   return hook
 }
 
-function denormalizeWithDiffsSave(merged: unknown, options: InternalCompareOptions) {
+function denormalizeWithDiffsSave(merged: unknown, options: InternalCompareOptions, overriddenSpec?: Spec): unknown {
   const jsoWithoutDiff: Set<unknown> = new Set()
   const jsoWithDiff: Set<unknown> = new Set()
   return denormalize(merged,
@@ -487,8 +487,7 @@ function denormalizeWithDiffsSave(merged: unknown, options: InternalCompareOptio
           }
         },
       } as DenormalizeOptions : {}),
-
-    },
+    }, overriddenSpec
   )
 }
 
@@ -521,6 +520,8 @@ function addNormalizedValuesToDenormalizedDiff(
 }
 
 export const compare = (before: unknown, after: unknown, options: InternalCompareOptions): CompareResult => {
+  const beforeSpec= resolveSpec(before)
+  const afterSpec= resolveSpec(after)
   const beforeFullyResolved = normalize(before, {
     ...options,
     source: options.beforeSource,
@@ -553,7 +554,14 @@ export const compare = (before: unknown, after: unknown, options: InternalCompar
   if (isObject(merged)) {
     merged[diffFlags] = rawDiffs
   }
-  merged = denormalizeWithDiffsSave(merged, options)
+
+  if(beforeSpec.type === afterSpec.type){
+    merged = denormalizeWithDiffsSave(merged, options)
+  }else {
+    merged = denormalizeWithDiffsSave(merged, options, beforeSpec)
+    merged = denormalizeWithDiffsSave(merged, options, afterSpec)
+  }
+
   let denormalizedDiffs: Diff[] = rawDiffs
   if (isObject(merged)) {
     denormalizedDiffs = merged[diffFlags] as Diff[]
