@@ -10,7 +10,8 @@ import {
   normalize,
   OriginsMetaRecord,
   pathItemToFullPath,
-  resolveOrigins, resolveSpec, Spec,
+  resolveOrigins,
+  resolveSpec,
 } from '@netcracker/qubership-apihub-api-unifier'
 import { deepEqual } from 'fast-equals'
 import {
@@ -430,7 +431,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
   return hook
 }
 
-function denormalizeWithDiffsSave(merged: unknown, options: InternalCompareOptions, overriddenSpec?: Spec): unknown {
+function denormalizeWithDiffsSave(merged: unknown, options: InternalCompareOptions & DenormalizeOptions): unknown {
   const jsoWithoutDiff: Set<unknown> = new Set()
   const jsoWithDiff: Set<unknown> = new Set()
   return denormalize(merged,
@@ -487,7 +488,7 @@ function denormalizeWithDiffsSave(merged: unknown, options: InternalCompareOptio
           }
         },
       } as DenormalizeOptions : {}),
-    }, overriddenSpec
+    },
   )
 }
 
@@ -495,7 +496,7 @@ function addNormalizedValuesToDenormalizedDiff(
   denormalizedDiffs: Diff[],
   rawDiffs: Diff[],
   beforeValueNormalizedProperty?: symbol,
-  afterValueNormalizedProperty?: symbol
+  afterValueNormalizedProperty?: symbol,
 ) {
   for (let i = 0; i < denormalizedDiffs.length && i < rawDiffs.length; i++) {
     const denormalizedDiff = denormalizedDiffs[i]
@@ -520,8 +521,9 @@ function addNormalizedValuesToDenormalizedDiff(
 }
 
 export const compare = (before: unknown, after: unknown, options: InternalCompareOptions): CompareResult => {
-  const beforeSpec= resolveSpec(before)
-  const afterSpec= resolveSpec(after)
+  const beforeSpec = resolveSpec(before)
+  const afterSpec = resolveSpec(after)
+
   const beforeFullyResolved = normalize(before, {
     ...options,
     source: options.beforeSource,
@@ -555,11 +557,17 @@ export const compare = (before: unknown, after: unknown, options: InternalCompar
     merged[diffFlags] = rawDiffs
   }
 
-  if(beforeSpec.type === afterSpec.type){
+  const beforeSpecType = beforeSpec.type
+  const afterSpecType = afterSpec.type
+  // The merged tree can contain values originating from both documents.
+  // If before/after spec types differ, a single denormalization pass may only correctly interpret one side,
+  // so we run it twice forcing each spec type to make diffs readable.
+  if (beforeSpecType === afterSpecType) {
     merged = denormalizeWithDiffsSave(merged, options)
-  }else {
-    merged = denormalizeWithDiffsSave(merged, options, beforeSpec)
-    merged = denormalizeWithDiffsSave(merged, options, afterSpec)
+  } else {
+    for (const forceRulesSpecType of [beforeSpecType, afterSpecType]) {
+      merged = denormalizeWithDiffsSave(merged, { ...options, forceRulesSpecType })
+    }
   }
 
   let denormalizedDiffs: Diff[] = rawDiffs
