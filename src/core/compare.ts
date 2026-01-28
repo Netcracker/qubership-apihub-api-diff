@@ -565,8 +565,8 @@ export const compare = (before: unknown, after: unknown, options: InternalCompar
   if (beforeSpecType === afterSpecType) {
     merged = denormalizeWithDiffsSave(merged, options)
   } else {
-    for (const forceRulesSpecType of [beforeSpecType, afterSpecType]) {
-      merged = denormalizeWithDiffsSave(merged, { ...options, forceRulesSpecType })
+    for (const forceRulesForSpecVersion of [beforeSpecType, afterSpecType]) {
+      merged = denormalizeWithDiffsSave(merged, { ...options, forceRulesForSpecVersion })
     }
   }
 
