@@ -155,6 +155,9 @@ export async function compareFilesWithMerge(
       afterObject = buildFromSchema(afterSchema)
       break
     }
+    default: {
+      throw new Error(`Unsupported spec type for comparison: ${type}`)
+    }
   }
   const beforeSchemaWithoutComponents = removeComponents(beforeObject)
   const afterSchemaWithoutComponents = removeComponents(afterObject)
