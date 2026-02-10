@@ -14,11 +14,15 @@ import { apiDiff, CompareOptions, CompareResult, Diff } from '../../src'
 import { RUNTIME_DIRECTIVE_LOCATIONS } from '../../src/graphapi'
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG, TEST_SYNTHETIC_TITLE_FLAG } from '../helper'
 
-const toMajorMinor = (v: string): string => (v.startsWith('3.1') ? '3.1' : '3.0')
+const toMajorMinor = (v: string): string => {
+  const match = v.match(/^(\d+\.\d+)/)
+  return match ? match[1] : v
+}
 
 const pairTag = (pair: SpecificationVersionPair): string => `${toMajorMinor(pair[0])}-${toMajorMinor(pair[1])}`
 
-type OpenApiVersionPairCaseContext = {
+type SpecVersionPairCaseContext = {
+  suiteType: TestSpecType
   suiteId: string
   testId: string
   beforeVersion: string
@@ -28,23 +32,26 @@ type OpenApiVersionPairCaseContext = {
 }
 
 /**
- * Initializes custom Jest wrapper `caseForOpenApiVersionPairs` on `test`/`it` and their `.only`/`.skip` variants.
+ * Initializes custom Jest wrapper `caseForSpecVersionPairs` on `test`/`it` and their `.only`/`.skip` variants.
  *
  * Why:
- * - **Runtime**: makes calls like `test.caseForOpenApiVersionPairs(...)` actually exist (they call into our generator).
+ * - **Runtime**: makes calls like `test.caseForSpecVersionPairs(...)` actually exist (they call into our generator).
  * - **IDE/Test Explorer**: many Jest integrations recognize only expressions starting with `test`/`it`, so
- *   `test.caseForOpenApiVersionPairs(...)` is easier for them to detect than a standalone helper call.
+ *   `test.caseForSpecVersionPairs(...)` is easier for them to detect than a standalone helper call.
  *
  * Call this once from Jest `setupFilesAfterEnv` (see `test/setup/jest-wrappers.ts`).
  */
-export function initCaseForOpenApiVersionPairs(): void {
+export function initCaseForSpecVersionPairs(): void {
   const attach = (jestIt: typeof test): void => {
-    (jestIt as unknown as Record<string, unknown>).caseForOpenApiVersionPairs = (
+    const record = jestIt as unknown as Record<string, unknown>
+
+    record.caseForSpecVersionPairs = (
+      suiteType: TestSpecType,
       testId: string,
       suiteId: string,
-      fn: (ctx: OpenApiVersionPairCaseContext) => Promise<void> | void,
+      fn: (ctx: SpecVersionPairCaseContext) => Promise<void> | void,
     ): void => {
-      runCaseForOpenApiVersionPairs(jestIt, suiteId, testId, fn)
+      runCaseForSpecVersionPairs(jestIt, suiteType, testId, suiteId, fn)
     }
   }
 
@@ -57,17 +64,18 @@ export function initCaseForOpenApiVersionPairs(): void {
   attach(it.skip)
 }
 
-function runCaseForOpenApiVersionPairs(
+function runCaseForSpecVersionPairs(
   jestTest: typeof test,
-  suiteId: string,
+  suiteType: TestSpecType,
   testId: string,
-  fn: (ctx: OpenApiVersionPairCaseContext) => Promise<void> | void,
+  suiteId: string,
+  fn: (ctx: SpecVersionPairCaseContext) => Promise<void> | void,
 ): void {
-  const pairs = getCompatibilitySuiteSpecificationVersionPairs(TEST_SPEC_TYPE_OPEN_API, suiteId, testId)
+  const pairs = getCompatibilitySuiteSpecificationVersionPairs(suiteType, suiteId, testId)
 
   if (pairs.length === 0) {
-    jestTest(`${testId} (no OpenAPI version pairs)`, () => {
-      throw new Error(`No OpenAPI version pairs for ${suiteId}/${testId}`)
+    jestTest(`${testId} (no version pairs)`, () => {
+      throw new Error(`No version pairs for (${suiteType}, ${suiteId}, ${testId})`)
     })
     return
   }
@@ -77,8 +85,9 @@ function runCaseForOpenApiVersionPairs(
     const afterVersion = pair[1]
     const caseTitle = `${testId} (${pairTag(pair)})`
     jestTest(caseTitle, async () => {
-      const { diffs, merged } = await compareFilesWithMerge(suiteId, testId, TEST_SPEC_TYPE_OPEN_API, pair)
+      const { diffs, merged } = await compareFilesWithMerge(suiteId, testId, suiteType, pair)
       await fn({
+        suiteType,
         suiteId,
         testId,
         beforeVersion,

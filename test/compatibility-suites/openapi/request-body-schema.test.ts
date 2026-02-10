@@ -1,5 +1,6 @@
-import { runAddRemoveDefaultValuesSchemaTests, runCommonSchemaTests } from './templates/schema'
-import { runCommonSchema31Tests } from './templates/schema31'
+import { TEST_SPEC_TYPE_OPEN_API } from '@netcracker/qubership-apihub-compatibility-suites'
+import { runGeneralRequestLikeSchemaTests } from '../schema/general/request-like'
+import { runOpenApiOnlyRequestLikeSchemaTests } from '../schema/openapi-only/request-like'
 
 const SUITE_ID = 'request-body-schema'
 
@@ -13,12 +14,7 @@ const REQUEST_SCHEMA_PATH = [
   'schema',
 ]
 
-describe('Openapi3 Request Body Schema', () => {
-  runCommonSchemaTests(SUITE_ID, REQUEST_SCHEMA_PATH)
-
-  runAddRemoveDefaultValuesSchemaTests(SUITE_ID)
-})
-
-describe('Openapi31 Request Body Schema', () => {
-  runCommonSchema31Tests(SUITE_ID, REQUEST_SCHEMA_PATH)
+describe('Request Body Schema', () => {
+  runGeneralRequestLikeSchemaTests(TEST_SPEC_TYPE_OPEN_API, SUITE_ID, REQUEST_SCHEMA_PATH)
+  runOpenApiOnlyRequestLikeSchemaTests(TEST_SPEC_TYPE_OPEN_API, SUITE_ID, REQUEST_SCHEMA_PATH)
 })
