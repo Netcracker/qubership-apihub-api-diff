@@ -1,7 +1,7 @@
 import { TEST_SPEC_TYPE_ASYNC_API } from '@netcracker/qubership-apihub-compatibility-suites'
 import { runGeneralRequestLikeSchemaTests } from '../schema/general/request-like'
 
-const SUITE_ID = 'operation-reply-object-message-payload'
+const SUITE_ID = 'operation-reply-object-message-payload-receive'
 
 const REPLY_MESSAGE_PAYLOAD_PATH = [
   'channels',
@@ -11,6 +11,6 @@ const REPLY_MESSAGE_PAYLOAD_PATH = [
   'payload',
 ]
 
-describe('AsyncAPI Operation Reply Object Message Payload', () => {
+describe('AsyncAPI Operation Reply Object Message Payload (receive)', () => {
   runGeneralRequestLikeSchemaTests(TEST_SPEC_TYPE_ASYNC_API, SUITE_ID, REPLY_MESSAGE_PAYLOAD_PATH)
 })
