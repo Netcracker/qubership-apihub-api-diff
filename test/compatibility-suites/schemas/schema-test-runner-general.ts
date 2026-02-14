@@ -1,16 +1,29 @@
 import { JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY } from '@netcracker/qubership-apihub-api-unifier'
 import { TestSpecType } from '@netcracker/qubership-apihub-compatibility-suites'
 import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
-import { annotation, breaking, DiffAction, nonBreaking } from '../../../../src'
-import { diffsMatcher, expectSpecVersionChange } from '../../../helper/matchers'
-import { compareFiles, TEST_DEFAULTS_DECLARATION_PATHS } from '../../utils'
+import { annotation, breaking, DiffAction, nonBreaking, risky } from '../../../src'
+import { diffsMatcher, expectSpecVersionChange } from '../../helper/matchers'
+import {
+  compareFiles,
+  compareFilesWithMerge,
+  createExpectedType,
+  currentTestId,
+  SchemaDiffDirection,
+  TEST_DEFAULTS_DECLARATION_PATHS,
+} from '../utils'
 
-export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteId: string, commonPath: JsonPath): void {
+export function runGeneralSchemaTests(
+  suiteType: TestSpecType,
+  suiteId: string,
+  commonPath: JsonPath,
+  direction: SchemaDiffDirection,
+): void {
+  const expectedType = createExpectedType(direction)
+
   describe('General', () => {
     describe('JSON Schema Keywords', () => {
-      test('Add schema title', async () => {
-        const testId = 'add-schema-title'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-schema-title', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
@@ -20,9 +33,8 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Update schema title', async () => {
-        const testId = 'update-schema-title'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('update-schema-title', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -33,9 +45,8 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Remove schema title', async () => {
-        const testId = 'remove-schema-title'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-schema-title', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
@@ -45,9 +56,8 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Update schema type', async () => {
-        const testId = 'update-schema-type'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('update-schema-type', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -58,9 +68,8 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Update schema type from specific type to any type', async () => {
-        const testId = 'update-schema-type-from-specific-type-to-any-type'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('update-schema-type-from-specific-type-to-any-type', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -68,97 +77,89 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
             afterValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
             beforeDeclarationPaths: [[...commonPath, 'type']],
             afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Update schema type to an equivalent value', async () => {
-        const testId = 'update-schema-type-to-an-equivalent-value'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('update-schema-type-to-an-equivalent-value', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual([])
       })
 
-      test('Add enum', async () => {
-        const testId = 'add-enum'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-enum', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'enum']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Remove enum', async () => {
-        const testId = 'remove-enum'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-enum', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'enum']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
 
-      test('Add enum value', async () => {
-        const testId = 'add-enum-value'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-enum-value', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'enum', 2]],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
 
-      test('Update enum value', async () => {
-        const testId = 'update-enum-value'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('update-enum-value', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'enum', 1]],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'enum', 1]],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
 
-      test('Remove enum value', async () => {
-        const testId = 'remove-enum-value'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-enum-value', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'enum', 2]],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Add format for string property', async () => {
-        const testId = 'add-format-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-format-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'format']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Update format for string property', async () => {
-        const testId = 'update-format-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('update-format-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -169,147 +170,136 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Remove format for string property', async () => {
-        const testId = 'remove-format-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-format-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'format']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add minLength for string property', async () => {
-        const testId = 'add-min-length-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-min-length-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'minLength']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'minLength']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
             afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'minLength']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Increase minLength for string property', async () => {
-        const testId = 'increase-min-length-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('increase-min-length-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minLength']],
             afterDeclarationPaths: [[...commonPath, 'minLength']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Decrease minLength for string property', async () => {
-        const testId = 'decrease-min-length-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('decrease-min-length-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minLength']],
             afterDeclarationPaths: [[...commonPath, 'minLength']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Remove minLength for string property', async () => {
-        const testId = 'remove-min-length-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-min-length-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'minLength']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'minLength']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'minLength']],
             afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add maxLength for string property', async () => {
-        const testId = 'add-max-length-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-max-length-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'maxLength']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Increase maxLength for string property', async () => {
-        const testId = 'increase-max-length-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('increase-max-length-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxLength']],
             afterDeclarationPaths: [[...commonPath, 'maxLength']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Decrease maxLength for string property', async () => {
-        const testId = 'decrease-max-length-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('decrease-max-length-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxLength']],
             afterDeclarationPaths: [[...commonPath, 'maxLength']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Remove maxLength for string property', async () => {
-        const testId = 'remove-max-length-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-max-length-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxLength']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add pattern for string property', async () => {
-        const testId = 'add-pattern-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-pattern-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'pattern']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Update pattern for string property', async () => {
-        const testId = 'update-pattern-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('update-pattern-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -320,33 +310,30 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Remove pattern for string property', async () => {
-        const testId = 'remove-pattern-for-string-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-pattern-for-string-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'pattern']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add format for number property', async () => {
-        const testId = 'add-format-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-format-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'format']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Update format for number property', async () => {
-        const testId = 'update-format-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('update-format-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -357,133 +344,122 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Remove format for number property', async () => {
-        const testId = 'remove-format-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-format-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'format']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add minimum for number property', async () => {
-        const testId = 'add-minimum-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-minimum-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'minimum']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Increase minimum for number property', async () => {
-        const testId = 'increase-minimum-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('increase-minimum-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
             afterDeclarationPaths: [[...commonPath, 'minimum']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Decrease minimum for number property', async () => {
-        const testId = 'decrease-minimum-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('decrease-minimum-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
             afterDeclarationPaths: [[...commonPath, 'minimum']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Remove minimum for number property', async () => {
-        const testId = 'remove-minimum-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-minimum-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add maximum for number property', async () => {
-        const testId = 'add-maximum-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-maximum-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'maximum']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Increase maximum for number property', async () => {
-        const testId = 'increase-maximum-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('increase-maximum-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maximum']],
             afterDeclarationPaths: [[...commonPath, 'maximum']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Decrease maximum for number property', async () => {
-        const testId = 'decrease-maximum-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('decrease-maximum-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maximum']],
             afterDeclarationPaths: [[...commonPath, 'maximum']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Remove maximum for number property', async () => {
-        const testId = 'remove-maximum-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-maximum-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maximum']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add multipleOf for number property', async () => {
-        const testId = 'add-multiple-of-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-multiple-of-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'multipleOf']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Update multipleOf for number property', async () => {
-        const testId = 'update-multiple-of-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('update-multiple-of-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -494,161 +470,149 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Remove multipleOf for number property', async () => {
-        const testId = 'remove-multiple-of-for-number-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-multiple-of-for-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'multipleOf']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add minItems for array property', async () => {
-        const testId = 'add-min-items-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-min-items-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
             afterDeclarationPaths: [[...commonPath, 'minItems']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Increase minItems for array property', async () => {
-        const testId = 'increase-min-items-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('increase-min-items-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minItems']],
             afterDeclarationPaths: [[...commonPath, 'minItems']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Decrease minItems for array property', async () => {
-        const testId = 'decrease-min-items-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('decrease-min-items-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minItems']],
             afterDeclarationPaths: [[...commonPath, 'minItems']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Remove minItems for array property', async () => {
-        const testId = 'remove-min-items-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-min-items-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minItems']],
             afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add maxItems for array property', async () => {
-        const testId = 'add-max-items-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-max-items-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'maxItems']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Increase maxItems for array property', async () => {
-        const testId = 'increase-max-items-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('increase-max-items-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxItems']],
             afterDeclarationPaths: [[...commonPath, 'maxItems']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Decrease maxItems for array property', async () => {
-        const testId = 'decrease-max-items-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('decrease-max-items-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxItems']],
             afterDeclarationPaths: [[...commonPath, 'maxItems']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Remove maxItems for array property', async () => {
-        const testId = 'remove-max-items-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-max-items-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxItems']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Prohibit non-unique items for array property', async () => {
-        const testId = 'prohibit-non-unique-items-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('prohibit-non-unique-items-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
             afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'uniqueItems']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Allow non-unique items for array property', async () => {
-        const testId = 'allow-non-unique-items-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('allow-non-unique-items-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'uniqueItems']],
             afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'uniqueItems']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add new property (compliance)', async () => {
-        const testId = 'add-new-property-compliance'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-new-property-compliance', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
@@ -658,38 +622,35 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Remove property (compliance)', async () => {
-        const testId = 'remove-property-compliance'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-property-compliance', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'prop2']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Add required property', async () => {
-        const testId = 'add-required-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-required-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'required', 0]],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'required', 1]],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Add required property with default', async () => {
-        const testId = 'add-required-property-with-default'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-required-property-with-default', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
@@ -704,57 +665,53 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Remove required property', async () => {
-        const testId = 'remove-required-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-required-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'required', 0]],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Update required property', async () => {
-        const testId = 'update-required-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('update-required-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'required', 0]],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'required', 0]],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Mark object property as readOnly', async () => {
-        const testId = 'mark-object-property-as-read-only'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('mark-object-property-as-read-only', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'readOnly']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option1', 'readOnly']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
             afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'readOnly']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Mark object property as not readOnly', async () => {
-        const testId = 'mark-object-property-as-not-read-only'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('mark-object-property-as-not-read-only', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -771,9 +728,8 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Mark object property as writeOnly', async () => {
-        const testId = 'mark-object-property-as-write-only'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('mark-object-property-as-write-only', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -790,9 +746,8 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Mark object property as not writeOnly', async () => {
-        const testId = 'mark-object-property-as-not-write-only'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('mark-object-property-as-not-write-only', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -809,117 +764,110 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Add minProperties for object property', async () => {
-        const testId = 'add-min-properties-for-object-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-min-properties-for-object-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
             afterDeclarationPaths: [[...commonPath, 'minProperties']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Increase minProperties for object property', async () => {
-        const testId = 'increase-min-properties-for-object-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('increase-min-properties-for-object-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minProperties']],
             afterDeclarationPaths: [[...commonPath, 'minProperties']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Decrease minProperties for object property', async () => {
-        const testId = 'decrease-min-properties-for-object-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('decrease-min-properties-for-object-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minProperties']],
             afterDeclarationPaths: [[...commonPath, 'minProperties']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Remove minProperties for object property', async () => {
-        const testId = 'remove-min-properties-for-object-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-min-properties-for-object-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minProperties']],
             afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add maxProperties for object property', async () => {
-        const testId = 'add-max-properties-for-object-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-max-properties-for-object-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'maxProperties']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Increase maxProperties for object property', async () => {
-        const testId = 'increase-max-properties-for-object-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('increase-max-properties-for-object-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
             afterDeclarationPaths: [[...commonPath, 'maxProperties']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Decrease maxProperties for object property', async () => {
-        const testId = 'decrease-max-properties-for-object-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('decrease-max-properties-for-object-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
             afterDeclarationPaths: [[...commonPath, 'maxProperties']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Remove maxProperties for object property', async () => {
-        const testId = 'remove-max-properties-for-object-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-max-properties-for-object-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Update definition of free-form object', async () => {
-        const testId = 'update-definition-of-free-form-object'
-        const diffs = await compareFiles(suiteId, testId, suiteType)
-        expect(diffs).toBeEmpty()
+      test('update-definition-of-free-form-object', async () => {
+        const result = await compareFilesWithMerge(suiteId, currentTestId(), suiteType)
+        expect(result.merged).not.toHaveProperty([...commonPath, 'properties', 'option1', 'additionalProperties'])
+        expect(result.merged).not.toHaveProperty([...commonPath, 'properties', 'option2', 'additionalProperties'])
+        expect(result.merged).not.toHaveProperty([...commonPath, 'additionalProperties'])
+        expect(result.diffs).toEqual([])
       })
 
-      test('Add non-boolean additionalProperties', async () => {
-        const testId = 'add-non-boolean-additional-properties'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-non-boolean-additional-properties', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(
           diffsMatcher([
             expect.objectContaining({
@@ -928,15 +876,14 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
               afterValue: 'string',
               beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
               afterDeclarationPaths: [[...commonPath, 'additionalProperties', 'type']],
-              type: breaking,
+              type: expectedType(breaking, nonBreaking),
             }),
           ]),
         )
       })
 
-      test('Update type of additionalProperties', async () => {
-        const testId = 'update-type-of-additional-properties'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('update-type-of-additional-properties', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -947,9 +894,8 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Remove additionalProperties', async () => {
-        const testId = 'remove-additional-properties'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-additional-properties', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(
           diffsMatcher([
             expect.objectContaining({
@@ -958,111 +904,102 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
               afterValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
               beforeDeclarationPaths: [[...commonPath, 'additionalProperties', 'type']],
               afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-              type: nonBreaking,
+              type: expectedType(nonBreaking, breaking),
             }),
           ]),
         )
       })
 
-      test('Add oneOf', async () => {
-        const testId = 'add-one-of'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-one-of', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'oneOf', 1]],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add oneOf option', async () => {
-        const testId = 'add-one-of-option'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-one-of-option', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'oneOf', 2]],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Remove oneOf option', async () => {
-        const testId = 'remove-one-of-option'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-one-of-option', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'oneOf', 2]],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Remove oneOf', async () => {
-        const testId = 'remove-one-of'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-one-of', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'oneOf', 1]],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Add anyOf', async () => {
-        const testId = 'add-any-of'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-any-of', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'anyOf', 1]],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Add anyOf option', async () => {
-        const testId = 'add-any-of-option'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-any-of-option', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'anyOf', 2]],
-            type: nonBreaking,
+            type: expectedType(nonBreaking, breaking),
           }),
         ]))
       })
 
-      test('Remove anyOf option', async () => {
-        const testId = 'remove-any-of-option'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-any-of-option', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'anyOf', 2]],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Remove anyOf', async () => {
-        const testId = 'remove-any-of'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-any-of', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'anyOf', 1]],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Add allOf', async () => {
-        const testId = 'add-all-of'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-all-of', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
@@ -1072,9 +1009,8 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Add allOf option', async () => {
-        const testId = 'add-all-of-option'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-all-of-option', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.add,
@@ -1084,48 +1020,44 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
         ]))
       })
 
-      test('Remove allOf option', async () => {
-        const testId = 'remove-all-of-option'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-all-of-option', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'allOf', 2, 'properties', 'prop3']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('Remove allOf', async () => {
-        const testId = 'remove-all-of'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-all-of', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'allOf', 1, 'properties', 'prop2']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
       // TODO: fixme
-      test.skip('Update schema type from any type to specific type', async () => {
-        const testId = 'update-schema-type-from-any-type-to-specific-type'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test.skip('update-schema-type-from-any-type-to-specific-type', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [TEST_DEFAULTS_DECLARATION_PATHS],
             afterDeclarationPaths: [[...commonPath, 'type']],
-            type: breaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
       // TODO: fixme
-      test.skip('Update schema type from specific type to nothing', async () => {
-        const testId = 'update-schema-type-from-specific-type-to-nothing'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test.skip('update-schema-type-from-specific-type-to-nothing', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -1137,9 +1069,8 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
       })
 
       // TODO: fixme
-      test.skip('Update schema type from nothing to specific type', async () => {
-        const testId = 'update-schema-type-from-nothing-to-specific-type'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test.skip('update-schema-type-from-nothing-to-specific-type', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.replace,
@@ -1152,39 +1083,33 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
 
       // --- General default value tests (no path needed, all expect empty diffs) ---
 
-      test('Add minItems with default value for array property', async () => {
-        const testId = 'add-minItems-with-default-value-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-minItems-with-default-value-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual([])
       })
 
-      test('Remove minItems with default value for array property', async () => {
-        const testId = 'remove-minItems-with-default-value-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-minItems-with-default-value-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual([])
       })
 
-      test('Add uniqueItems with default value for array property', async () => {
-        const testId = 'add-uniqueItems-with-default-value-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-uniqueItems-with-default-value-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual([])
       })
 
-      test('Remove uniqueItems with default value for array property', async () => {
-        const testId = 'remove-uniqueItems-with-default-value-for-array-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-uniqueItems-with-default-value-for-array-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual([])
       })
 
-      test('Add minProperties with default value for object property', async () => {
-        const testId = 'add-minProperties-with-default-value-for-object-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('add-minProperties-with-default-value-for-object-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual([])
       })
 
-      test('Remove minProperties with default value for object property', async () => {
-        const testId = 'remove-minProperties-with-default-value-for-object-property'
-        const result = await compareFiles(suiteId, testId, suiteType)
+      test('remove-minProperties-with-default-value-for-object-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual([])
       })
     })
@@ -1200,7 +1125,7 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
             expect.objectContaining({
               action: DiffAction.add,
               afterDeclarationPaths: [[...commonPath, 'type', 1]],
-              type: nonBreaking,
+              type: expectedType(nonBreaking, breaking),
             }),
           ]))
         },
@@ -1216,7 +1141,7 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
             expect.objectContaining({
               action: DiffAction.add,
               afterDeclarationPaths: [[...commonPath, 'type', 2]],
-              type: nonBreaking,
+              type: expectedType(nonBreaking, breaking),
             }),
           ]))
         },
@@ -1232,7 +1157,7 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
             expect.objectContaining({
               action: DiffAction.remove,
               beforeDeclarationPaths: [[...commonPath, 'type', 1]],
-              type: breaking,
+              type: expectedType(breaking, nonBreaking),
             }),
           ]))
         },
@@ -1248,7 +1173,7 @@ export function runGeneralRequestLikeSchemaTests(suiteType: TestSpecType, suiteI
             expect.objectContaining({
               action: DiffAction.remove,
               beforeDeclarationPaths: [[...commonPath, 'type', 2]],
-              type: breaking,
+              type: expectedType(breaking, nonBreaking),
             }),
           ]))
         },

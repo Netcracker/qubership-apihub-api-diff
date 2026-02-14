@@ -1,6 +1,7 @@
 import { TEST_SPEC_TYPE_OPEN_API } from '@netcracker/qubership-apihub-compatibility-suites'
-import { runGeneralResponseLikeSchemaTests } from '../schema/general/response-like'
-import { runOpenApiOnlyResponseLikeSchemaTests } from '../schema/openapi-only/response-like'
+import { runGeneralSchemaTests } from '../schemas/schema-test-runner-general'
+import { runOpenApiOnlySchemaTests } from '../schemas/schema-test-runner-openapi-only'
+import { SCHEMA_DIFF_DIRECTION } from '../utils'
 
 const SUITE_ID = 'response-body-schema'
 
@@ -16,6 +17,6 @@ const RESPONSE_SCHEMA_PATH = [
 ]
 
 describe('Response Body Schema', () => {
-  runGeneralResponseLikeSchemaTests(TEST_SPEC_TYPE_OPEN_API, SUITE_ID, RESPONSE_SCHEMA_PATH)
-  runOpenApiOnlyResponseLikeSchemaTests(TEST_SPEC_TYPE_OPEN_API, SUITE_ID, RESPONSE_SCHEMA_PATH)
+  runGeneralSchemaTests(TEST_SPEC_TYPE_OPEN_API, SUITE_ID, RESPONSE_SCHEMA_PATH, SCHEMA_DIFF_DIRECTION.response)
+  runOpenApiOnlySchemaTests(TEST_SPEC_TYPE_OPEN_API, SUITE_ID, RESPONSE_SCHEMA_PATH, SCHEMA_DIFF_DIRECTION.response)
 })

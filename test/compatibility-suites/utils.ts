@@ -11,9 +11,36 @@ import {
 import { buildFromSchema, GraphApiDirectiveDefinition } from '@netcracker/qubership-apihub-graphapi'
 import { isObject } from '@netcracker/qubership-apihub-json-crawl'
 import { buildSchema } from 'graphql/utilities'
-import { apiDiff, CompareOptions, CompareResult, Diff } from '../../src'
+import { apiDiff, CompareOptions, CompareResult, Diff, DiffType } from '../../src'
 import { RUNTIME_DIRECTIVE_LOCATIONS } from '../../src/graphapi'
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG, TEST_SYNTHETIC_TITLE_FLAG } from '../helper'
+
+export const SCHEMA_DIFF_DIRECTION = {
+  request: 'request',
+  response: 'response',
+} as const
+
+export type SchemaDiffDirection = typeof SCHEMA_DIFF_DIRECTION[keyof typeof SCHEMA_DIFF_DIRECTION]
+
+/**
+ * Returns a selector that picks the expected diff type based on direction.
+ * First argument is for request, second is for response.
+ */
+export function createExpectedType(direction: SchemaDiffDirection) {
+  return (forRequest: DiffType, forResponse: DiffType): DiffType => {
+    return direction === SCHEMA_DIFF_DIRECTION.request ? forRequest : forResponse
+  }
+}
+
+/**
+ * Extracts test ID from the current Jest test name.
+ * In Jest 30, `currentTestName` joins describe/test names with a space.
+ * Since all test names in our suites are kebab-case (no spaces), the last word is the test ID.
+ */
+export const currentTestId = (): string => {
+  const fullName = expect.getState().currentTestName!
+  return fullName.split(' ').pop()!
+}
 
 const toMajorMinor = (v: string): string => {
   const match = v.match(/^(\d+\.\d+)/)

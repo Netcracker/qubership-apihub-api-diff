@@ -1,5 +1,6 @@
 import { TEST_SPEC_TYPE_ASYNC_API } from '@netcracker/qubership-apihub-compatibility-suites'
-import { runGeneralRequestLikeSchemaTests } from '../schema/general/request-like'
+import { runGeneralSchemaTests } from '../schemas/schema-test-runner-general'
+import { SCHEMA_DIFF_DIRECTION } from '../utils'
 
 const SUITE_ID = 'operation-message-headers-send'
 
@@ -14,5 +15,5 @@ const MESSAGE_HEADERS_PATH = [
 ]
 
 describe('AsyncAPI Operation Message Headers (send)', () => {
-  runGeneralRequestLikeSchemaTests(TEST_SPEC_TYPE_ASYNC_API, SUITE_ID, MESSAGE_HEADERS_PATH)
+  runGeneralSchemaTests(TEST_SPEC_TYPE_ASYNC_API, SUITE_ID, MESSAGE_HEADERS_PATH, SCHEMA_DIFF_DIRECTION.request)
 })
