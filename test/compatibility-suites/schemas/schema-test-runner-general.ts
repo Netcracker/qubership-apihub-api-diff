@@ -6,9 +6,9 @@ import { diffsMatcher, expectSpecVersionChange } from '../../helper/matchers'
 import {
   compareFiles,
   compareFilesWithMerge,
-  createExpectedType,
+  createExpectedDiffTypeSelector,
   currentTestId,
-  SchemaDiffDirection,
+  DataFlowDirection,
   TEST_DEFAULTS_DECLARATION_PATHS,
 } from '../utils'
 
@@ -16,9 +16,9 @@ export function runGeneralSchemaTests(
   suiteType: TestSpecType,
   suiteId: string,
   commonPath: JsonPath,
-  direction: SchemaDiffDirection,
+  direction: DataFlowDirection,
 ): void {
-  const expectedType = createExpectedType(direction)
+  const expectedType = createExpectedDiffTypeSelector(direction)
 
   describe('General', () => {
     describe('JSON Schema Keywords', () => {

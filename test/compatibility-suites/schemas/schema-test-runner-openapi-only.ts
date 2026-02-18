@@ -4,9 +4,9 @@ import { annotation, breaking, DiffAction, nonBreaking, risky } from '../../../s
 import { diffsMatcher, expectSpecVersionChange } from '../../helper/matchers'
 import {
   compareFiles,
-  createExpectedType,
+  createExpectedDiffTypeSelector,
   currentTestId,
-  SchemaDiffDirection,
+  DataFlowDirection,
   TEST_DEFAULTS_DECLARATION_PATHS,
 } from '../utils'
 
@@ -14,9 +14,9 @@ export function runOpenApiOnlySchemaTests(
   suiteType: TestSpecType,
   suiteId: string,
   commonPath: JsonPath,
-  direction: SchemaDiffDirection,
+  direction: DataFlowDirection,
 ): void {
-  const expectedType = createExpectedType(direction)
+  const expectedType = createExpectedDiffTypeSelector(direction)
 
   describe('OpenAPI-Only', () => {
     describe('OpenAPI Vocabulary', () => {

@@ -15,20 +15,18 @@ import { apiDiff, CompareOptions, CompareResult, Diff, DiffType } from '../../sr
 import { RUNTIME_DIRECTIVE_LOCATIONS } from '../../src/graphapi'
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG, TEST_SYNTHETIC_TITLE_FLAG } from '../helper'
 
-export const SCHEMA_DIFF_DIRECTION = {
-  request: 'request',
-  response: 'response',
-} as const
+export const DATA_FLOW_DIRECTION_SEND = 'send' as const
+export const DATA_FLOW_DIRECTION_RECEIVE = 'receive' as const
 
-export type SchemaDiffDirection = typeof SCHEMA_DIFF_DIRECTION[keyof typeof SCHEMA_DIFF_DIRECTION]
+export type DataFlowDirection = typeof DATA_FLOW_DIRECTION_SEND | typeof DATA_FLOW_DIRECTION_RECEIVE
 
 /**
  * Returns a selector that picks the expected diff type based on direction.
  * First argument is for request, second is for response.
  */
-export function createExpectedType(direction: SchemaDiffDirection) {
-  return (forRequest: DiffType, forResponse: DiffType): DiffType => {
-    return direction === SCHEMA_DIFF_DIRECTION.request ? forRequest : forResponse
+export function createExpectedDiffTypeSelector(direction: DataFlowDirection) {
+  return (forSend: DiffType, forReceive: DiffType): DiffType => {
+    return direction === DATA_FLOW_DIRECTION_SEND ? forSend : forReceive
   }
 }
 
