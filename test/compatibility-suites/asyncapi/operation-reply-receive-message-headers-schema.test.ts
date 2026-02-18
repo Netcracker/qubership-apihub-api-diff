@@ -1,8 +1,8 @@
 import { TEST_SPEC_TYPE_ASYNC_API } from '@netcracker/qubership-apihub-compatibility-suites'
 import { runGeneralSchemaTests } from '../schemas/schema-test-runner-general'
-import { DATA_FLOW_DIRECTION_RECEIVE } from '../utils'
+import { DATA_FLOW_DIRECTION_SEND } from '../utils'
 
-const SUITE_ID = 'operation-reply-object-message-headers-send'
+const SUITE_ID = 'operation-reply-receive-message-headers'
 
 const REPLY_MESSAGE_HEADERS_PATH = [
   'channels',
@@ -14,6 +14,6 @@ const REPLY_MESSAGE_HEADERS_PATH = [
   'header1',
 ]
 
-describe('AsyncAPI Operation Reply Object Message Headers (send)', () => {
-  runGeneralSchemaTests(TEST_SPEC_TYPE_ASYNC_API, SUITE_ID, REPLY_MESSAGE_HEADERS_PATH, DATA_FLOW_DIRECTION_RECEIVE)
+describe('AsyncAPI Operation Reply Receive Message Headers', () => {
+  runGeneralSchemaTests(TEST_SPEC_TYPE_ASYNC_API, SUITE_ID, REPLY_MESSAGE_HEADERS_PATH, DATA_FLOW_DIRECTION_SEND)
 })
