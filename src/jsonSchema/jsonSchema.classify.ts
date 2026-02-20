@@ -76,7 +76,8 @@ export const multipleOfClassifier: ClassifyRule = [
 ]
 
 export const requiredItemClassifyRule: ClassifyRule = [
-  ({ after }) => (!isString(after.value) || isExist(strictResolveValueFromContext(after, PARENT_JUMP, PARENT_JUMP, 'properties', after.value, 'default')) ? nonBreaking : breaking),
+  // classification is the same, but we are keeping the code structure to be able to change it if needed
+  ({ after }) => (!isString(after.value) || isExist(strictResolveValueFromContext(after, PARENT_JUMP, PARENT_JUMP, 'properties', after.value, 'default')) ? breaking : breaking),
   nonBreaking,
   ({ after }) => (!isString(after.value) || isExist(strictResolveValueFromContext(after, PARENT_JUMP, PARENT_JUMP, 'properties', after.value, 'default')) ? nonBreaking : breaking),
   nonBreaking,

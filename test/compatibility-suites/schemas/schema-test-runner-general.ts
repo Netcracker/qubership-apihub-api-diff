@@ -655,12 +655,12 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'required', 0]],
-            type: nonBreaking,
+            type: expectedType(breaking, nonBreaking),
           }),
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'required', 1]],
-            type: nonBreaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
