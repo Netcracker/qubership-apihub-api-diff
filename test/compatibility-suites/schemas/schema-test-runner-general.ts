@@ -665,7 +665,7 @@ export function runGeneralSchemaTests(
         ]))
       })
 
-      test('remove-required-property', async () => {
+      test('remove-required-status-from-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
