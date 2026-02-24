@@ -676,6 +676,22 @@ export function runGeneralSchemaTests(
         ]))
       })
 
+      test('remove-required-property-compliance', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
+        expect(result).toEqual(diffsMatcher([
+          expect.objectContaining({
+            action: DiffAction.remove,
+            beforeDeclarationPaths: [[...commonPath, 'required', 0]],
+            type: expectedType(nonBreaking, breaking),
+          }),
+          expect.objectContaining({
+            action: DiffAction.remove,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'prop2']],
+            type: expectedType(nonBreaking, breaking),
+          }),
+        ]))
+      })
+
       test('update-required-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
