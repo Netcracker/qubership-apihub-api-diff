@@ -91,7 +91,7 @@ export const propertyClassifyRule: ClassifyRule = [
     !isExist(getKeyValue(after.value, 'default')) &&
     getArrayValue((strictResolveValueFromContext(after, PARENT_JUMP, PARENT_JUMP, 'required')))?.includes(after.key) ? breaking : nonBreaking
   ),
-  breaking,
+  nonBreaking,
   unclassified,
   nonBreaking,
   ({ before }) => (getArrayValue(strictResolveValueFromContext(before, PARENT_JUMP, PARENT_JUMP, 'required'))?.includes(before.key) ? breaking : nonBreaking),

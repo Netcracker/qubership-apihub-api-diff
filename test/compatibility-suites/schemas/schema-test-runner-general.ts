@@ -628,7 +628,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'prop2']],
-            type: expectedType(breaking, nonBreaking),
+            type: nonBreaking,
           }),
         ]))
       })
@@ -1026,7 +1026,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'allOf', 2, 'properties', 'prop3']],
-            type: expectedType(breaking, nonBreaking),
+            type: nonBreaking,
           }),
         ]))
       })
@@ -1037,7 +1037,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'allOf', 1, 'properties', 'prop2']],
-            type: expectedType(breaking, nonBreaking),
+            type: nonBreaking,
           }),
         ]))
       })
