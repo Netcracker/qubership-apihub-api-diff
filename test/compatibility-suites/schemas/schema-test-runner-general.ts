@@ -176,7 +176,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'format']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -350,7 +350,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'format']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
