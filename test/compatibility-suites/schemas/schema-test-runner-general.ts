@@ -165,7 +165,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'format']],
             afterDeclarationPaths: [[...commonPath, 'format']],
-            type: breaking,
+            type: expectedType(breaking, risky),
           }),
         ]))
       })
@@ -339,7 +339,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'format']],
             afterDeclarationPaths: [[...commonPath, 'format']],
-            type: breaking,
+            type: expectedType(breaking, risky),
           }),
         ]))
       })
