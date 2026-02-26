@@ -408,7 +408,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
