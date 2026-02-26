@@ -5,6 +5,7 @@ import {
   nonBreaking,
   PARENT_JUMP,
   risky,
+  riskyIf,
   strictResolveValueFromContext,
   unclassified,
 } from '../core'
@@ -48,6 +49,12 @@ export const minimumClassifier: ClassifyRule = [
   },
   nonBreaking,
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value < after.value),
+  ({ before, after }) => {
+    const beforeExclusiveMinimum = strictResolveValueFromContext(before, PARENT_JUMP, 'exclusiveMinimum')
+    return nonBreakingIf(!isNumber(beforeExclusiveMinimum) || !isNumber(after.value) || beforeExclusiveMinimum < after.value)
+  },
+  breaking,
+  ({ before, after }) => riskyIf(isNumber(before.value) && isNumber(after.value) && before.value >= after.value),
 ]
 
 export const maximumClassifier: ClassifyRule = [

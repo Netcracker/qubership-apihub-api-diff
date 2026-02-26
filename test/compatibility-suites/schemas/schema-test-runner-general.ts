@@ -385,7 +385,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
             afterDeclarationPaths: [[...commonPath, 'minimum']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
