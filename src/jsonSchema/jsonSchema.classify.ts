@@ -87,6 +87,9 @@ export const exclusiveClassifier: ClassifyRule = [
   ({ after }) => (after.value === true ? breaking : unclassified),
   ({ before }) => (before.value === true ? nonBreaking : unclassified),
   breakingIfAfterTrue,
+  ({ after }) => (after.value === true ? nonBreaking : unclassified),
+  ({ before }) => (before.value === true ? risky : unclassified),
+  ({ after }) => riskyIf(!after.value),
 ]
 
 //todo think about replace multipleOf in inverse case

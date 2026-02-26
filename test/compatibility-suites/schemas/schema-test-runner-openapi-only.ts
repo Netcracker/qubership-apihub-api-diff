@@ -333,13 +333,13 @@ export function runOpenApiOnlySchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'exclusiveMinimum']],
             afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMinimum']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMinimum']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -367,13 +367,13 @@ export function runOpenApiOnlySchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'exclusiveMaximum']],
             afterDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMaximum']],
             afterDeclarationPaths: [[...commonPath, 'properties', 'option2', 'exclusiveMaximum']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
