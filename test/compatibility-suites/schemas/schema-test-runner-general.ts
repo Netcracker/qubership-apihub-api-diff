@@ -390,6 +390,18 @@ export function runGeneralSchemaTests(
         ]))
       })
 
+      test('decrease-minimum-for-required-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
+        expect(result).toEqual(diffsMatcher([
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'prop1', 'minimum']],
+            afterDeclarationPaths: [[...commonPath, 'properties', 'prop1', 'minimum']],
+            type: expectedType(nonBreaking, breaking),
+          }),
+        ]))
+      })
+
       test('remove-minimum-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([

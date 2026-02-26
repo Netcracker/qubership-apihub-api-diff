@@ -54,7 +54,17 @@ export const minimumClassifier: ClassifyRule = [
     return nonBreakingIf(!isNumber(beforeExclusiveMinimum) || !isNumber(after.value) || beforeExclusiveMinimum < after.value)
   },
   breaking,
-  ({ before, after }) => riskyIf(isNumber(before.value) && isNumber(after.value) && before.value >= after.value),
+  ({ before, after }) => {
+    if (!isNumber(before.value) || !isNumber(after.value) || before.value < after.value) {
+      return nonBreaking
+    }
+    const propertyName = before.parentContext?.key
+    const requiredArray = getArrayValue(strictResolveValueFromContext(before, PARENT_JUMP, PARENT_JUMP, PARENT_JUMP, 'required'))
+    if (isString(propertyName) && requiredArray?.includes(propertyName)) {
+      return breaking
+    }
+    return risky
+  },
 ]
 
 export const maximumClassifier: ClassifyRule = [
