@@ -915,7 +915,7 @@ export function runGeneralSchemaTests(
               afterValue: 'string',
               beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
               afterDeclarationPaths: [[...commonPath, 'additionalProperties', 'type']],
-              type: expectedType(breaking, nonBreaking),
+              type: expectedType(breaking, risky),
             }),
           ]),
         )

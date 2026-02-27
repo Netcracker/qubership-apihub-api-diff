@@ -27,7 +27,7 @@ export const typeClassifier: ClassifyRule = [
   ({ before, after }) => nonBreakingIf(isTypeAssignable(before.value, after.value, false)),
   breaking,//not tested
   breaking,//not tested
-  ({ before, after }) => nonBreakingIf(isTypeAssignable(before.value, after.value, true)),
+  ({ before, after }) => isTypeAssignable(before.value, after.value, true) ? risky : breaking,
 ]
 
 export const maxClassifier: ClassifyRule = [
