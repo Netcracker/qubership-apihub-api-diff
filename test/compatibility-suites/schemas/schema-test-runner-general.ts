@@ -488,7 +488,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'multipleOf']],
             afterDeclarationPaths: [[...commonPath, 'multipleOf']],
-            type: breaking,
+            type: expectedType(breaking, risky),
           }),
         ]))
       })

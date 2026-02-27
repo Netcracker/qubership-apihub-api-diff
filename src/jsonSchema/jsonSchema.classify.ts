@@ -99,7 +99,7 @@ export const multipleOfClassifier: ClassifyRule = [
   ({ before, after }) => breakingIfNotMultiple(before.value, after.value),
   nonBreaking,
   breaking,
-  breaking,
+  risky,
 ]
 
 export const requiredItemClassifyRule: ClassifyRule = [
