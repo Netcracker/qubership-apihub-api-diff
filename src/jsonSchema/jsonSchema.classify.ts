@@ -35,7 +35,7 @@ export const maxClassifier: ClassifyRule = [
   nonBreaking,
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value > after.value),
   nonBreaking,
-  breaking,
+  risky,
   ({ before, after }) => riskyIf(isNumber(before.value) && isNumber(after.value) && before.value < after.value),
 ]
 

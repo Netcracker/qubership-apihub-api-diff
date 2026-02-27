@@ -282,7 +282,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxLength']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -593,7 +593,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxItems']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -892,7 +892,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
