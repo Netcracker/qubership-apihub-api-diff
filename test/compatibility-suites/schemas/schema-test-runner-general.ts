@@ -259,7 +259,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxLength']],
             afterDeclarationPaths: [[...commonPath, 'maxLength']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -570,7 +570,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxItems']],
             afterDeclarationPaths: [[...commonPath, 'maxItems']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -869,7 +869,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
             afterDeclarationPaths: [[...commonPath, 'maxProperties']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })

@@ -455,7 +455,7 @@ export function runOpenApiOnlySchemaTests(
               action: DiffAction.replace,
               beforeDeclarationPaths: [[...commonPath, 'maxLength']],
               afterDeclarationPaths: [[...COMPONENTS_SCHEMAS, 'Color', 'maxLength']],
-              type: expectedType(nonBreaking, breaking),
+              type: expectedType(nonBreaking, risky),
             }),
           ]))
         },

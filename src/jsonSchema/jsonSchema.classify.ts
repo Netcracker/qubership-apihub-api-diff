@@ -34,6 +34,9 @@ export const maxClassifier: ClassifyRule = [
   breaking,
   nonBreaking,
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value > after.value),
+  nonBreaking,
+  breaking,
+  ({ before, after }) => riskyIf(isNumber(before.value) && isNumber(after.value) && before.value < after.value),
 ]
 
 export const minClassifier: ClassifyRule = [
