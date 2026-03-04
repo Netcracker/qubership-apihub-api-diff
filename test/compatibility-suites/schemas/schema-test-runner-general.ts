@@ -2,7 +2,7 @@ import { JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY } from '@netcracker/qubership-apihu
 import { TestSpecType } from '@netcracker/qubership-apihub-compatibility-suites'
 import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 import { annotation, breaking, DiffAction, nonBreaking, risky } from '../../../src'
-import { diffsMatcher, expectSpecVersionChange } from '../../helper/matchers'
+import { buildSuiteSkipScopes, diffsMatcher, expectSpecVersionChange } from '../../helper/matchers'
 import {
   compareFiles,
   compareFilesWithMerge,
@@ -19,12 +19,14 @@ export function runGeneralSchemaTests(
   direction: DataFlowDirection,
 ): void {
   const expectedType = createExpectedDiffTypeSelector(direction)
+  const skipScopes = buildSuiteSkipScopes(suiteType)
+  const diffsMatcherWithSkippedScopes: typeof diffsMatcher = (expected) => diffsMatcher(expected, skipScopes)
 
   describe('General', () => {
     describe('JSON Schema Keywords', () => {
       test('add-schema-title', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'title']],
@@ -35,7 +37,7 @@ export function runGeneralSchemaTests(
 
       test('update-schema-title', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'title']],
@@ -47,7 +49,7 @@ export function runGeneralSchemaTests(
 
       test('remove-schema-title', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'title']],
@@ -58,7 +60,7 @@ export function runGeneralSchemaTests(
 
       test('update-schema-type', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'type']],
@@ -70,7 +72,7 @@ export function runGeneralSchemaTests(
 
       test('update-schema-type-from-specific-type-to-any-type', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeValue: 'string',
@@ -82,14 +84,20 @@ export function runGeneralSchemaTests(
         ]))
       })
 
-      test('update-schema-type-to-an-equivalent-value', async () => {
-        const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual([])
-      })
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'update-schema-type-to-an-equivalent-value',
+        suiteId,
+        async ({ beforeVersion, afterVersion, diffs }) => {
+          expect(diffs).toEqual(diffsMatcherWithSkippedScopes([
+            expectSpecVersionChange(suiteType, beforeVersion, afterVersion),
+          ]))
+        },
+      )
 
       test('add-enum', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'enum']],
@@ -100,7 +108,7 @@ export function runGeneralSchemaTests(
 
       test('remove-enum', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'enum']],
@@ -111,7 +119,7 @@ export function runGeneralSchemaTests(
 
       test('add-enum-value', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'enum', 2]],
@@ -122,7 +130,7 @@ export function runGeneralSchemaTests(
 
       test('update-enum-value', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'enum', 1]],
@@ -138,7 +146,7 @@ export function runGeneralSchemaTests(
 
       test('remove-enum-value', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'enum', 2]],
@@ -149,7 +157,7 @@ export function runGeneralSchemaTests(
 
       test('add-format-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'format']],
@@ -160,7 +168,7 @@ export function runGeneralSchemaTests(
 
       test('update-format-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'format']],
@@ -172,7 +180,7 @@ export function runGeneralSchemaTests(
 
       test('remove-format-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'format']],
@@ -183,7 +191,7 @@ export function runGeneralSchemaTests(
 
       test('add-min-length-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'minLength']],
@@ -201,7 +209,7 @@ export function runGeneralSchemaTests(
 
       test('increase-min-length-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minLength']],
@@ -213,7 +221,7 @@ export function runGeneralSchemaTests(
 
       test('decrease-min-length-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minLength']],
@@ -225,7 +233,7 @@ export function runGeneralSchemaTests(
 
       test('remove-min-length-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'minLength']],
@@ -243,7 +251,7 @@ export function runGeneralSchemaTests(
 
       test('add-max-length-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'maxLength']],
@@ -254,7 +262,7 @@ export function runGeneralSchemaTests(
 
       test('increase-max-length-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxLength']],
@@ -266,7 +274,7 @@ export function runGeneralSchemaTests(
 
       test('decrease-max-length-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxLength']],
@@ -278,7 +286,7 @@ export function runGeneralSchemaTests(
 
       test('remove-max-length-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxLength']],
@@ -289,7 +297,7 @@ export function runGeneralSchemaTests(
 
       test('add-pattern-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'pattern']],
@@ -300,7 +308,7 @@ export function runGeneralSchemaTests(
 
       test('update-pattern-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'pattern']],
@@ -312,7 +320,7 @@ export function runGeneralSchemaTests(
 
       test('remove-pattern-for-string-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'pattern']],
@@ -323,7 +331,7 @@ export function runGeneralSchemaTests(
 
       test('add-format-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'format']],
@@ -334,7 +342,7 @@ export function runGeneralSchemaTests(
 
       test('update-format-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'format']],
@@ -346,7 +354,7 @@ export function runGeneralSchemaTests(
 
       test('remove-format-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'format']],
@@ -357,7 +365,7 @@ export function runGeneralSchemaTests(
 
       test('add-minimum-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'minimum']],
@@ -368,7 +376,7 @@ export function runGeneralSchemaTests(
 
       test('increase-minimum-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
@@ -380,7 +388,7 @@ export function runGeneralSchemaTests(
 
       test('decrease-minimum-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
@@ -392,7 +400,7 @@ export function runGeneralSchemaTests(
 
       test('remove-minimum-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
@@ -403,7 +411,7 @@ export function runGeneralSchemaTests(
 
       test('add-maximum-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'maximum']],
@@ -414,7 +422,7 @@ export function runGeneralSchemaTests(
 
       test('increase-maximum-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maximum']],
@@ -426,7 +434,7 @@ export function runGeneralSchemaTests(
 
       test('decrease-maximum-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maximum']],
@@ -438,7 +446,7 @@ export function runGeneralSchemaTests(
 
       test('remove-maximum-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maximum']],
@@ -449,7 +457,7 @@ export function runGeneralSchemaTests(
 
       test('add-multiple-of-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'multipleOf']],
@@ -460,7 +468,7 @@ export function runGeneralSchemaTests(
 
       test('update-multiple-of-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'multipleOf']],
@@ -472,7 +480,7 @@ export function runGeneralSchemaTests(
 
       test('remove-multiple-of-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'multipleOf']],
@@ -483,7 +491,7 @@ export function runGeneralSchemaTests(
 
       test('add-min-items-for-array-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
@@ -495,7 +503,7 @@ export function runGeneralSchemaTests(
 
       test('increase-min-items-for-array-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minItems']],
@@ -507,7 +515,7 @@ export function runGeneralSchemaTests(
 
       test('decrease-min-items-for-array-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minItems']],
@@ -519,7 +527,7 @@ export function runGeneralSchemaTests(
 
       test('remove-min-items-for-array-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minItems']],
@@ -531,7 +539,7 @@ export function runGeneralSchemaTests(
 
       test('add-max-items-for-array-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'maxItems']],
@@ -542,7 +550,7 @@ export function runGeneralSchemaTests(
 
       test('increase-max-items-for-array-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxItems']],
@@ -554,7 +562,7 @@ export function runGeneralSchemaTests(
 
       test('decrease-max-items-for-array-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxItems']],
@@ -566,7 +574,7 @@ export function runGeneralSchemaTests(
 
       test('remove-max-items-for-array-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxItems']],
@@ -577,7 +585,7 @@ export function runGeneralSchemaTests(
 
       test('prohibit-non-unique-items-for-array-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
@@ -595,7 +603,7 @@ export function runGeneralSchemaTests(
 
       test('allow-non-unique-items-for-array-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'uniqueItems']],
@@ -613,7 +621,7 @@ export function runGeneralSchemaTests(
 
       test('add-new-property-compliance', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'properties', 'prop2']],
@@ -624,7 +632,7 @@ export function runGeneralSchemaTests(
 
       test('remove-property-compliance', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'prop2']],
@@ -635,7 +643,7 @@ export function runGeneralSchemaTests(
 
       test('add-required-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'required', 0]],
@@ -651,7 +659,7 @@ export function runGeneralSchemaTests(
 
       test('add-required-property-with-default', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'required', 0]],
@@ -667,7 +675,7 @@ export function runGeneralSchemaTests(
 
       test('remove-required-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'required', 0]],
@@ -678,7 +686,7 @@ export function runGeneralSchemaTests(
 
       test('update-required-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'required', 0]],
@@ -694,7 +702,7 @@ export function runGeneralSchemaTests(
 
       test('mark-object-property-as-read-only', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'readOnly']],
@@ -712,7 +720,7 @@ export function runGeneralSchemaTests(
 
       test('mark-object-property-as-not-read-only', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'readOnly']],
@@ -730,7 +738,7 @@ export function runGeneralSchemaTests(
 
       test('mark-object-property-as-write-only', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
@@ -748,7 +756,7 @@ export function runGeneralSchemaTests(
 
       test('mark-object-property-as-not-write-only', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'option1', 'writeOnly']],
@@ -766,7 +774,7 @@ export function runGeneralSchemaTests(
 
       test('add-min-properties-for-object-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
@@ -778,7 +786,7 @@ export function runGeneralSchemaTests(
 
       test('increase-min-properties-for-object-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minProperties']],
@@ -790,7 +798,7 @@ export function runGeneralSchemaTests(
 
       test('decrease-min-properties-for-object-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minProperties']],
@@ -802,7 +810,7 @@ export function runGeneralSchemaTests(
 
       test('remove-min-properties-for-object-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minProperties']],
@@ -814,7 +822,7 @@ export function runGeneralSchemaTests(
 
       test('add-max-properties-for-object-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'maxProperties']],
@@ -825,7 +833,7 @@ export function runGeneralSchemaTests(
 
       test('increase-max-properties-for-object-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
@@ -837,7 +845,7 @@ export function runGeneralSchemaTests(
 
       test('decrease-max-properties-for-object-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
@@ -849,7 +857,7 @@ export function runGeneralSchemaTests(
 
       test('remove-max-properties-for-object-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
@@ -869,7 +877,7 @@ export function runGeneralSchemaTests(
       test('add-non-boolean-additional-properties', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(
-          diffsMatcher([
+          diffsMatcherWithSkippedScopes([
             expect.objectContaining({
               action: DiffAction.replace,
               beforeValue: JSON_SCHEMA_NODE_SYNTHETIC_TYPE_ANY,
@@ -884,7 +892,7 @@ export function runGeneralSchemaTests(
 
       test('update-type-of-additional-properties', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'additionalProperties', 'type']],
@@ -897,7 +905,7 @@ export function runGeneralSchemaTests(
       test('remove-additional-properties', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(
-          diffsMatcher([
+          diffsMatcherWithSkippedScopes([
             expect.objectContaining({
               action: DiffAction.replace,
               beforeValue: 'string',
@@ -912,7 +920,7 @@ export function runGeneralSchemaTests(
 
       test('add-one-of', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'oneOf', 1]],
@@ -923,7 +931,7 @@ export function runGeneralSchemaTests(
 
       test('add-one-of-option', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'oneOf', 2]],
@@ -934,7 +942,7 @@ export function runGeneralSchemaTests(
 
       test('remove-one-of-option', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'oneOf', 2]],
@@ -945,7 +953,7 @@ export function runGeneralSchemaTests(
 
       test('remove-one-of', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'oneOf', 1]],
@@ -956,7 +964,7 @@ export function runGeneralSchemaTests(
 
       test('add-any-of', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'anyOf', 1]],
@@ -967,7 +975,7 @@ export function runGeneralSchemaTests(
 
       test('add-any-of-option', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'anyOf', 2]],
@@ -978,7 +986,7 @@ export function runGeneralSchemaTests(
 
       test('remove-any-of-option', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'anyOf', 2]],
@@ -989,7 +997,7 @@ export function runGeneralSchemaTests(
 
       test('remove-any-of', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'anyOf', 1]],
@@ -1000,7 +1008,7 @@ export function runGeneralSchemaTests(
 
       test('add-all-of', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'allOf', 1, 'properties', 'prop2']],
@@ -1011,7 +1019,7 @@ export function runGeneralSchemaTests(
 
       test('add-all-of-option', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'allOf', 2, 'properties', 'prop3']],
@@ -1022,7 +1030,7 @@ export function runGeneralSchemaTests(
 
       test('remove-all-of-option', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'allOf', 2, 'properties', 'prop3']],
@@ -1033,7 +1041,7 @@ export function runGeneralSchemaTests(
 
       test('remove-all-of', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'allOf', 1, 'properties', 'prop2']],
@@ -1045,7 +1053,7 @@ export function runGeneralSchemaTests(
       // TODO: fixme
       test.skip('update-schema-type-from-any-type-to-specific-type', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [TEST_DEFAULTS_DECLARATION_PATHS],
@@ -1058,7 +1066,7 @@ export function runGeneralSchemaTests(
       // TODO: fixme
       test.skip('update-schema-type-from-specific-type-to-nothing', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'type']],
@@ -1071,7 +1079,7 @@ export function runGeneralSchemaTests(
       // TODO: fixme
       test.skip('update-schema-type-from-nothing-to-specific-type', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
-        expect(result).toEqual(diffsMatcher([
+        expect(result).toEqual(diffsMatcherWithSkippedScopes([
           expect.objectContaining({
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'allOf']],
@@ -1120,7 +1128,7 @@ export function runGeneralSchemaTests(
         'add-union-type',
         suiteId,
         async ({ beforeVersion, afterVersion, diffs }) => {
-          expect(diffs).toEqual(diffsMatcher([
+          expect(diffs).toEqual(diffsMatcherWithSkippedScopes([
             expectSpecVersionChange(suiteType, beforeVersion, afterVersion),
             expect.objectContaining({
               action: DiffAction.add,
@@ -1136,7 +1144,7 @@ export function runGeneralSchemaTests(
         'add-null-to-union-type',
         suiteId,
         async ({ beforeVersion, afterVersion, diffs }) => {
-          expect(diffs).toEqual(diffsMatcher([
+          expect(diffs).toEqual(diffsMatcherWithSkippedScopes([
             expectSpecVersionChange(suiteType, beforeVersion, afterVersion),
             expect.objectContaining({
               action: DiffAction.add,
@@ -1152,7 +1160,7 @@ export function runGeneralSchemaTests(
         'remove-union-type',
         suiteId,
         async ({ beforeVersion, afterVersion, diffs }) => {
-          expect(diffs).toEqual(diffsMatcher([
+          expect(diffs).toEqual(diffsMatcherWithSkippedScopes([
             expectSpecVersionChange(suiteType, beforeVersion, afterVersion),
             expect.objectContaining({
               action: DiffAction.remove,
@@ -1168,7 +1176,7 @@ export function runGeneralSchemaTests(
         'remove-null-from-union-type',
         suiteId,
         async ({ beforeVersion, afterVersion, diffs }) => {
-          expect(diffs).toEqual(diffsMatcher([
+          expect(diffs).toEqual(diffsMatcherWithSkippedScopes([
             expectSpecVersionChange(suiteType, beforeVersion, afterVersion),
             expect.objectContaining({
               action: DiffAction.remove,
@@ -1184,7 +1192,7 @@ export function runGeneralSchemaTests(
         'reorder-types-in-union-type',
         suiteId,
         async ({ beforeVersion, afterVersion, diffs }) => {
-          expect(diffs).toEqual(diffsMatcher([
+          expect(diffs).toEqual(diffsMatcherWithSkippedScopes([
             expectSpecVersionChange(suiteType, beforeVersion, afterVersion),
           ]))
         },
@@ -1195,7 +1203,7 @@ export function runGeneralSchemaTests(
         'union-type-equivalent-to-any-of',
         suiteId,
         async ({ beforeVersion, afterVersion, diffs }) => {
-          expect(diffs).toEqual(diffsMatcher([
+          expect(diffs).toEqual(diffsMatcherWithSkippedScopes([
             expectSpecVersionChange(suiteType, beforeVersion, afterVersion),
           ]))
         },

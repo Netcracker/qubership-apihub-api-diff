@@ -1,5 +1,5 @@
 import { Diff } from '../../src'
-import { CompareScope } from '../../src/types'
+import { CompareScope, COMPARE_SCOPE_ROOT } from '../../src/types'
 import 'jest-extended'
 import {
   TEST_SPEC_TYPE_ASYNC_API,
@@ -135,4 +135,15 @@ export const expectSpecVersionChange = (
  */
 export const expectOpenApiVersionChange = (fromVersion: string = '3.0.4', toVersion: string = '3.1.0') => {
   return expectSpecVersionChange(TEST_SPEC_TYPE_OPEN_API, fromVersion, toVersion)
+}
+
+/**
+ * AsyncAPI produces each schema diff in two scopes: "root" and the direction-specific
+ * scope ("send"/"receive"). Compatibility-suite tests care about the direction-scoped
+ * diff only, so this helper returns the set of scopes to filter out.
+ */
+export function buildSuiteSkipScopes(suiteType: TestSpecType): Set<CompareScope> {
+  return suiteType === TEST_SPEC_TYPE_ASYNC_API
+    ? new Set<CompareScope>([COMPARE_SCOPE_ROOT])
+    : new Set<CompareScope>()
 }
