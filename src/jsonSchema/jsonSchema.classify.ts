@@ -5,6 +5,7 @@ import {
   nonBreaking,
   PARENT_JUMP,
   risky,
+  riskyIf,
   strictResolveValueFromContext,
   unclassified,
 } from '../core'
@@ -26,13 +27,16 @@ export const typeClassifier: ClassifyRule = [
   ({ before, after }) => nonBreakingIf(isTypeAssignable(before.value, after.value, false)),
   breaking,//not tested
   breaking,//not tested
-  ({ before, after }) => nonBreakingIf(isTypeAssignable(before.value, after.value, true)),
+  ({ before, after }) => isTypeAssignable(before.value, after.value, true) ? risky : breaking,
 ]
 
 export const maxClassifier: ClassifyRule = [
   breaking,
   nonBreaking,
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value > after.value),
+  nonBreaking,
+  risky,
+  ({ before, after }) => riskyIf(isNumber(before.value) && isNumber(after.value) && before.value < after.value),
 ]
 
 export const minClassifier: ClassifyRule = [
@@ -48,6 +52,29 @@ export const minimumClassifier: ClassifyRule = [
   },
   nonBreaking,
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value < after.value),
+  ({ before, after }) => {
+    const beforeExclusiveMinimum = strictResolveValueFromContext(before, PARENT_JUMP, 'exclusiveMinimum')
+    return nonBreakingIf(!isNumber(beforeExclusiveMinimum) || !isNumber(after.value) || beforeExclusiveMinimum < after.value)
+  },
+  ({ before }) => {
+    const propertyName = before.parentContext?.key
+    const requiredArray = getArrayValue(strictResolveValueFromContext(before, PARENT_JUMP, PARENT_JUMP, PARENT_JUMP, 'required'))
+    if (isString(propertyName) && requiredArray?.includes(propertyName)) {
+      return breaking
+    }
+    return risky
+  },
+  ({ before, after }) => {
+    if (!isNumber(before.value) || !isNumber(after.value) || before.value < after.value) {
+      return nonBreaking
+    }
+    const propertyName = before.parentContext?.key
+    const requiredArray = getArrayValue(strictResolveValueFromContext(before, PARENT_JUMP, PARENT_JUMP, PARENT_JUMP, 'required'))
+    if (isString(propertyName) && requiredArray?.includes(propertyName)) {
+      return breaking
+    }
+    return risky
+  },
 ]
 
 export const maximumClassifier: ClassifyRule = [
@@ -63,6 +90,9 @@ export const exclusiveClassifier: ClassifyRule = [
   ({ after }) => (after.value === true ? breaking : unclassified),
   ({ before }) => (before.value === true ? nonBreaking : unclassified),
   breakingIfAfterTrue,
+  ({ after }) => (after.value === true ? nonBreaking : unclassified),
+  ({ before }) => (before.value === true ? risky : unclassified),
+  ({ after }) => riskyIf(!after.value),
 ]
 
 //todo think about replace multipleOf in inverse case
@@ -72,11 +102,12 @@ export const multipleOfClassifier: ClassifyRule = [
   ({ before, after }) => breakingIfNotMultiple(before.value, after.value),
   nonBreaking,
   breaking,
-  breaking,
+  risky,
 ]
 
 export const requiredItemClassifyRule: ClassifyRule = [
-  ({ after }) => (!isString(after.value) || isExist(strictResolveValueFromContext(after, PARENT_JUMP, PARENT_JUMP, 'properties', after.value, 'default')) ? nonBreaking : breaking),
+  // classification is the same, but we are keeping the code structure to be able to change it if needed
+  ({ after }) => (!isString(after.value) || isExist(strictResolveValueFromContext(after, PARENT_JUMP, PARENT_JUMP, 'properties', after.value, 'default')) ? breaking : breaking),
   nonBreaking,
   ({ after }) => (!isString(after.value) || isExist(strictResolveValueFromContext(after, PARENT_JUMP, PARENT_JUMP, 'properties', after.value, 'default')) ? nonBreaking : breaking),
   nonBreaking,
@@ -90,7 +121,7 @@ export const propertyClassifyRule: ClassifyRule = [
     !isExist(getKeyValue(after.value, 'default')) &&
     getArrayValue((strictResolveValueFromContext(after, PARENT_JUMP, PARENT_JUMP, 'required')))?.includes(after.key) ? breaking : nonBreaking
   ),
-  breaking,
+  nonBreaking,
   unclassified,
   nonBreaking,
   ({ before }) => (getArrayValue(strictResolveValueFromContext(before, PARENT_JUMP, PARENT_JUMP, 'required'))?.includes(before.key) ? breaking : nonBreaking),

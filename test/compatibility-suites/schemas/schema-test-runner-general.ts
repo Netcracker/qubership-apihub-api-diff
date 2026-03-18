@@ -165,7 +165,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'format']],
             afterDeclarationPaths: [[...commonPath, 'format']],
-            type: breaking,
+            type: expectedType(breaking, risky),
           }),
         ]))
       })
@@ -176,7 +176,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'format']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -259,7 +259,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxLength']],
             afterDeclarationPaths: [[...commonPath, 'maxLength']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -282,7 +282,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxLength']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -339,7 +339,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'format']],
             afterDeclarationPaths: [[...commonPath, 'format']],
-            type: breaking,
+            type: expectedType(breaking, risky),
           }),
         ]))
       })
@@ -350,7 +350,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'format']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -385,6 +385,18 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
             afterDeclarationPaths: [[...commonPath, 'minimum']],
+            type: expectedType(nonBreaking, risky),
+          }),
+        ]))
+      })
+
+      test('decrease-minimum-for-required-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
+        expect(result).toEqual(diffsMatcher([
+          expect.objectContaining({
+            action: DiffAction.replace,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'prop1', 'minimum']],
+            afterDeclarationPaths: [[...commonPath, 'properties', 'prop1', 'minimum']],
             type: expectedType(nonBreaking, breaking),
           }),
         ]))
@@ -396,6 +408,17 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
+            type: expectedType(nonBreaking, risky),
+          }),
+        ]))
+      })
+
+      test('remove-minimum-for-required-number-property', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
+        expect(result).toEqual(diffsMatcher([
+          expect.objectContaining({
+            action: DiffAction.remove,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'prop1', 'minimum']],
             type: expectedType(nonBreaking, breaking),
           }),
         ]))
@@ -465,7 +488,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'multipleOf']],
             afterDeclarationPaths: [[...commonPath, 'multipleOf']],
-            type: breaking,
+            type: expectedType(breaking, risky),
           }),
         ]))
       })
@@ -547,7 +570,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxItems']],
             afterDeclarationPaths: [[...commonPath, 'maxItems']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -570,7 +593,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxItems']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -628,7 +651,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'properties', 'prop2']],
-            type: expectedType(breaking, nonBreaking),
+            type: nonBreaking,
           }),
         ]))
       })
@@ -655,22 +678,38 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'required', 0]],
-            type: nonBreaking,
+            type: expectedType(breaking, nonBreaking),
           }),
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...commonPath, 'required', 1]],
-            type: nonBreaking,
+            type: expectedType(breaking, nonBreaking),
           }),
         ]))
       })
 
-      test('remove-required-property', async () => {
+      test('remove-required-status-from-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'required', 0]],
+            type: expectedType(nonBreaking, breaking),
+          }),
+        ]))
+      })
+
+      test('remove-required-property-compliance', async () => {
+        const result = await compareFiles(suiteId, currentTestId(), suiteType)
+        expect(result).toEqual(diffsMatcher([
+          expect.objectContaining({
+            action: DiffAction.remove,
+            beforeDeclarationPaths: [[...commonPath, 'required', 0]],
+            type: expectedType(nonBreaking, breaking),
+          }),
+          expect.objectContaining({
+            action: DiffAction.remove,
+            beforeDeclarationPaths: [[...commonPath, 'properties', 'prop2']],
             type: expectedType(nonBreaking, breaking),
           }),
         ]))
@@ -830,7 +869,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
             afterDeclarationPaths: [[...commonPath, 'maxProperties']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -853,7 +892,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maxProperties']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ]))
       })
@@ -876,7 +915,7 @@ export function runGeneralSchemaTests(
               afterValue: 'string',
               beforeDeclarationPaths: TEST_DEFAULTS_DECLARATION_PATHS,
               afterDeclarationPaths: [[...commonPath, 'additionalProperties', 'type']],
-              type: expectedType(breaking, nonBreaking),
+              type: expectedType(breaking, risky),
             }),
           ]),
         )
@@ -1026,7 +1065,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'allOf', 2, 'properties', 'prop3']],
-            type: expectedType(breaking, nonBreaking),
+            type: nonBreaking,
           }),
         ]))
       })
@@ -1037,7 +1076,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'allOf', 1, 'properties', 'prop2']],
-            type: expectedType(breaking, nonBreaking),
+            type: nonBreaking,
           }),
         ]))
       })
