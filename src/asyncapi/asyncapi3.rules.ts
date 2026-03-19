@@ -140,7 +140,6 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
     $: allAnnotation,
     '/headers': {
       $: allAnnotation,
-      '/*': { $: allAnnotation },
       '/**': { $: allAnnotation },
     },
     '/payload': {
@@ -158,11 +157,11 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
   }
 
   const messageRules: CompareRules = {
-    $: allBreaking,
+    $: allUnclassified,
     '/headers': (ctx) => ({ ...schemaOrMultiFormatSchemaRules(ctx), $: allBreaking }),
     '/correlationId': correlationIdRules,
     '/contentType': { $: addNonBreaking },
-    '/name': { $: allNonBreaking },
+    '/name': { $: allAnnotation },
     '/title': { $: allAnnotation },
     '/summary': { $: allAnnotation },
     '/description': { $: allAnnotation },
@@ -182,7 +181,6 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
     ...asyncApiSpecificationExtensionRulesFunction(allUnclassified),
   }
 
-  //TODO: validate classification
   const parameterRules: CompareRules = {
     $: allUnclassified,
     '/enum': {
@@ -257,7 +255,7 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
   const operationRules = (isSendAction: boolean): CompareRules => ({
     // For send operations: add=non-breaking (can send new types), remove=breaking
     // For receive operations: add=breaking (must handle new types), remove=non-breaking
-    $: isSendAction //TODO: fix scopes
+    $: isSendAction
       ? [nonBreaking, breaking, unclassified]
       : [breaking, nonBreaking, unclassified],
     [START_NEW_COMPARE_SCOPE_RULE]: isSendAction ? COMPARE_SCOPE_SEND : COMPARE_SCOPE_RECEIVE,
@@ -283,7 +281,6 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
     ...asyncApiSpecificationExtensionRulesFunction(),
   })
 
-  //TODO: review
   const operationsRules: CompareRules = {
     $: addNonBreaking,
     '/*': ({ value }) => {
@@ -319,7 +316,7 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
       },
     },
     '/messages': {
-      $: [nonBreaking, breaking, breaking],
+      $: allUnclassified,
       '/*': messageRules,
     },
     '/securitySchemes': {
