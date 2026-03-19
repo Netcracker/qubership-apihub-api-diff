@@ -95,7 +95,7 @@ function makeSpec({
 describe('createPropertyMappingResolver', () => {
   const SYM = Symbol('key')
   const resolver = createPropertyMappingResolver(SYM)
-  const mockCtx = {} as never
+  const mockCtx = {} as any
 
   const item = (key: string) => ({ [SYM]: key })
 
@@ -355,7 +355,7 @@ describe('firstReferenceKeyProperty retained in merged document if explicitly pa
   })
 })
 
-describe('messages mapped by firstReferenceKeyProperty ', () => {
+describe('messages mapped by firstReferenceKeyProperty', () => {
   it('reordered operation messages produce no diffs', async () => {
     const before = makeSpec({ messageIds: ['MessageA', 'MessageB'] })
     const after = makeSpec({ messageIds: ['MessageB', 'MessageA'] })
@@ -381,6 +381,7 @@ describe('messages mapped by firstReferenceKeyProperty ', () => {
     const { diffs } = apiDiff(before, after)
 
     // diffs for MessageA in 3 scopes are reported only
+    expect(diffs).toHaveLength(3)
     const COMPONENTS_MESSAGE_A_PAYLOAD_TYPE_PATH = ['components', 'messages', 'MessageA', 'payload', 'type']
     const TYPE_CHANGE_DIFF = {
       beforeDeclarationPaths: [COMPONENTS_MESSAGE_A_PAYLOAD_TYPE_PATH],
@@ -390,6 +391,131 @@ describe('messages mapped by firstReferenceKeyProperty ', () => {
       afterValue: 'integer',
     }
     expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        ...TYPE_CHANGE_DIFF,
+        scope: COMPARE_SCOPE_ROOT,
+      }),
+      expect.objectContaining({
+        ...TYPE_CHANGE_DIFF,
+        scope: COMPARE_SCOPE_COMPONENTS,
+      }),
+      expect.objectContaining({
+        ...TYPE_CHANGE_DIFF,
+        scope: COMPARE_SCOPE_SEND,
+      }),
+    ]))
+  })
+
+  it('add message, modify existing message', async () => {
+    const before = makeSpec({
+      messageIds: ['MessageA'],
+    })
+    const after = makeSpec({
+      messageIds: ['MessageB', 'MessageA'],
+      messagePayloadsPatch: { MessageA: { type: 'integer' } },
+    })
+
+    await parseAsyncApiAndAssertValid(before)
+    await parseAsyncApiAndAssertValid(after)
+
+    const { diffs } = apiDiff(before, after)
+
+
+    const COMPONENTS_MESSAGE_A_PAYLOAD_TYPE_PATH = ['components', 'messages', 'MessageA', 'payload', 'type']
+    const TYPE_CHANGE_DIFF = {
+      beforeDeclarationPaths: [COMPONENTS_MESSAGE_A_PAYLOAD_TYPE_PATH],
+      afterDeclarationPaths: [COMPONENTS_MESSAGE_A_PAYLOAD_TYPE_PATH],
+      action: DiffAction.replace,
+      beforeValue: 'string',
+      afterValue: 'integer',
+    }
+    const ADD_MESSAGE_DIFF = {
+      afterDeclarationPaths: [['channels', 'myChannel', 'messages', 'MessageB']],
+      action: DiffAction.add,
+      afterValue: {
+        payload: {
+          type: "integer",
+        },
+      },
+    }
+
+    expect(diffs).toHaveLength(6)
+    expect(diffs).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        ...ADD_MESSAGE_DIFF,
+        scope: COMPARE_SCOPE_ROOT,
+      }),
+      expect.objectContaining({
+        ...ADD_MESSAGE_DIFF,
+        scope: COMPARE_SCOPE_SEND,
+      }),
+      expect.objectContaining({
+        ...ADD_MESSAGE_DIFF,
+        afterDeclarationPaths: [['operations', 'myOp', 'messages', 0]],
+        scope: COMPARE_SCOPE_SEND,
+      }),
+      expect.objectContaining({
+        ...TYPE_CHANGE_DIFF,
+        scope: COMPARE_SCOPE_ROOT,
+      }),
+      expect.objectContaining({
+        ...TYPE_CHANGE_DIFF,
+        scope: COMPARE_SCOPE_COMPONENTS,
+      }),
+      expect.objectContaining({
+        ...TYPE_CHANGE_DIFF,
+        scope: COMPARE_SCOPE_SEND,
+      }),
+    ]))
+  })
+
+  it('remove message, modify remaining message', async () => {
+    const before = makeSpec({
+      messageIds: ['MessageB', 'MessageA'],
+    })
+    const after = makeSpec({
+      messageIds: ['MessageA'],
+      messagePayloadsPatch: { MessageA: { type: 'integer' } },
+    })
+
+    await parseAsyncApiAndAssertValid(before)
+    await parseAsyncApiAndAssertValid(after)
+
+    const { diffs } = apiDiff(before, after)
+
+    const COMPONENTS_MESSAGE_A_PAYLOAD_TYPE_PATH = ['components', 'messages', 'MessageA', 'payload', 'type']
+    const TYPE_CHANGE_DIFF = {
+      beforeDeclarationPaths: [COMPONENTS_MESSAGE_A_PAYLOAD_TYPE_PATH],
+      afterDeclarationPaths: [COMPONENTS_MESSAGE_A_PAYLOAD_TYPE_PATH],
+      action: DiffAction.replace,
+      beforeValue: 'string',
+      afterValue: 'integer',
+    }
+    const REMOVE_MESSAGE_DIFF = {
+      beforeDeclarationPaths: [['channels', 'myChannel', 'messages', 'MessageB']],
+      action: DiffAction.remove,
+      beforeValue: {
+        payload: {
+          type: "integer",
+        },
+      },
+    }
+
+    expect(diffs).toHaveLength(6)
+    expect(diffs).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        ...REMOVE_MESSAGE_DIFF,
+        scope: COMPARE_SCOPE_ROOT,
+      }),
+      expect.objectContaining({
+        ...REMOVE_MESSAGE_DIFF,
+        scope: COMPARE_SCOPE_SEND,
+      }),
+      expect.objectContaining({
+        ...REMOVE_MESSAGE_DIFF,
+        beforeDeclarationPaths: [['operations', 'myOp', 'messages', 0]],
+        scope: COMPARE_SCOPE_SEND,
+      }),
       expect.objectContaining({
         ...TYPE_CHANGE_DIFF,
         scope: COMPARE_SCOPE_ROOT,
@@ -434,6 +560,7 @@ describe('servers mapped by key', () => {
 
     const { diffs } = apiDiff(before, after)
 
+    expect(diffs).toHaveLength(2)
     const HOST_CHANGE_DIFF = {
       beforeValue: 'remote.host',
       afterValue: 'remote.changed',
@@ -442,6 +569,113 @@ describe('servers mapped by key', () => {
       beforeDeclarationPaths: [['servers', 'serverB', 'host']],
     }
     expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        ...HOST_CHANGE_DIFF,
+        scope: COMPARE_SCOPE_ROOT,
+      }),
+      expect.objectContaining({
+        ...HOST_CHANGE_DIFF,
+        scope: COMPARE_SCOPE_SEND,
+      }),
+    ]))
+  })
+
+  it('add server, modify existing server', async () => {
+    const before = makeSpec({
+      serverIds: ['serverA'],
+    })
+    const after = makeSpec({
+      serverIds: ['serverB', 'serverA'],
+      serversPatch: {
+        serverA: { host: 'localhost.changed', protocol: 'amqp' },
+      },
+    })
+
+    await parseAsyncApiAndAssertValid(before)
+    await parseAsyncApiAndAssertValid(after)
+
+    const { diffs } = apiDiff(before, after)
+
+    const HOST_CHANGE_DIFF = {
+      beforeValue: 'localhost',
+      afterValue: 'localhost.changed',
+      action: DiffAction.replace,
+      afterDeclarationPaths: [['servers', 'serverA', 'host']],
+      beforeDeclarationPaths: [['servers', 'serverA', 'host']],
+    }
+    const ADD_SERVER_DIFF = {
+      afterDeclarationPaths: [['channels', 'myChannel', 'servers', 0]],
+      action: DiffAction.add,
+      afterValue: {
+        host: 'remote.host',
+        protocol: 'amqp',
+      },
+    }
+
+    expect(diffs).toHaveLength(4)
+    expect(diffs).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        ...ADD_SERVER_DIFF,
+        scope: COMPARE_SCOPE_ROOT,
+      }),
+      expect.objectContaining({
+        ...ADD_SERVER_DIFF,
+        scope: COMPARE_SCOPE_SEND,
+      }),
+      expect.objectContaining({
+        ...HOST_CHANGE_DIFF,
+        scope: COMPARE_SCOPE_ROOT,
+      }),
+      expect.objectContaining({
+        ...HOST_CHANGE_DIFF,
+        scope: COMPARE_SCOPE_SEND,
+      }),
+    ]))
+  })
+
+  it('remove server, modify remaining server', async () => {
+    const before = makeSpec({
+      serverIds: ['serverB', 'serverA'],
+    })
+    const after = makeSpec({
+      serverIds: ['serverA'],
+      serversPatch: {
+        serverA: { host: 'localhost.changed', protocol: 'amqp' },
+      },
+    })
+
+    await parseAsyncApiAndAssertValid(before)
+    await parseAsyncApiAndAssertValid(after)
+
+    const { diffs } = apiDiff(before, after)
+
+    const HOST_CHANGE_DIFF = {
+      beforeValue: 'localhost',
+      afterValue: 'localhost.changed',
+      action: DiffAction.replace,
+      afterDeclarationPaths: [['servers', 'serverA', 'host']],
+      beforeDeclarationPaths: [['servers', 'serverA', 'host']],
+    }
+    const REMOVE_SERVER_DIFF = {
+      beforeDeclarationPaths: [['channels', 'myChannel', 'servers', 0]],
+      action: DiffAction.remove,
+      beforeValue: {
+        host: 'remote.host',
+        protocol: 'amqp',
+      },
+    }
+
+    expect(diffs).toHaveLength(4)
+    expect(diffs).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        ...REMOVE_SERVER_DIFF,
+
+        scope: COMPARE_SCOPE_ROOT,
+      }),
+      expect.objectContaining({
+        ...REMOVE_SERVER_DIFF,
+        scope: COMPARE_SCOPE_SEND,
+      }),
       expect.objectContaining({
         ...HOST_CHANGE_DIFF,
         scope: COMPARE_SCOPE_ROOT,
@@ -477,6 +711,7 @@ describe('operations mapped by key', () => {
 
     const { diffs } = apiDiff(before, after)
 
+    expect(diffs).toHaveLength(1)
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         afterValue: "changed description",
@@ -485,6 +720,72 @@ describe('operations mapped by key', () => {
           [
             "operations",
             "opB",
+            "description",
+          ],
+        ],
+        scope: "send",
+      }),
+    ]))
+  })
+
+  it('add operation, modify existing operation', async () => {
+    const before = makeSpec({ operationIds: ['opA'] })
+    const after = makeSpec({ operationIds: ['opB', 'opA'] })
+
+      ; (after as any).operations.opA.description = 'changed description'
+
+    await parseAsyncApiAndAssertValid(before)
+    await parseAsyncApiAndAssertValid(after)
+
+    const { diffs } = apiDiff(before, after)
+
+    expect(diffs).toHaveLength(2)
+    expect(diffs).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        afterDeclarationPaths: [['operations', 'opB']],
+        action: DiffAction.add,
+        scope: 'root',
+      }),
+      expect.objectContaining({
+        afterValue: "changed description",
+        action: "add",
+        afterDeclarationPaths: [
+          [
+            "operations",
+            "opA",
+            "description",
+          ],
+        ],
+        scope: "send",
+      }),
+    ]))
+  })
+
+  it('remove operation, modify remaining operation', async () => {
+    const before = makeSpec({ operationIds: ['opB', 'opA'] })
+    const after = makeSpec({ operationIds: ['opA'] })
+
+      ; (after as any).operations.opA.description = 'changed description'
+
+    await parseAsyncApiAndAssertValid(before)
+    await parseAsyncApiAndAssertValid(after)
+
+    const { diffs } = apiDiff(before, after)
+
+    expect(diffs).toHaveLength(2)
+    expect(diffs).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        beforeDeclarationPaths: [['operations', 'opB']],
+        action: DiffAction.remove,
+        scope: 'root',
+      }),
+      expect.objectContaining({
+        afterValue: "changed description",
+        action: "add",
+        afterDeclarationPaths: [
+          [
+            "operations",
+            "opA",
             "description",
           ],
         ],
