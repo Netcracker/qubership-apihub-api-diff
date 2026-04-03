@@ -50,6 +50,7 @@ import {
   paramClassifyRule,
   paramClassifyRuleIdRule,
   parameterAllowReservedClassifyRule,
+  parameterAllowReservedClassifyRuleIdRule,
   parameterExplodeClassifyRule,
   parameterExplodeClassifyRuleIdRule,
   parameterNameClassifyRule,
@@ -170,6 +171,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       },
       '/allowReserved': {
         $: parameterAllowReservedClassifyRule,
+        classifyRuleId: parameterAllowReservedClassifyRuleIdRule,
         description: diffDescription(resolveParameterDescriptionTemplates('allowReserved status'))
       },
       '/deprecated': {

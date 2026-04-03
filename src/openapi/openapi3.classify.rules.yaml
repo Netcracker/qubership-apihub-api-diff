@@ -94,3 +94,37 @@
     classifyRuleId: rest.parameter.explode.replace
   set:
     type: breaking
+
+# ---------------------------------------------------------------------------
+# Parameter Object > allowReserved property
+# ---------------------------------------------------------------------------
+# allowReserved only applies to query parameters; path/cookie/header → unclassified.
+# For add and remove the same ruleId is used; the YAML action filter distinguishes
+# the outcome (add→non-breaking, remove→breaking).
+
+- match:
+    classifyRuleId: rest.parameter.allow-reserved.after-in-non-query
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.parameter.allow-reserved.after-in-query
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.allow-reserved.after-in-query
+    action: remove
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.allow-reserved.replace.after-true
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.allow-reserved.replace.after-false
+  set:
+    type: breaking

@@ -84,6 +84,27 @@ export const parameterExplodeClassifyRule: ClassifyRule = [
   breaking,
 ]
 
+const isAllowReservedNonApplicable = (after: { parent: unknown }): boolean =>
+  ['path', 'cookie', 'header'].includes(getKeyValue(after.parent, 'in') as string)
+
+export const parameterAllowReservedClassifyRuleIdRule: ClassifyRuleIdRule = [
+  ({ after }) => (isAllowReservedNonApplicable(after)
+    ? REST_CLASSIFY_RULE_IDS.PARAMETER_ALLOW_RESERVED_AFTER_IN_NON_QUERY
+    : REST_CLASSIFY_RULE_IDS.PARAMETER_ALLOW_RESERVED_AFTER_IN_QUERY),
+  // The classifier uses `after` for the remove case (parameter still present; `in` is on after.parent)
+  ({ after }) => (isAllowReservedNonApplicable(after)
+    ? REST_CLASSIFY_RULE_IDS.PARAMETER_ALLOW_RESERVED_AFTER_IN_NON_QUERY
+    : REST_CLASSIFY_RULE_IDS.PARAMETER_ALLOW_RESERVED_AFTER_IN_QUERY),
+  ({ after }) => {
+    if (isAllowReservedNonApplicable(after)) {
+      return REST_CLASSIFY_RULE_IDS.PARAMETER_ALLOW_RESERVED_AFTER_IN_NON_QUERY
+    }
+    return after.value
+      ? REST_CLASSIFY_RULE_IDS.PARAMETER_ALLOW_RESERVED_REPLACE_AFTER_TRUE
+      : REST_CLASSIFY_RULE_IDS.PARAMETER_ALLOW_RESERVED_REPLACE_AFTER_FALSE
+  },
+]
+
 export const parameterAllowReservedClassifyRule: ClassifyRule = [
   ({ after }) => (['path', 'cookie', 'header'].includes(getKeyValue(after.parent, 'in') as string) ? unclassified : nonBreaking),
   ({ after }) => (['path', 'cookie', 'header'].includes(getKeyValue(after.parent, 'in') as string) ? unclassified : breaking),
