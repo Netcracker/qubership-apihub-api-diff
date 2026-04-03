@@ -175,4 +175,36 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    * By default, breaking (request); non-breaking (response).
    */
   MINIMUM_REPLACE_CONSTRAINT_TIGHTENED: 'json-schema.minimum.replace.constraint-tightened',
+
+  /**
+   * JSON Schema `maximum` keyword added — the before schema already has a numeric
+   * `exclusiveMaximum` that is less than or equal to the new `maximum` value,
+   * so the new `maximum` does not introduce any tighter bound.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MAXIMUM_ADD_BEFORE_EXCLUSIVE_MAX_COVERS: 'json-schema.maximum.add.before-exclusive-max-covers',
+  /**
+   * JSON Schema `maximum` keyword added — either no numeric `exclusiveMaximum` existed
+   * in the before schema, or its value is greater than the new `maximum`, meaning the new
+   * `maximum` introduces a tighter upper bound.
+   * By default, breaking (request); non-breaking (response).
+   */
+  MAXIMUM_ADD_BEFORE_EXCLUSIVE_MAX_NOT_COVERS: 'json-schema.maximum.add.before-exclusive-max-not-covers',
+  /**
+   * JSON Schema `maximum` keyword removed — the upper-bound constraint is dropped.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MAXIMUM_REMOVE: 'json-schema.maximum.remove',
+  /**
+   * JSON Schema `maximum` keyword replace — the after value is greater than or equal to the
+   * before value (both numeric), meaning the upper bound was relaxed or kept the same.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MAXIMUM_REPLACE_CONSTRAINT_RELAXED: 'json-schema.maximum.replace.constraint-relaxed',
+  /**
+   * JSON Schema `maximum` keyword replace — the after value is less than the before value,
+   * or either value is non-numeric, meaning the upper bound was tightened or is indeterminate.
+   * By default, breaking (request); non-breaking (response).
+   */
+  MAXIMUM_REPLACE_CONSTRAINT_TIGHTENED: 'json-schema.maximum.replace.constraint-tightened',
 } as const

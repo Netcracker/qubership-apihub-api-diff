@@ -103,6 +103,19 @@ export const minimumClassifier: ClassifyRule = [
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value < after.value),
 ]
 
+export const maximumClassifyRuleIdRule: ClassifyRuleIdRule = [
+  ({ before, after }) => {
+    const beforeExclusiveMaximum = getKeyValue(before.parent, 'exclusiveMaximum')
+    return (isNumber(beforeExclusiveMaximum) && isNumber(after.value) && beforeExclusiveMaximum <= after.value)
+      ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_ADD_BEFORE_EXCLUSIVE_MAX_COVERS
+      : JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_ADD_BEFORE_EXCLUSIVE_MAX_NOT_COVERS
+  },
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_REMOVE,
+  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && before.value <= after.value
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_REPLACE_CONSTRAINT_RELAXED
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_REPLACE_CONSTRAINT_TIGHTENED),
+]
+
 export const maximumClassifier: ClassifyRule = [
   ({ before, after }) => {
     const beforeExclusiveMaximum = getKeyValue(before.parent, 'exclusiveMaximum')
