@@ -1,0 +1,30 @@
+# OOB matching rules for REST (OpenAPI 3.x) classify rule IDs.
+#
+# The classifyRuleId already encodes the subset/not-subset condition, so a
+# single rule per ruleId is sufficient — no action or scope disambiguation.
+#
+# Rule ordering convention: rules are applied in direct array order; the LAST
+# matching rule wins. Place more-specific rules after the general catch-all.
+#
+# breaking → risky reclassification (effectiveBwcScope: NOT_BACKWARD_COMPATIBLE)
+# is handled for all ruleIds by general.classify.rules.yaml via the wildcard '*'.
+
+- match:
+    classifyRuleId: rest.operation.security.after-security-requirements-are-subset-of-before
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.operation.security.after-security-requirements-are-not-a-subset-of-before
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.operation.security.item.after-security-requirements-are-subset-of-before
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.operation.security.item.after-security-requirements-are-not-a-subset-of-before
+  set:
+    type: breaking

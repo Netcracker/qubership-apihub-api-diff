@@ -1,0 +1,207 @@
+# OOB matching rules for JSON Schema classify rule IDs.
+#
+# Several ruleIds produce a different type in response schemas (scope: response)
+# because openApiSchemaRules applies reverseClassifyRuleTransformer for response
+# schemas. Scope values: 'root' (raw JSON Schema), 'request', 'response'.
+#
+# Rule ordering convention: rules are applied in direct array order; the LAST
+# matching rule wins. General catch-all rules come first; more-specific rules
+# (with scope/action filters) come after and override the general rule.
+#
+# breaking → risky reclassification (effectiveBwcScope: NOT_BACKWARD_COMPATIBLE)
+# is handled for all ruleIds by general.classify.rules.yaml via the wildcard '*'.
+
+# ---------------------------------------------------------------------------
+# type keyword
+# ---------------------------------------------------------------------------
+
+- match:
+    classifyRuleId: json-schema.type.add
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: json-schema.type.remove
+  set:
+    type: breaking
+
+# after-is-superset-of-before (e.g. integer → number):
+#   request / root → non-breaking   (general, lower priority)
+#   response       → breaking       (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.type.replace.after-is-superset-of-before
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.type.replace.after-is-superset-of-before
+    scope: response
+  set:
+    type: breaking
+
+# after-is-subset-of-before (e.g. number → integer):
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.type.replace.after-is-subset-of-before
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.type.replace.after-is-subset-of-before
+    scope: response
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: json-schema.type.replace.incompatible
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# required array items
+# ---------------------------------------------------------------------------
+
+# after-property-has-default:
+#   everything else                → non-breaking (general, lower priority)
+#   response + (remove or replace) → breaking     (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.required.item.after-property-has-default
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.required.item.after-property-has-default
+    action:
+      - remove
+      - replace
+    scope: response
+  set:
+    type: breaking
+
+# after-property-has-no-default (only occurs for add and replace actions):
+#   general (all)        → breaking     (lower priority)
+#   add + response       → non-breaking (higher priority)
+- match:
+    classifyRuleId: json-schema.required.item.after-property-has-no-default
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.required.item.after-property-has-no-default
+    action: add
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# properties items
+# ---------------------------------------------------------------------------
+
+# after-required-no-default (add):
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.property.after-required-no-default
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.property.after-required-no-default
+    scope: response
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: json-schema.property.after-optional-or-has-default
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: json-schema.property.before-required
+  set:
+    type: breaking
+
+# before-not-required (remove):
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.property.before-not-required
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.property.before-not-required
+    scope: response
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: json-schema.property
+  set:
+    type: unclassified
+
+# ---------------------------------------------------------------------------
+# enum array items
+# ---------------------------------------------------------------------------
+
+# replace:
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.enum.item
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.enum.item
+    scope: response
+  set:
+    type: non-breaking
+
+# before-enum-non-empty (add):
+#   non-response → non-breaking (general, lower priority)
+#   response     → risky        (specific, higher priority)
+#   (risky from reverseClassifier — not from reclassifyBreakingToRisky)
+- match:
+    classifyRuleId: json-schema.enum.item.before-enum-non-empty
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.enum.item.before-enum-non-empty
+    scope: response
+  set:
+    type: risky
+
+# before-enum-empty (add):
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.enum.item.before-enum-empty
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.enum.item.before-enum-empty
+    scope: response
+  set:
+    type: non-breaking
+
+# after-enum-non-empty (remove):
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.enum.item.after-enum-non-empty
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.enum.item.after-enum-non-empty
+    scope: response
+  set:
+    type: non-breaking
+
+# after-enum-empty (remove):
+#   non-response → non-breaking (general, lower priority)
+#   response     → risky        (specific, higher priority)
+#   (risky from reverseClassifier — not from reclassifyBreakingToRisky)
+- match:
+    classifyRuleId: json-schema.enum.item.after-enum-empty
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.enum.item.after-enum-empty
+    scope: response
+  set:
+    type: risky

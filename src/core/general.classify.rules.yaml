@@ -1,0 +1,20 @@
+# General matching rules that apply across all classifyRuleIds.
+#
+# Rules use classifyRuleId: '*' (WILDCARD_CLASSIFY_RULE_ID) to match any ruleId.
+# Wildcard rules are collected into a separate list inside matchingDiffClassifier
+# and applied after all specific (per-ruleId) rules have been processed.
+#
+# The `type` filter in a wildcard rule is checked against the accumulated result
+# type from preceding specific rules, not the engine's final diff type. This
+# allows the wildcard to react to the type established by specific rules.
+#
+# This rule replicates the engine's reclassifyBreakingToRisky logic:
+# any diff whose path is marked as NOT_BACKWARD_COMPATIBLE and whose
+# accumulated classification is 'breaking' is promoted to 'risky'.
+
+- match:
+    classifyRuleId: "*"
+    effectiveBwcScope: NOT_BACKWARD_COMPATIBLE
+    type: breaking
+  set:
+    type: risky

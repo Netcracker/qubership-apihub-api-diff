@@ -34,6 +34,9 @@ export type {
   ClassifyRuleIdRule,
 } from './types'
 
+export { matchingDiffClassifier, WILDCARD_CLASSIFY_RULE_ID } from './core'
+export type { MatchingRule, MatchingRuleMatch } from './core'
+
 export {
   isDiffAdd,
   isDiffRemove,
