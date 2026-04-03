@@ -143,4 +143,36 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    * By default, breaking (request); non-breaking (response).
    */
   MIN_REPLACE_CONSTRAINT_TIGHTENED: 'json-schema.min.replace.constraint-tightened',
+
+  /**
+   * JSON Schema `minimum` keyword added — the before schema already has a numeric
+   * `exclusiveMinimum` that is greater than or equal to the new `minimum` value,
+   * so the new `minimum` does not introduce any tighter bound.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MINIMUM_ADD_BEFORE_EXCLUSIVE_MIN_COVERS: 'json-schema.minimum.add.before-exclusive-min-covers',
+  /**
+   * JSON Schema `minimum` keyword added — either no numeric `exclusiveMinimum` existed
+   * in the before schema, or its value is less than the new `minimum`, meaning the new
+   * `minimum` introduces a tighter lower bound.
+   * By default, breaking (request); non-breaking (response).
+   */
+  MINIMUM_ADD_BEFORE_EXCLUSIVE_MIN_NOT_COVERS: 'json-schema.minimum.add.before-exclusive-min-not-covers',
+  /**
+   * JSON Schema `minimum` keyword removed — the lower-bound constraint is dropped.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MINIMUM_REMOVE: 'json-schema.minimum.remove',
+  /**
+   * JSON Schema `minimum` keyword replace — the after value is less than or equal to the before
+   * value (both numeric), meaning the lower bound was relaxed or kept the same.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MINIMUM_REPLACE_CONSTRAINT_RELAXED: 'json-schema.minimum.replace.constraint-relaxed',
+  /**
+   * JSON Schema `minimum` keyword replace — the after value is greater than the before value,
+   * or either value is non-numeric, meaning the lower bound was tightened or is indeterminate.
+   * By default, breaking (request); non-breaking (response).
+   */
+  MINIMUM_REPLACE_CONSTRAINT_TIGHTENED: 'json-schema.minimum.replace.constraint-tightened',
 } as const

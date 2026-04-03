@@ -81,6 +81,19 @@ export const minClassifier: ClassifyRule = [
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value < after.value),
 ]
 
+export const minimumClassifyRuleIdRule: ClassifyRuleIdRule = [
+  ({ before, after }) => {
+    const beforeExclusiveMinimum = getKeyValue(before.parent, 'exclusiveMinimum')
+    return (isNumber(beforeExclusiveMinimum) && isNumber(after.value) && beforeExclusiveMinimum >= after.value)
+      ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MINIMUM_ADD_BEFORE_EXCLUSIVE_MIN_COVERS
+      : JSON_SCHEMA_CLASSIFY_RULE_IDS.MINIMUM_ADD_BEFORE_EXCLUSIVE_MIN_NOT_COVERS
+  },
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MINIMUM_REMOVE,
+  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && before.value >= after.value
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MINIMUM_REPLACE_CONSTRAINT_RELAXED
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.MINIMUM_REPLACE_CONSTRAINT_TIGHTENED),
+]
+
 export const minimumClassifier: ClassifyRule = [
   ({ before, after }) => {
     const beforeExclusiveMinimum = getKeyValue(before.parent, 'exclusiveMinimum')

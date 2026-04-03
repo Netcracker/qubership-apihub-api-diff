@@ -32,6 +32,7 @@ import {
   minClassifier,
   minClassifyRuleIdRule,
   minimumClassifier,
+  minimumClassifyRuleIdRule,
   multipleOfClassifier,
   propertyClassifyRule,
   propertyClassifyRuleIdRule,
@@ -96,7 +97,7 @@ export const jsonSchemaRules = ({
 
     '/multipleOf': simpleRule(multipleOfClassifier, resolveSchemaDescriptionTemplates('multipleOf validator')),
     '/maximum': simpleRule(maximumClassifier, resolveSchemaDescriptionTemplates('maximum validator')),
-    '/minimum': simpleRule(minimumClassifier, resolveSchemaDescriptionTemplates('minimum validator')),
+    '/minimum': { ...simpleRule(minimumClassifier, resolveSchemaDescriptionTemplates('minimum validator')), classifyRuleId: minimumClassifyRuleIdRule },
     ...version === SPEC_TYPE_JSON_SCHEMA_04 ? {
       '/exclusiveMaximum': simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')),
       '/exclusiveMinimum': simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')),

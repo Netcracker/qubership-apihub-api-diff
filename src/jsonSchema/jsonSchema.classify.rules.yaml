@@ -136,6 +136,78 @@
     type: unclassified
 
 # ---------------------------------------------------------------------------
+# minimum keyword (interacts with draft-04 exclusiveMinimum in the add case)
+# ---------------------------------------------------------------------------
+# All actions flip for response schemas (reverseClassifyRuleTransformer).
+
+# add — before exclusiveMinimum already covers the new minimum
+# (exclusiveMinimum exists and is >= new minimum value, so no new constraint):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.minimum.add.before-exclusive-min-covers
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.minimum.add.before-exclusive-min-covers
+    scope: response
+  set:
+    type: breaking
+
+# add — before exclusiveMinimum does not cover the new minimum
+# (missing, non-numeric, or less than the new minimum — a new tighter bound):
+#   non-response → breaking
+#   response     → non-breaking
+- match:
+    classifyRuleId: json-schema.minimum.add.before-exclusive-min-not-covers
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.minimum.add.before-exclusive-min-not-covers
+    scope: response
+  set:
+    type: non-breaking
+
+# remove (drops the lower-bound constraint):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.minimum.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.minimum.remove
+    scope: response
+  set:
+    type: breaking
+
+# replace constraint-relaxed (after <= before, both numeric — lower bound lowered):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.minimum.replace.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.minimum.replace.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+# replace constraint-tightened (after > before, or either value non-numeric):
+#   non-response → breaking
+#   response     → non-breaking
+- match:
+    classifyRuleId: json-schema.minimum.replace.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.minimum.replace.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
 # max* keywords (maxLength, maxItems, maxProperties, exclusiveMaximum non-draft-04)
 # ---------------------------------------------------------------------------
 # All three actions flip for response schemas (reverseClassifyRuleTransformer).
