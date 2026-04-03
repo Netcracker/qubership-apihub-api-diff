@@ -42,6 +42,7 @@ import {
   apihubAllowEmptyValueParameterClassifyRule,
   apihubAllowEmptyValueParameterClassifyRuleIdRule,
   apihubParametersRemovalClassifyRule,
+  apihubParametersRemovalClassifyRuleIdRule,
   globalSecurityClassifyRule,
   globalSecurityItemClassifyRule,
   operationSecurityClassifyRule,
@@ -384,6 +385,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/externalDocs': externalDocumentationRules,
     '/parameters': {
       $: [nonBreaking, apihubParametersRemovalClassifyRule, breaking],
+      classifyRuleId: apihubParametersRemovalClassifyRuleIdRule,
       mapping: paramMappingResolver(2),
       ...parametersRules,
     },

@@ -205,3 +205,29 @@
     classifyRuleId: rest.parameter.allow-empty-value.after-not-true
   set:
     type: breaking
+
+# ---------------------------------------------------------------------------
+# Parameters array node (/parameters)
+# ---------------------------------------------------------------------------
+# Covers the parameters array itself, not its items.
+# Remove is non-breaking only when all entries were ignored header params.
+
+- match:
+    classifyRuleId: rest.parameters-array.add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameters-array.remove.before-all-ignored-headers
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameters-array.remove.before-has-non-ignored
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameters-array.replace
+  set:
+    type: breaking

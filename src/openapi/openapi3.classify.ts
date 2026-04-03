@@ -53,6 +53,17 @@ const isIgnoredHeaderParam = (param: any): boolean => {
   return param.in === 'header' && NON_BREAKING_HEADERS.includes(param.name)
 }
 
+export const apihubParametersRemovalClassifyRuleIdRule: ClassifyRuleIdRule = [
+  REST_CLASSIFY_RULE_IDS.PARAMETERS_ARRAY_ADD,
+  ({ before }) => {
+    const value = before.value
+    return Array.isArray(value) && (value as unknown[]).every(isIgnoredHeaderParam)
+      ? REST_CLASSIFY_RULE_IDS.PARAMETERS_ARRAY_REMOVE_BEFORE_ALL_IGNORED_HEADERS
+      : REST_CLASSIFY_RULE_IDS.PARAMETERS_ARRAY_REMOVE_BEFORE_HAS_NON_IGNORED
+  },
+  REST_CLASSIFY_RULE_IDS.PARAMETERS_ARRAY_REPLACE,
+]
+
 export const apihubParametersRemovalClassifyRule = (ctx: CompareContext): DiffType => {
   const { before: { value } } = ctx
   if (!Array.isArray(value)) {
