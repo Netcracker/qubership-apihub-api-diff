@@ -1,0 +1,102 @@
+---
+description: Conventions for ClassifyRuleIdRule definitions and ruleId constant naming
+globs: src/**/*.classify*.ts
+alwaysApply: false
+---
+
+# ClassifyRuleIdRule Authoring Conventions
+
+## Purpose
+
+`ClassifyRuleIdRule` attaches a stable string identifier (`classifyRuleId`) to each diff so a `diffClassifier` can reclassify it via a simple table lookup, without re-implementing the original condition logic.
+
+## Type Forms
+
+`ClassifyRuleIdRule` is one of:
+
+- **Single element** – same ruleId for all actions:
+  ```ts
+  export const requiredItemClassifyRuleIdRule: ClassifyRuleIdRule =
+    ({ after }) => (requiredItemHasPropertyDefault(after)
+      ? JSON_SCHEMA_CLASSIFY_RULE_IDS.REQUIRED_ITEM_AFTER_PROPERTY_HAS_DEFAULT
+      : JSON_SCHEMA_CLASSIFY_RULE_IDS.REQUIRED_ITEM_AFTER_PROPERTY_HAS_NO_DEFAULT)
+  ```
+
+- **3-tuple `[add, remove, replace]`** – when add/remove/replace have different conditions or inspect different sides:
+  ```ts
+  export const enumItemClassifyRuleIdRule: ClassifyRuleIdRule = [
+    ({ before }) => (isNotEmptyArray(before.parent)
+      ? JSON_SCHEMA_CLASSIFY_RULE_IDS.ENUM_ITEM_BEFORE_ENUM_NON_EMPTY
+      : JSON_SCHEMA_CLASSIFY_RULE_IDS.ENUM_ITEM_BEFORE_ENUM_EMPTY),
+    ({ after }) => (isNotEmptyArray(after.parent)
+      ? JSON_SCHEMA_CLASSIFY_RULE_IDS.ENUM_ITEM_AFTER_ENUM_NON_EMPTY
+      : JSON_SCHEMA_CLASSIFY_RULE_IDS.ENUM_ITEM_AFTER_ENUM_EMPTY),
+    JSON_SCHEMA_CLASSIFY_RULE_IDS.ENUM_ITEM,  // replace: static fallback
+  ]
+  ```
+
+## Side Selection in Resolvers
+
+| Tuple position | Inspect side | Rationale |
+|---|---|---|
+| add (index 0) | `after` | Added state is in `after` |
+| remove (index 1) | `before` | Removed state is in `before` |
+| replace (index 2) | `after` (or both) | New state or comparison between sides |
+| array-item add | `before.parent` | State of the sibling array before adding |
+| array-item remove | `after.parent` | State of the sibling array after removing |
+
+## Placement & Structure
+
+- Place `ClassifyRuleIdRule` **directly before** its corresponding `ClassifyRule`.
+- Extract shared boolean helpers between the two (e.g., `propertyHasDefault`, `propertyIsRequired`).
+- Place helpers immediately before the `ClassifyRuleIdRule`.
+- Both live in the same `*.classify.ts` file; constants go in the matching `*.classify.ruleIds.ts`.
+
+## Do NOT Encode Action in the ruleId String
+
+`diff.action` is already available on the diff object. Encode the **condition**, not the action.
+
+```ts
+// ❌ encodes action
+REQUIRED_ITEM_ADD_NO_DEFAULT: 'json-schema.required.item.add-no-default'
+
+// ✅ describes condition from relevant side
+REQUIRED_ITEM_AFTER_PROPERTY_HAS_NO_DEFAULT: 'json-schema.required.item.after-property-has-no-default'
+```
+
+Exception: static constants for structurally unique cases are fine (`TYPE_ADD`, `TYPE_REMOVE`).
+
+## Naming Conventions
+
+**OpenAPI / REST** (`REST_CLASSIFY_RULE_IDS` in `openapi3.classify.ruleIds.ts`):
+```
+rest.{object}.{property}[.item].{details}
+```
+Example: `rest.operation.security.item.after-security-requirements-are-subset-of-before`
+
+**JSON Schema** (`JSON_SCHEMA_CLASSIFY_RULE_IDS` in `jsonSchema.classify.ruleIds.ts`):
+```
+json-schema.{keyword}[.{sub-property}][.item].{details}
+```
+Example: `json-schema.required.item.after-property-has-no-default`
+
+`details` rules:
+- Use `before-{condition}` when describing the before-state (remove context).
+- Use `after-{condition}` when describing the after-state (add/replace context).
+- Use a plain condition phrase when action-independent (e.g., `incompatible`, `subset-of-before`).
+- Keep it in kebab-case and human-readable.
+
+## JSDoc for Each Constant
+
+Every constant must have a JSDoc comment stating:
+1. What structural condition it represents.
+2. The default classification behaviour.
+
+```ts
+/**
+ * JSON Schema `required` array item was added and the corresponding property
+ * in the after object has no `default` value.
+ * By default, adding it to `required` is breaking.
+ */
+REQUIRED_ITEM_AFTER_PROPERTY_HAS_NO_DEFAULT: 'json-schema.required.item.after-property-has-no-default',
+```
