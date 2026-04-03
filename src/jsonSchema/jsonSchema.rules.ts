@@ -156,6 +156,7 @@ export const jsonSchemaRules = ({
 
     '/enum': {
       $: [breaking, nonBreaking, breaking, nonBreaking, risky, nonBreaking],
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ENUM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ENUM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ENUM_REPLACE],
       mapping: deepEqualsUniqueItemsArrayMappingResolver,
       '/*': ({ key, value }) => {
         if (!isNumber(key)) {

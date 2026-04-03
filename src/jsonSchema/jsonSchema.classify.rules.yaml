@@ -627,6 +627,42 @@
     type: risky
 
 # ============================================================
+# enum array (the /enum keyword node itself)
+# Rule: [breaking, nonBreaking, breaking, nonBreaking, risky, nonBreaking]
+# Response remove is risky (non-standard: reversal of nonBreaking would be breaking)
+# ============================================================
+# add: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.enum.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.enum.add
+    scope: response
+  set:
+    type: non-breaking
+# remove: non-breaking (request) / risky (response)
+- match:
+    classifyRuleId: json-schema.enum.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.enum.remove
+    scope: response
+  set:
+    type: risky
+# replace: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.enum.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.enum.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
 # pattern validator
 # ============================================================
 # add: breaking (request) / non-breaking (response)

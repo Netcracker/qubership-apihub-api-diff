@@ -11,6 +11,22 @@
  *   - details: kebab-case phrase capturing the condition that determines classification
  */
 export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
+  /**
+   * JSON Schema `enum` array added (the whole enum keyword).
+   * By default, breaking (request); non-breaking (response).
+   */
+  ENUM_ADD: 'json-schema.enum.add',
+  /**
+   * JSON Schema `enum` array removed.
+   * By default, non-breaking (request); risky (response).
+   */
+  ENUM_REMOVE: 'json-schema.enum.remove',
+  /**
+   * JSON Schema `enum` array replaced.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ENUM_REPLACE: 'json-schema.enum.replace',
+
   /** JSON Schema `enum` array item change */
   ENUM_ITEM: 'json-schema.enum.item',
   /**
