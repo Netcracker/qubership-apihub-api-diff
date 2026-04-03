@@ -152,6 +152,42 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    */
   MINIMUM_ADD_BEFORE_EXCLUSIVE_MIN_COVERS: 'json-schema.minimum.add.before-exclusive-min-covers',
   /**
+   * JSON Schema `additionalProperties` — the constraint is added (any action where before
+   * and after are both truthy, or the property is newly added).
+   * By default, breaking (both request and response).
+   */
+  ADDITIONAL_PROPERTIES_ADD: 'json-schema.additional-properties.add',
+  /**
+   * JSON Schema `additionalProperties` — the constraint is removed.
+   * By default, breaking (both request and response).
+   */
+  ADDITIONAL_PROPERTIES_REMOVE: 'json-schema.additional-properties.remove',
+  /**
+   * JSON Schema `additionalProperties` replace — before-value is truthy (was restrictive)
+   * and after-value is truthy (still restrictive).
+   * By default, breaking (both request and response).
+   */
+  ADDITIONAL_PROPERTIES_REPLACE_BEFORE_TRUTHY_AFTER_TRUTHY: 'json-schema.additional-properties.replace.before-truthy-after-truthy',
+  /**
+   * JSON Schema `additionalProperties` replace — before-value is truthy (was restrictive)
+   * and after-value is falsy (now permissive).
+   * By default, breaking (request); non-breaking (response).
+   */
+  ADDITIONAL_PROPERTIES_REPLACE_BEFORE_TRUTHY_AFTER_FALSY: 'json-schema.additional-properties.replace.before-truthy-after-falsy',
+  /**
+   * JSON Schema `additionalProperties` replace — before-value is falsy (was permissive)
+   * and after-value is truthy (now restrictive).
+   * By default, non-breaking (request); breaking (response).
+   */
+  ADDITIONAL_PROPERTIES_REPLACE_BEFORE_FALSY_AFTER_TRUTHY: 'json-schema.additional-properties.replace.before-falsy-after-truthy',
+  /**
+   * JSON Schema `additionalProperties` replace — before-value is falsy (was permissive)
+   * and after-value is falsy (still permissive).
+   * By default, non-breaking (both request and response).
+   */
+  ADDITIONAL_PROPERTIES_REPLACE_BEFORE_FALSY_AFTER_FALSY: 'json-schema.additional-properties.replace.before-falsy-after-falsy',
+
+  /**
    * JSON Schema `multipleOf` keyword — the constraint is added to a previously unconstrained
    * schema.
    * By default, breaking (request); non-breaking (response).

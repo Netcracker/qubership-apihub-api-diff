@@ -136,6 +136,58 @@
     type: unclassified
 
 # ---------------------------------------------------------------------------
+# additionalProperties
+# ---------------------------------------------------------------------------
+# add and remove are always breaking regardless of scope (position[3]=breaking,
+# position[4]=breaking in the 6-element classifier).
+# replace uses 4 ruleIds encoding the (before-truthy × after-truthy) combination:
+#   request checks !!before.value; response checks !!after.value.
+
+- match:
+    classifyRuleId: json-schema.additional-properties.add
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: json-schema.additional-properties.remove
+  set:
+    type: breaking
+
+# replace before-truthy-after-truthy: breaking (both)
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-truthy-after-truthy
+  set:
+    type: breaking
+
+# replace before-truthy-after-falsy: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-truthy-after-falsy
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-truthy-after-falsy
+    scope: response
+  set:
+    type: non-breaking
+
+# replace before-falsy-after-truthy: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-falsy-after-truthy
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-falsy-after-truthy
+    scope: response
+  set:
+    type: breaking
+
+# replace before-falsy-after-falsy: non-breaking (both)
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-falsy-after-falsy
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
 # multipleOf keyword
 # ---------------------------------------------------------------------------
 # Add and remove flip for response (reverseClassifyRuleTransformer).

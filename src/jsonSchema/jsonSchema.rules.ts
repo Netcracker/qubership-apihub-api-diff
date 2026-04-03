@@ -47,7 +47,7 @@ import {
 import { jsonSchemaAdapter } from './jsonSchema.adapter'
 import { jsonSchemaMappingResolver } from './jsonSchema.mapping'
 import { combinersCompareResolver } from './jsonSchema.resolver'
-import { ClassifyRule, CompareRules, DescriptionTemplates } from '../types'
+import { ClassifyRule, ClassifyRuleIdRule, CompareRules, DescriptionTemplates } from '../types'
 import { JsonSchemaRulesOptions, NativeAnySchemaFactory } from './jsonSchema.types'
 import { normalize, SPEC_TYPE_JSON_SCHEMA_04 } from '@netcracker/qubership-apihub-api-unifier'
 import { isBoolean, isNumber, isString } from '../utils'
@@ -215,6 +215,7 @@ export const jsonSchemaRules = ({
     '/additionalProperties': () => ({
       ...rules,
       $: additionalPropertiesClassifier,
+      classifyRuleId: additionalPropertiesClassifyRuleIdRule,
     }),
     '/patternProperties': {
       '/*': () => ({
@@ -251,6 +252,19 @@ export const jsonSchemaRules = ({
   }
   return rules
 }
+
+const additionalPropertiesClassifyRuleIdRule: ClassifyRuleIdRule = [
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_ADD,
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_REMOVE,
+  ({ before, after }) => {
+    const beforeTruthy = !!before.value
+    const afterTruthy = !!after.value
+    if (beforeTruthy && afterTruthy) { return JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_REPLACE_BEFORE_TRUTHY_AFTER_TRUTHY }
+    if (beforeTruthy) { return JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_REPLACE_BEFORE_TRUTHY_AFTER_FALSY }
+    if (afterTruthy) { return JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_REPLACE_BEFORE_FALSY_AFTER_TRUTHY }
+    return JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_REPLACE_BEFORE_FALSY_AFTER_FALSY
+  },
+]
 
 const additionalPropertiesClassifier: ClassifyRule = [
   breaking,
