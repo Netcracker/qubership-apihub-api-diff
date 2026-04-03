@@ -136,6 +136,63 @@
     type: unclassified
 
 # ---------------------------------------------------------------------------
+# max* keywords (maxLength, maxItems, maxProperties, exclusiveMaximum non-draft-04)
+# ---------------------------------------------------------------------------
+# All three actions flip for response schemas (reverseClassifyRuleTransformer).
+
+# add (introduces an upper-bound constraint):
+#   non-response → breaking
+#   response     → non-breaking
+- match:
+    classifyRuleId: json-schema.max.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.max.add
+    scope: response
+  set:
+    type: non-breaking
+
+# remove (drops the upper-bound constraint):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.max.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.max.remove
+    scope: response
+  set:
+    type: breaking
+
+# replace constraint-relaxed (after >= before, both numeric — upper bound raised):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.max.replace.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.max.replace.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+# replace constraint-tightened (after < before, or either value non-numeric):
+#   non-response → breaking
+#   response     → non-breaking
+- match:
+    classifyRuleId: json-schema.max.replace.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.max.replace.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
 # enum array items
 # ---------------------------------------------------------------------------
 

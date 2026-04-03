@@ -95,4 +95,28 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    * By default, always breaking in both request and response contexts.
    */
   TYPE_REPLACE_INCOMPATIBLE: 'json-schema.type.replace.incompatible',
+
+  /**
+   * JSON Schema `max*` keyword (maxLength, maxItems, maxProperties, non-draft-04 exclusiveMaximum)
+   * — the constraint is added to a previously unconstrained schema.
+   * By default, breaking (request); non-breaking (response).
+   */
+  MAX_ADD: 'json-schema.max.add',
+  /**
+   * JSON Schema `max*` keyword — the constraint is removed from the schema.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MAX_REMOVE: 'json-schema.max.remove',
+  /**
+   * JSON Schema `max*` keyword replace — the after value is greater than or equal to the before
+   * value (both numeric), meaning the constraint was relaxed or kept the same.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MAX_REPLACE_CONSTRAINT_RELAXED: 'json-schema.max.replace.constraint-relaxed',
+  /**
+   * JSON Schema `max*` keyword replace — the after value is less than the before value, or either
+   * value is non-numeric, meaning the constraint was tightened or is indeterminate.
+   * By default, breaking (request); non-breaking (response).
+   */
+  MAX_REPLACE_CONSTRAINT_TIGHTENED: 'json-schema.max.replace.constraint-tightened',
 } as const

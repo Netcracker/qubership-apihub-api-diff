@@ -53,6 +53,14 @@ export const typeClassifier: ClassifyRule = [
   ({ before, after }) => nonBreakingIf(isTypeAssignable(before.value, after.value, true)),
 ]
 
+export const maxClassifyRuleIdRule: ClassifyRuleIdRule = [
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_ADD,
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_REMOVE,
+  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && before.value <= after.value
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_REPLACE_CONSTRAINT_RELAXED
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_REPLACE_CONSTRAINT_TIGHTENED),
+]
+
 export const maxClassifier: ClassifyRule = [
   breaking,
   nonBreaking,
