@@ -27,7 +27,7 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
   const classifyRuleIdDef = ctx.rules?.classifyRuleId
   const classifyRuleIdElement = Array.isArray(classifyRuleIdDef) ? classifyRuleIdDef[index] : classifyRuleIdDef
   const classifyRuleId = isFunc(classifyRuleIdElement) ? classifyRuleIdElement(ctx) : classifyRuleIdElement
-  const mutableDiffCopy = { ...diff, type: unclassified, classifyRuleId } as D
+  const mutableDiffCopy = { ...diff, type: unclassified, classifyRuleId, effectiveBwcScope: ctx.apiCompatibilityScope } as D
 
   if (classifierRule) {
     const classifier = Array.isArray(classifierRule) ? classifierRule : allUnclassified

@@ -18,6 +18,14 @@ interface DiffBase<T> {
   scope: CompareScope
   description?: string
   classifyRuleId?: string
+  /**
+   * The effective backward-compatibility scope at the point where the diff was
+   * created, as computed by `apiCompatibilityScopeFunction`. Captures the BWC
+   * scope so that post-processing classifiers (e.g. matching rules) can
+   * replicate the `reclassifyBreakingToRisky` logic without requiring access to
+   * the original compare context.
+   */
+  effectiveBwcScope?: ApiCompatibilityKind
 }
 
 export interface DiffAdd<T = DiffType> extends DiffBase<T> {
