@@ -231,3 +231,32 @@
     classifyRuleId: rest.parameters-array.replace
   set:
     type: breaking
+
+# ---------------------------------------------------------------------------
+# Root-level security array
+# ---------------------------------------------------------------------------
+
+- match:
+    classifyRuleId: rest.global-security.add.after-empty
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.add.after-non-empty
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.global-security.remove
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.replace.after-subset-or-empty
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.replace.after-not-subset
+  set:
+    type: breaking

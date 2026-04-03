@@ -192,6 +192,16 @@ export const paramSchemaTypeClassifyRule: ClassifyRule = [
   },
 ]
 
+export const globalSecurityClassifyRuleIdRule: ClassifyRuleIdRule = [
+  ({ after }) => (emptySecurity(after.value)
+    ? REST_CLASSIFY_RULE_IDS.GLOBAL_SECURITY_ADD_AFTER_EMPTY
+    : REST_CLASSIFY_RULE_IDS.GLOBAL_SECURITY_ADD_AFTER_NON_EMPTY),
+  REST_CLASSIFY_RULE_IDS.GLOBAL_SECURITY_REMOVE,
+  ({ after, before }) => (includeSecurity(after.value, before.value) || emptySecurity(after.value)
+    ? REST_CLASSIFY_RULE_IDS.GLOBAL_SECURITY_REPLACE_AFTER_SUBSET_OR_EMPTY
+    : REST_CLASSIFY_RULE_IDS.GLOBAL_SECURITY_REPLACE_AFTER_NOT_SUBSET),
+]
+
 export const globalSecurityClassifyRule: ClassifyRule = [
   ({ after }) => (!emptySecurity(after.value) ? breaking : nonBreaking),
   nonBreaking,

@@ -44,6 +44,7 @@ import {
   apihubParametersRemovalClassifyRule,
   apihubParametersRemovalClassifyRuleIdRule,
   globalSecurityClassifyRule,
+  globalSecurityClassifyRuleIdRule,
   globalSecurityItemClassifyRule,
   operationSecurityClassifyRule,
   operationSecurityItemClassifyRule,
@@ -529,6 +530,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/components': componentsRule,
     '/security': {
       $: globalSecurityClassifyRule,
+      classifyRuleId: globalSecurityClassifyRuleIdRule,
       '/*': { $: globalSecurityItemClassifyRule },
     },
     '/tags': {
