@@ -211,6 +211,18 @@ export const globalSecurityClassifyRule: ClassifyRule = [
   }) => (includeSecurity(after.value, before.value) || emptySecurity(after.value) ? nonBreaking : breaking),
 ]
 
+export const globalSecurityItemClassifyRuleIdRule: ClassifyRuleIdRule = [
+  ({ before }) => (isNotEmptyArray(before.parent)
+    ? REST_CLASSIFY_RULE_IDS.GLOBAL_SECURITY_ITEM_ADD_BEFORE_NON_EMPTY
+    : REST_CLASSIFY_RULE_IDS.GLOBAL_SECURITY_ITEM_ADD_BEFORE_EMPTY),
+  ({ after }) => (isNotEmptyArray(after.parent)
+    ? REST_CLASSIFY_RULE_IDS.GLOBAL_SECURITY_ITEM_REMOVE_AFTER_NON_EMPTY
+    : REST_CLASSIFY_RULE_IDS.GLOBAL_SECURITY_ITEM_REMOVE_AFTER_EMPTY),
+  ({ after, before }) => (includeSecurity(after.parent, before.parent) || emptySecurity(after.value)
+    ? REST_CLASSIFY_RULE_IDS.GLOBAL_SECURITY_ITEM_REPLACE_AFTER_SUBSET_OR_EMPTY
+    : REST_CLASSIFY_RULE_IDS.GLOBAL_SECURITY_ITEM_REPLACE_AFTER_NOT_SUBSET),
+]
+
 export const globalSecurityItemClassifyRule: ClassifyRule = [
   ({ before }) => (isNotEmptyArray(before.parent) ? nonBreaking : breaking),
   ({ after }) => (isNotEmptyArray(after.parent) ? nonBreaking : breaking),

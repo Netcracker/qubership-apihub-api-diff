@@ -46,6 +46,7 @@ import {
   globalSecurityClassifyRule,
   globalSecurityClassifyRuleIdRule,
   globalSecurityItemClassifyRule,
+  globalSecurityItemClassifyRuleIdRule,
   operationSecurityClassifyRule,
   operationSecurityItemClassifyRule,
   operationSecurityItemClassifyRuleIdRule,
@@ -531,7 +532,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/security': {
       $: globalSecurityClassifyRule,
       classifyRuleId: globalSecurityClassifyRuleIdRule,
-      '/*': { $: globalSecurityItemClassifyRule },
+      '/*': { $: globalSecurityItemClassifyRule, classifyRuleId: globalSecurityItemClassifyRuleIdRule },
     },
     '/tags': {
       $: allAnnotation,

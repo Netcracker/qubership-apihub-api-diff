@@ -260,3 +260,39 @@
     classifyRuleId: rest.global-security.replace.after-not-subset
   set:
     type: breaking
+
+# ---------------------------------------------------------------------------
+# Root-level security array items
+# ---------------------------------------------------------------------------
+# Add: breaking when the before-parent OR-list was empty (first requirement introduced).
+# Remove: breaking when the after-parent OR-list is empty (last requirement removed).
+
+- match:
+    classifyRuleId: rest.global-security.item.before-non-empty
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.item.before-empty
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.global-security.item.after-non-empty
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.item.after-empty
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.global-security.item.replace.after-subset-or-empty
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.item.replace.after-not-subset
+  set:
+    type: breaking
