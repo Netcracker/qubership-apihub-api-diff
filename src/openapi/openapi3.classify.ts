@@ -130,6 +130,19 @@ export const parameterNameClassifyRule: ClassifyRule = [
   ({ before }) => (getKeyValue(before.parent, 'in') === 'path' ? annotation : breaking),
 ]
 
+export const parameterRequiredClassifyRuleIdRule: ClassifyRuleIdRule = [
+  REST_CLASSIFY_RULE_IDS.PARAMETER_REQUIRED_ADD,
+  REST_CLASSIFY_RULE_IDS.PARAMETER_REQUIRED_REMOVE,
+  ({ after }) => {
+    if (getKeyValue(after.parent, 'schema', 'default')) {
+      return REST_CLASSIFY_RULE_IDS.PARAMETER_REQUIRED_REPLACE_HAS_SCHEMA_DEFAULT
+    }
+    return after.value
+      ? REST_CLASSIFY_RULE_IDS.PARAMETER_REQUIRED_REPLACE_AFTER_TRUE_NO_DEFAULT
+      : REST_CLASSIFY_RULE_IDS.PARAMETER_REQUIRED_REPLACE_AFTER_FALSE
+  },
+]
+
 export const parameterRequiredClassifyRule: ClassifyRule = [
   breaking,
   nonBreaking,

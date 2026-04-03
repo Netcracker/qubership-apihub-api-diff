@@ -152,3 +152,32 @@
     classifyRuleId: rest.parameter.name.replace.before-non-path-param
   set:
     type: breaking
+
+# ---------------------------------------------------------------------------
+# Parameter Object > required property
+# ---------------------------------------------------------------------------
+
+- match:
+    classifyRuleId: rest.parameter.required.add
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.required.remove
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.required.replace.after-has-schema-default
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.required.replace.after-true-no-schema-default
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.required.replace.after-false
+  set:
+    type: non-breaking

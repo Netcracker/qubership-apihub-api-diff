@@ -56,6 +56,7 @@ import {
   parameterNameClassifyRule,
   parameterNameClassifyRuleIdRule,
   parameterRequiredClassifyRule,
+  parameterRequiredClassifyRuleIdRule,
   pathChangeClassifyRule,
 } from './openapi3.classify'
 import {
@@ -208,6 +209,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       },
       '/required': {
         $: parameterRequiredClassifyRule,
+        classifyRuleId: parameterRequiredClassifyRuleIdRule,
         description: diffDescription(resolveParameterDescriptionTemplates('required status'))
       },
       '/schema': () => ({
