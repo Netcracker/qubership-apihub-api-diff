@@ -28,3 +28,38 @@
     classifyRuleId: rest.operation.security.item.after-security-requirements-are-not-a-subset-of-before
   set:
     type: breaking
+
+# ---------------------------------------------------------------------------
+# Parameter Object (add / remove the whole parameter)
+# ---------------------------------------------------------------------------
+# Parameters are always in request context; no scope overrides needed.
+
+- match:
+    classifyRuleId: rest.parameter.after-ignored-header
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.parameter.after-required-no-default
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.after-optional-or-has-default
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.before-ignored-header
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.parameter.before-not-ignored-header
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.replace
+  set:
+    type: unclassified

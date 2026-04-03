@@ -18,6 +18,21 @@ import { createPathUnifier } from './openapi3.mapping'
 import { OpenAPIV3 } from 'openapi-types'
 import { REST_CLASSIFY_RULE_IDS } from './openapi3.classify.ruleIds'
 
+export const paramClassifyRuleIdRule: ClassifyRuleIdRule = [
+  ({ after }) => {
+    if (isIgnoredHeaderParam(after.value)) {
+      return REST_CLASSIFY_RULE_IDS.PARAM_AFTER_IGNORED_HEADER
+    }
+    return getKeyValue(after.value, 'required') && !isExist(getKeyValue(after.value, 'schema', 'default'))
+      ? REST_CLASSIFY_RULE_IDS.PARAM_AFTER_REQUIRED_NO_DEFAULT
+      : REST_CLASSIFY_RULE_IDS.PARAM_AFTER_OPTIONAL_OR_HAS_DEFAULT
+  },
+  ({ before }) => (isIgnoredHeaderParam(before.value)
+    ? REST_CLASSIFY_RULE_IDS.PARAM_BEFORE_IGNORED_HEADER
+    : REST_CLASSIFY_RULE_IDS.PARAM_BEFORE_NOT_IGNORED_HEADER),
+  REST_CLASSIFY_RULE_IDS.PARAM_REPLACE,
+]
+
 export const paramClassifyRule: ClassifyRule = [
   ({ after }) => {
     if (isIgnoredHeaderParam(after.value)) {

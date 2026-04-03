@@ -48,6 +48,7 @@ import {
   operationSecurityItemClassifyRuleIdRule,
   operationSecurityClassifyRuleIdRule,
   paramClassifyRule,
+  paramClassifyRuleIdRule,
   parameterAllowReservedClassifyRule,
   parameterExplodeClassifyRule,
   parameterNameClassifyRule,
@@ -157,6 +158,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
   const parametersRules: CompareRules = {
     '/*': {
       $: paramClassifyRule,
+      classifyRuleId: paramClassifyRuleIdRule,
       description: diffDescription([`[{{${TEMPLATE_PARAM_ACTION}}}] {{${TEMPLATE_PARAM_PARAMETER_LOCATION}}} parameter '{{${GREP_TEMPLATE_PARAM_PARAMETER_NAME}}}'`]),
       descriptionParamCalculator: parameterParamsCalculator,
       [IGNORE_DIFFERENCE_IN_KEYS_RULE]: true,
