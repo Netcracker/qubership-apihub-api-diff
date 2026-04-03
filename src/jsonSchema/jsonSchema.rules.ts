@@ -24,6 +24,7 @@ import {
 } from '../core'
 import {
   enumClassifyRule,
+  enumItemClassifyRuleIdRule,
   exclusiveClassifier,
   maxClassifier,
   maximumClassifier,
@@ -31,7 +32,10 @@ import {
   minimumClassifier,
   multipleOfClassifier,
   propertyClassifyRule,
+  propertyClassifyRuleIdRule,
   requiredItemClassifyRule,
+  requiredItemClassifyRuleIdRule,
+  schemaTypeClassifyRuleIdRule,
   typeClassifier,
 } from './jsonSchema.classify'
 import { jsonSchemaAdapter } from './jsonSchema.adapter'
@@ -41,6 +45,7 @@ import { ClassifyRule, CompareRules, DescriptionTemplates } from '../types'
 import { JsonSchemaRulesOptions, NativeAnySchemaFactory } from './jsonSchema.types'
 import { normalize, SPEC_TYPE_JSON_SCHEMA_04 } from '@netcracker/qubership-apihub-api-unifier'
 import { isBoolean, isNumber, isString } from '../utils'
+import { JSON_SCHEMA_CLASSIFY_RULE_IDS } from './jsonSchema.classify.ruleIds'
 
 const simpleRule = (classify: ClassifyRule, descriptionTemplate: DescriptionTemplates) => ({
   $: classify,
@@ -82,7 +87,10 @@ export const jsonSchemaRules = ({
     // todo: add descriptionParamCalculator only for jsonScheme
     '/title': simpleRule(allAnnotation, resolveSchemaDescriptionTemplates('title')),
     '/description': simpleRule(allAnnotation, resolveSchemaDescriptionTemplates('description')),
-    '/type': simpleRule(typeClassifier, resolveSchemaDescriptionTemplates('type')),
+    '/type': {
+      ...simpleRule(typeClassifier, resolveSchemaDescriptionTemplates('type')),
+      classifyRuleId: schemaTypeClassifyRuleIdRule,
+    },
 
     '/multipleOf': simpleRule(multipleOfClassifier, resolveSchemaDescriptionTemplates('multipleOf validator')),
     '/maximum': simpleRule(maximumClassifier, resolveSchemaDescriptionTemplates('maximum validator')),
@@ -114,6 +122,7 @@ export const jsonSchemaRules = ({
         }
         return ({
           ...simpleRule(requiredItemClassifyRule, resolveSchemaDescriptionTemplates(`required status for property '${value}'`)),
+          classifyRuleId: requiredItemClassifyRuleIdRule,
           ignoreKeyDifference: true,
         })
       },
@@ -131,6 +140,7 @@ export const jsonSchemaRules = ({
         }
         return ({
           $: enumClassifyRule,
+          classifyRuleId: enumItemClassifyRuleIdRule,
           description: diffDescription(resolveSchemaDescriptionTemplates(isString(value) || isBoolean(value) || isNumber(value) ? `possible value '${value.toString()}'` : 'some possible value')),
           ignoreKeyDifference: true,
         })
@@ -191,6 +201,7 @@ export const jsonSchemaRules = ({
         return ({
           ...rules,
           $: propertyClassifyRule,
+          classifyRuleId: propertyClassifyRuleIdRule,
           description: diffDescription(resolveSchemaDescriptionTemplates(`property '${key.toString()}'`)),
         })
       },
