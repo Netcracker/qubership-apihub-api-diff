@@ -12,10 +12,11 @@ import {
 } from '../core'
 import { getKeyValue, isExist, isNotEmptyArray } from '../utils'
 import { emptySecurity, includeSecurity } from './openapi3.utils'
-import type { ClassifyRule, CompareContext } from '../types'
+import type { ClassifyRule, CompareContext, ClassifyRuleIdRule } from '../types'
 import { DiffType } from '../types'
 import { createPathUnifier } from './openapi3.mapping'
 import { OpenAPIV3 } from 'openapi-types'
+import { REST_CLASSIFY_RULE_IDS } from './openapi3.classify.ruleIds'
 
 export const paramClassifyRule: ClassifyRule = [
   ({ after }) => {
@@ -117,6 +118,18 @@ export const globalSecurityItemClassifyRule: ClassifyRule = [
   }) => (includeSecurity(after.parent, before.parent) || emptySecurity(after.value) ? nonBreaking : breaking),
 ]
 
+export const operationSecurityClassifyRuleIdRule: ClassifyRuleIdRule = [
+  ({ before, after }) => (emptySecurity(after.value) || includeSecurity(after.value, getKeyValue(before.root, 'security'))
+    ? REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_SUBSET
+    : REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_NOT_SUBSET),
+  ({ before, after }) => (includeSecurity(getKeyValue(after.root, 'security'), before.value)
+    ? REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_SUBSET
+    : REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_NOT_SUBSET),
+  ({ before, after }) => (includeSecurity(after.value, before.value) || emptySecurity(after.value)
+    ? REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_SUBSET
+    : REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_NOT_SUBSET),
+]
+
 export const operationSecurityClassifyRule: ClassifyRule = [
   ({
     before,
@@ -127,6 +140,18 @@ export const operationSecurityClassifyRule: ClassifyRule = [
     before,
     after,
   }) => (includeSecurity(after.value, before.value) || emptySecurity(after.value) ? nonBreaking : breaking),
+]
+
+export const operationSecurityItemClassifyRuleIdRule: ClassifyRuleIdRule = [
+  ({ before }) => (isNotEmptyArray(before.parent)
+    ? REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_ITEM_SUBSET
+    : REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_ITEM_NOT_SUBSET),
+  ({ after }) => (!isNotEmptyArray(after.parent)
+    ? REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_ITEM_SUBSET
+    : REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_ITEM_NOT_SUBSET),
+  ({ before, after }) => (includeSecurity(after.parent, before.parent) || emptySecurity(after.value)
+    ? REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_ITEM_SUBSET
+    : REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_ITEM_NOT_SUBSET),
 ]
 
 export const operationSecurityItemClassifyRule: ClassifyRule = [

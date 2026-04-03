@@ -45,6 +45,8 @@ import {
   globalSecurityItemClassifyRule,
   operationSecurityClassifyRule,
   operationSecurityItemClassifyRule,
+  operationSecurityItemClassifyRuleIdRule,
+  operationSecurityClassifyRuleIdRule,
   paramClassifyRule,
   parameterAllowReservedClassifyRule,
   parameterExplodeClassifyRule,
@@ -72,6 +74,7 @@ import { examplesParamsCalculator } from './openapi3.description.examples'
 import { headerParamsCalculator } from './openapi3.description.header'
 import { encodingParamsCalculator } from './openapi3.description.encoding'
 import { openApiSpecificationExtensionRulesFunction } from './openapi3.compare.rules'
+import { REST_CLASSIFY_RULE_IDS } from './openapi3.classify.ruleIds'
 
 const documentAnnotationRule: CompareRules = { $: allAnnotation }
 const operationAnnotationRule: CompareRules = { $: allAnnotation }
@@ -382,8 +385,10 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     },
     '/security': {
       $: operationSecurityClassifyRule,
+      classifyRuleId: operationSecurityClassifyRuleIdRule,
       '/*': {
         $: operationSecurityItemClassifyRule,
+        classifyRuleId: operationSecurityItemClassifyRuleIdRule,
         '/*': {
           $: allBreaking,
           mapping: deepEqualsUniqueItemsArrayMappingResolver,
