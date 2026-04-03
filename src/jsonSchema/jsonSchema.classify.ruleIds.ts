@@ -152,6 +152,30 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    */
   MINIMUM_ADD_BEFORE_EXCLUSIVE_MIN_COVERS: 'json-schema.minimum.add.before-exclusive-min-covers',
   /**
+   * JSON Schema `multipleOf` keyword — the constraint is added to a previously unconstrained
+   * schema.
+   * By default, breaking (request); non-breaking (response).
+   */
+  MULTIPLE_OF_ADD: 'json-schema.multiple-of.add',
+  /**
+   * JSON Schema `multipleOf` keyword — the constraint is removed from the schema.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MULTIPLE_OF_REMOVE: 'json-schema.multiple-of.remove',
+  /**
+   * JSON Schema `multipleOf` keyword replace — the old value is an exact multiple of the new
+   * value (both numeric), so the new divisor is strictly more permissive.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MULTIPLE_OF_REPLACE_NEW_IS_DIVISOR_OF_OLD: 'json-schema.multiple-of.replace.new-is-divisor-of-old',
+  /**
+   * JSON Schema `multipleOf` keyword replace — either value is non-numeric, or the old value
+   * is not an exact multiple of the new value.
+   * By default, breaking (both request and response).
+   */
+  MULTIPLE_OF_REPLACE_NEW_IS_NOT_DIVISOR_OF_OLD: 'json-schema.multiple-of.replace.new-is-not-divisor-of-old',
+
+  /**
    * JSON Schema draft-04 boolean `exclusiveMinimum` / `exclusiveMaximum` — added with value
    * `true`, activating the exclusive constraint.
    * By default, breaking (request); non-breaking (response).

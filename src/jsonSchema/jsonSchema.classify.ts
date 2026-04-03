@@ -143,6 +143,14 @@ export const exclusiveClassifier: ClassifyRule = [
   breakingIfAfterTrue,
 ]
 
+export const multipleOfClassifyRuleIdRule: ClassifyRuleIdRule = [
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MULTIPLE_OF_ADD,
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MULTIPLE_OF_REMOVE,
+  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && (before.value as number) % (after.value as number) === 0
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MULTIPLE_OF_REPLACE_NEW_IS_DIVISOR_OF_OLD
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.MULTIPLE_OF_REPLACE_NEW_IS_NOT_DIVISOR_OF_OLD),
+]
+
 //todo think about replace multipleOf in inverse case
 export const multipleOfClassifier: ClassifyRule = [
   breaking,

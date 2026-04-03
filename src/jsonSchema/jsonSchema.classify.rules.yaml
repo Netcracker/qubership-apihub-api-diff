@@ -136,6 +136,53 @@
     type: unclassified
 
 # ---------------------------------------------------------------------------
+# multipleOf keyword
+# ---------------------------------------------------------------------------
+# Add and remove flip for response (reverseClassifyRuleTransformer).
+# replace new-is-divisor-of-old also flips (request=non-breaking, response=breaking)
+# because position[5] of the 6-element classifier is explicit `breaking`.
+# replace new-is-not-divisor-of-old is breaking in both contexts (no scope override needed).
+
+# add: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.multiple-of.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.multiple-of.add
+    scope: response
+  set:
+    type: non-breaking
+
+# remove: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.multiple-of.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.multiple-of.remove
+    scope: response
+  set:
+    type: breaking
+
+# replace new-is-divisor-of-old: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.multiple-of.replace.new-is-divisor-of-old
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.multiple-of.replace.new-is-divisor-of-old
+    scope: response
+  set:
+    type: breaking
+
+# replace new-is-not-divisor-of-old: breaking (both)
+- match:
+    classifyRuleId: json-schema.multiple-of.replace.new-is-not-divisor-of-old
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
 # exclusive keyword (draft-04 boolean exclusiveMinimum / exclusiveMaximum)
 # ---------------------------------------------------------------------------
 # `true` activates the exclusive constraint; any other value is a no-op.
