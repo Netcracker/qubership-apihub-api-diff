@@ -1,4 +1,4 @@
-import { COMPARE_MODE_DEFAULT, COMPARE_SCOPE_ROOT, CompareEngine, CompareOptions, CompareResult } from './types'
+import { COMPARE_MODE_DEFAULT, COMPARE_SCOPE_ROOT, CompareEngine, CompareOptions, CompareResult, Diff, DiffType } from './types'
 import { compareJsonSchema } from './jsonSchema'
 import { compareGraphApi } from './graphapi'
 import { compareAsyncApi } from './asyncapi'
@@ -62,7 +62,7 @@ export function apiDiff(before: unknown, after: unknown, options: CompareOptions
     throw new Error(`Specification cannot be different. Got ${beforeSpec.type} and ${afterSpec.type}`)
   }
   const engine = COMPARE_ENGINES_MAP[selectEngineSpecType(beforeSpec.type, afterSpec.type)]
-  return engine(before, after, {
+  const result = engine(before, after, {
     mode: COMPARE_MODE_DEFAULT,
     normalizedResult: DEFAULT_NORMALIZED_RESULT,
     metaKey: DIFF_META_KEY,
@@ -75,4 +75,14 @@ export function apiDiff(before: unknown, after: unknown, options: CompareOptions
     createdMergedJso: new Set(),
     ...options,
   })
+  if (options.diffClassifier) {
+    for (const diff of result.diffs) {
+      const override = options.diffClassifier(diff)
+      if (override !== undefined) {
+        const d = diff as { type: DiffType }
+        if (override.type !== undefined) d.type = override.type
+      }
+    }
+  }
+  return result
 }

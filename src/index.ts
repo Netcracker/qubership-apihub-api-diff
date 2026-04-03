@@ -27,6 +27,11 @@ export type {
   DiffReplace,
   DiffRename,
   DiffMetaRecord,
+  DiffClassifier,
+  DiffClassifierResult,
+  ClassifyRuleIdResolver,
+  ClassifyRuleIdElement,
+  ClassifyRuleIdRule,
 } from './types'
 
 export {
@@ -42,3 +47,5 @@ export {
   onlyExistedArrayIndexes
 } from './utils'
 
+export { REST_CLASSIFY_RULE_IDS } from './openapi'
+export { JSON_SCHEMA_CLASSIFY_RULE_IDS } from './jsonSchema'
