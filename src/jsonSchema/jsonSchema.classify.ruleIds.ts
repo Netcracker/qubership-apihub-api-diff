@@ -12,6 +12,70 @@
  */
 export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
   /**
+   * JSON Schema `oneOf` combiner item added.
+   * By default, non-breaking (request); breaking (response).
+   */
+  ONE_OF_ITEM_ADD: 'json-schema.one-of.item.add',
+  /**
+   * JSON Schema `oneOf` combiner item removed.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ONE_OF_ITEM_REMOVE: 'json-schema.one-of.item.remove',
+  /**
+   * JSON Schema `oneOf` combiner item replaced.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ONE_OF_ITEM_REPLACE: 'json-schema.one-of.item.replace',
+
+  /**
+   * JSON Schema `anyOf` combiner item added.
+   * By default, non-breaking (request); breaking (response).
+   */
+  ANY_OF_ITEM_ADD: 'json-schema.any-of.item.add',
+  /**
+   * JSON Schema `anyOf` combiner item removed.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ANY_OF_ITEM_REMOVE: 'json-schema.any-of.item.remove',
+  /**
+   * JSON Schema `anyOf` combiner item replaced.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ANY_OF_ITEM_REPLACE: 'json-schema.any-of.item.replace',
+
+  /**
+   * JSON Schema `allOf` combiner item added.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ALL_OF_ITEM_ADD: 'json-schema.all-of.item.add',
+  /**
+   * JSON Schema `allOf` combiner item removed.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ALL_OF_ITEM_REMOVE: 'json-schema.all-of.item.remove',
+  /**
+   * JSON Schema `allOf` combiner item replaced.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ALL_OF_ITEM_REPLACE: 'json-schema.all-of.item.replace',
+
+  /**
+   * JSON Schema `not` keyword added (the /not node itself).
+   * By default, breaking (request); non-breaking (response).
+   */
+  NOT_ADD: 'json-schema.not.add',
+  /**
+   * JSON Schema `not` keyword removed.
+   * By default, breaking (request); non-breaking (response).
+   */
+  NOT_REMOVE: 'json-schema.not.remove',
+  /**
+   * JSON Schema `not` keyword replaced.
+   * By default, breaking (request); non-breaking (response).
+   */
+  NOT_REPLACE: 'json-schema.not.replace',
+
+  /**
    * JSON Schema `enum` array added (the whole enum keyword).
    * By default, breaking (request); non-breaking (response).
    */

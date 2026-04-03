@@ -180,6 +180,7 @@ export const jsonSchemaRules = ({
         return ({
           ...rules,
           $: [nonBreaking, breaking, breaking],
+          classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ONE_OF_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ONE_OF_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ONE_OF_ITEM_REPLACE],
           description: diffDescription(resolveSchemaDescriptionTemplates(`oneOf[${key.toString()}]`)),
         })
       },
@@ -193,6 +194,7 @@ export const jsonSchemaRules = ({
         return ({
           ...rules,
           $: [nonBreaking, breaking, breaking],
+          classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ANY_OF_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ANY_OF_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ANY_OF_ITEM_REPLACE],
           description: diffDescription(resolveSchemaDescriptionTemplates(`anyOf[${key.toString()}]`)),
         })
       },
@@ -203,6 +205,7 @@ export const jsonSchemaRules = ({
       '/*': () => ({
         ...rules,
         $: allBreaking,
+        classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ALL_OF_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ALL_OF_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ALL_OF_ITEM_REPLACE],
       }),
     },
 
@@ -211,6 +214,7 @@ export const jsonSchemaRules = ({
       // TODO check
       ...transformCompareRules(rules, reverseClassifyRuleTransformer),
       $: allBreaking,
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.NOT_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.NOT_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.NOT_REPLACE],
     }),
     '/items': ({ value }) => arrayItemsRules(value, rules),
     '/additionalItems': () => ({

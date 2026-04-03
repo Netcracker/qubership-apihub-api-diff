@@ -663,6 +663,134 @@
     type: non-breaking
 
 # ============================================================
+# oneOf combiner items
+# Rule: [nonBreaking, breaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.one-of.item.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.one-of.item.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.one-of.item.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.one-of.item.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.one-of.item.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.one-of.item.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
+# anyOf combiner items
+# Rule: [nonBreaking, breaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.any-of.item.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.any-of.item.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.any-of.item.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.any-of.item.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.any-of.item.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.any-of.item.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
+# allOf combiner items
+# Rule: allBreaking [breaking, breaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.all-of.item.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.all-of.item.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.all-of.item.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.all-of.item.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.all-of.item.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.all-of.item.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
+# not keyword ($: node)
+# Rule: allBreaking [breaking, breaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.not.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.not.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.not.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.not.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.not.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.not.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
 # pattern validator
 # ============================================================
 # add: breaking (request) / non-breaking (response)
