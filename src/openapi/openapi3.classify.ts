@@ -149,6 +149,16 @@ export const parameterRequiredClassifyRule: ClassifyRule = [
   (ctx) => (getKeyValue(ctx.after.parent, 'schema', 'default') ? nonBreaking : breakingIfAfterTrue(ctx)),
 ]
 
+export const apihubAllowEmptyValueParameterClassifyRuleIdRule: ClassifyRuleIdRule =
+  ({ after }) => {
+    if (getKeyValue(after.parent, 'in') !== 'query') {
+      return REST_CLASSIFY_RULE_IDS.PARAMETER_ALLOW_EMPTY_VALUE_AFTER_NOT_QUERY
+    }
+    return after.value === true
+      ? REST_CLASSIFY_RULE_IDS.PARAMETER_ALLOW_EMPTY_VALUE_AFTER_TRUE
+      : REST_CLASSIFY_RULE_IDS.PARAMETER_ALLOW_EMPTY_VALUE_AFTER_NOT_TRUE
+  }
+
 export const apihubAllowEmptyValueParameterClassifyRule: ClassifyRule = transformClassifyRule(
   reverseClassifyRule(booleanClassifier),
   (type, { after }, action) => (

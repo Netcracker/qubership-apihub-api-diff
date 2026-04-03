@@ -181,3 +181,27 @@
     classifyRuleId: rest.parameter.required.replace.after-false
   set:
     type: non-breaking
+
+# ---------------------------------------------------------------------------
+# Parameter Object > allowEmptyValue property
+# ---------------------------------------------------------------------------
+# Only applies to query parameters. Uses reverseClassifyRule(booleanClassifier):
+#   booleanClassifier = [breakingIfAfterTrue, nonBreaking, breakingIfAfterTrue]
+# After reversal: add/replace → nonBreaking when after=true, breaking when after≠true;
+#   remove → always breaking (reversed nonBreaking).
+# Non-query params always yield unclassified.
+
+- match:
+    classifyRuleId: rest.parameter.allow-empty-value.after-not-query
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.parameter.allow-empty-value.after-true
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.allow-empty-value.after-not-true
+  set:
+    type: breaking

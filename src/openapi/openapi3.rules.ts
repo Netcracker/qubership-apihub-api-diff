@@ -40,6 +40,7 @@ import { OpenApi3RulesOptions } from './openapi3.types'
 import { openApiSchemaRules } from './openapi3.schema'
 import {
   apihubAllowEmptyValueParameterClassifyRule,
+  apihubAllowEmptyValueParameterClassifyRuleIdRule,
   apihubParametersRemovalClassifyRule,
   globalSecurityClassifyRule,
   globalSecurityItemClassifyRule,
@@ -169,6 +170,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       [START_NEW_COMPARE_SCOPE_RULE]: COMPARE_SCOPE_REQUEST,
       '/allowEmptyValue': {
         $: apihubAllowEmptyValueParameterClassifyRule,
+        classifyRuleId: apihubAllowEmptyValueParameterClassifyRuleIdRule,
         description: diffDescription(resolveParameterDescriptionTemplates('allowEmptyValue status'))
       },
       '/allowReserved': {
