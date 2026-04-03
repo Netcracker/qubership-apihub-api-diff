@@ -213,4 +213,12 @@ export const REST_CLASSIFY_RULE_IDS = {
   PATH_CHANGE_REPLACE_SAME_EFFECTIVE_PATH: 'rest.path.replace.same-effective-path',
   /** Path item replaced — the effective path differs. By default, breaking. */
   PATH_CHANGE_REPLACE_DIFFERENT_EFFECTIVE_PATH: 'rest.path.replace.different-effective-path',
+  /**
+   * The `pathChangeClassifyRuleIdRule` is attached to the `/*` wildcard inside
+   * `/paths`, which matches both path items AND specification extensions (x-*).
+   * When the key does NOT start with `/` the diff is a spec extension — its
+   * engine type is `unclassified` and this ruleId conveys that to the OOB
+   * classifier without conflicting with the path-specific ruleIds above.
+   */
+  PATH_CHANGE_NOT_APPLICABLE: 'rest.path.not-applicable',
 } as const

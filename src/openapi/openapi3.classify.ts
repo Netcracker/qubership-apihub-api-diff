@@ -277,6 +277,43 @@ export const operationSecurityItemClassifyRule: ClassifyRule = [
   }) => (includeSecurity(after.parent, before.parent) || emptySecurity(after.value) ? nonBreaking : breaking),
 ]
 
+const computeUnifiedPaths = ({ before, after, parentContext }: {
+  before: { key: unknown; value: unknown }
+  after: { key: unknown; value: unknown }
+  parentContext?: { before: { root: unknown }; after: { root: unknown } }
+}) => {
+  const beforePath = before.key as string
+  const afterPath = after.key as string
+  const beforeRootServers = (parentContext?.before.root as OpenAPIV3.Document)?.servers
+  const beforePathItemServers = (before.value as OpenAPIV3.PathItemObject)?.servers
+  const afterRootServers = (parentContext?.after.root as OpenAPIV3.Document)?.servers
+  const afterPathItemServers = (after.value as OpenAPIV3.PathItemObject)?.servers
+  return {
+    before: createPathUnifier(beforeRootServers)(beforePath, beforePathItemServers),
+    after: createPathUnifier(afterRootServers)(afterPath, afterPathItemServers),
+  }
+}
+
+export const pathChangeClassifyRuleIdRule: ClassifyRuleIdRule = [
+  // The `/*` wildcard in /paths matches both path items (key starts with `/`)
+  // and specification extensions (key starts with `x-`). Guard accordingly.
+  ({ after }) => (String(after.key).startsWith('/')
+    ? REST_CLASSIFY_RULE_IDS.PATH_CHANGE_ADD
+    : REST_CLASSIFY_RULE_IDS.PATH_CHANGE_NOT_APPLICABLE),
+  ({ before }) => (String(before.key).startsWith('/')
+    ? REST_CLASSIFY_RULE_IDS.PATH_CHANGE_REMOVE
+    : REST_CLASSIFY_RULE_IDS.PATH_CHANGE_NOT_APPLICABLE),
+  (ctx) => {
+    if (!String(ctx.before.key).startsWith('/')) {
+      return REST_CLASSIFY_RULE_IDS.PATH_CHANGE_NOT_APPLICABLE
+    }
+    const unified = computeUnifiedPaths(ctx)
+    return unified.before === unified.after
+      ? REST_CLASSIFY_RULE_IDS.PATH_CHANGE_REPLACE_SAME_EFFECTIVE_PATH
+      : REST_CLASSIFY_RULE_IDS.PATH_CHANGE_REPLACE_DIFFERENT_EFFECTIVE_PATH
+  },
+]
+
 export const pathChangeClassifyRule: ClassifyRule = [
   nonBreaking,
   breaking,

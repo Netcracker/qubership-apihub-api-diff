@@ -296,3 +296,37 @@
     classifyRuleId: rest.global-security.item.replace.after-not-subset
   set:
     type: breaking
+
+# ---------------------------------------------------------------------------
+# Path item (path rename / change)
+# ---------------------------------------------------------------------------
+# Replace yields annotation when the unified (server-prefixed) path is unchanged
+# — i.e. only path parameter placeholder names changed, not the effective path.
+
+- match:
+    classifyRuleId: rest.path.add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.path.remove
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.path.replace.same-effective-path
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.path.replace.different-effective-path
+  set:
+    type: breaking
+
+# Spec extensions (x-*) inside /paths share the /* wildcard with path items and
+# therefore inherit the pathChangeClassifyRuleIdRule. Their engine type is
+# unclassified; this ruleId conveys that to the OOB classifier.
+- match:
+    classifyRuleId: rest.path.not-applicable
+  set:
+    type: unclassified
