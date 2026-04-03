@@ -336,4 +336,20 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    * By default, breaking (both request and response).
    */
   FORMAT_REPLACE: 'json-schema.format.replace',
+
+  /**
+   * JSON Schema `uniqueItems` changed — after-value is `true` (enabling uniqueness constraint).
+   * By default, breaking (request); non-breaking (response).
+   */
+  UNIQUE_ITEMS_AFTER_TRUE: 'json-schema.unique-items.after-true',
+  /**
+   * JSON Schema `uniqueItems` changed — after-value is not `true` (constraint absent or false).
+   * By default, non-breaking (request); breaking (response).
+   */
+  UNIQUE_ITEMS_AFTER_NOT_TRUE: 'json-schema.unique-items.after-not-true',
+  /**
+   * JSON Schema `uniqueItems` removed.
+   * By default, non-breaking (request); breaking (response).
+   */
+  UNIQUE_ITEMS_REMOVE: 'json-schema.unique-items.remove',
 } as const

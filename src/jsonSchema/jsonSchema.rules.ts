@@ -113,7 +113,14 @@ export const jsonSchemaRules = ({
     '/pattern': { ...simpleRule([breaking, nonBreaking, breaking, nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('pattern validator')), classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_REPLACE] },
     '/maxItems': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxItems validator')), classifyRuleId: maxClassifyRuleIdRule },
     '/minItems': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minItems validator')), classifyRuleId: minClassifyRuleIdRule },
-    '/uniqueItems': simpleRule(booleanClassifier, resolveSchemaDescriptionTemplates('uniqueItems validator')),
+    '/uniqueItems': {
+      ...simpleRule(booleanClassifier, resolveSchemaDescriptionTemplates('uniqueItems validator')),
+      classifyRuleId: [
+        ({ after }) => after.value === true ? JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_AFTER_TRUE : JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_AFTER_NOT_TRUE,
+        JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_REMOVE,
+        ({ after }) => after.value === true ? JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_AFTER_TRUE : JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_AFTER_NOT_TRUE,
+      ],
+    },
     '/maxProperties': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxProperties validator')), classifyRuleId: maxClassifyRuleIdRule },
     '/minProperties': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minProperties validator')), classifyRuleId: minClassifyRuleIdRule },
 
