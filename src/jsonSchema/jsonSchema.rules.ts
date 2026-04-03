@@ -26,6 +26,7 @@ import {
   enumClassifyRule,
   enumItemClassifyRuleIdRule,
   exclusiveClassifier,
+  exclusiveClassifyRuleIdRule,
   maxClassifier,
   maxClassifyRuleIdRule,
   maximumClassifier,
@@ -100,8 +101,8 @@ export const jsonSchemaRules = ({
     '/maximum': { ...simpleRule(maximumClassifier, resolveSchemaDescriptionTemplates('maximum validator')), classifyRuleId: maximumClassifyRuleIdRule },
     '/minimum': { ...simpleRule(minimumClassifier, resolveSchemaDescriptionTemplates('minimum validator')), classifyRuleId: minimumClassifyRuleIdRule },
     ...version === SPEC_TYPE_JSON_SCHEMA_04 ? {
-      '/exclusiveMaximum': simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')),
-      '/exclusiveMinimum': simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')),
+      '/exclusiveMaximum': { ...simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')), classifyRuleId: exclusiveClassifyRuleIdRule },
+      '/exclusiveMinimum': { ...simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')), classifyRuleId: exclusiveClassifyRuleIdRule },
     } : {
       '/exclusiveMaximum': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')), classifyRuleId: maxClassifyRuleIdRule },
       '/exclusiveMinimum': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')), classifyRuleId: minClassifyRuleIdRule },

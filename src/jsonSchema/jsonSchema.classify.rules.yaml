@@ -136,6 +136,69 @@
     type: unclassified
 
 # ---------------------------------------------------------------------------
+# exclusive keyword (draft-04 boolean exclusiveMinimum / exclusiveMaximum)
+# ---------------------------------------------------------------------------
+# `true` activates the exclusive constraint; any other value is a no-op.
+# All flipping cases reverse for response schemas (reverseClassifyRuleTransformer).
+# `unclassified` is the same for request and response (not reversed).
+
+# add after-true: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.exclusive.add.after-true
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.exclusive.add.after-true
+    scope: response
+  set:
+    type: non-breaking
+
+# add after-not-true: unclassified (both)
+- match:
+    classifyRuleId: json-schema.exclusive.add.after-not-true
+  set:
+    type: unclassified
+
+# remove before-true: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.exclusive.remove.before-true
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.exclusive.remove.before-true
+    scope: response
+  set:
+    type: breaking
+
+# remove before-not-true: unclassified (both)
+- match:
+    classifyRuleId: json-schema.exclusive.remove.before-not-true
+  set:
+    type: unclassified
+
+# replace after-true: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.exclusive.replace.after-true
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.exclusive.replace.after-true
+    scope: response
+  set:
+    type: non-breaking
+
+# replace after-not-true: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.exclusive.replace.after-not-true
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.exclusive.replace.after-not-true
+    scope: response
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
 # minimum keyword (interacts with draft-04 exclusiveMinimum in the add case)
 # ---------------------------------------------------------------------------
 # All actions flip for response schemas (reverseClassifyRuleTransformer).

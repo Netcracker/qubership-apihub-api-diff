@@ -125,6 +125,18 @@ export const maximumClassifier: ClassifyRule = [
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value > after.value),
 ]
 
+export const exclusiveClassifyRuleIdRule: ClassifyRuleIdRule = [
+  ({ after }) => (after.value === true
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.EXCLUSIVE_ADD_AFTER_TRUE
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.EXCLUSIVE_ADD_AFTER_NOT_TRUE),
+  ({ before }) => (before.value === true
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.EXCLUSIVE_REMOVE_BEFORE_TRUE
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.EXCLUSIVE_REMOVE_BEFORE_NOT_TRUE),
+  ({ after }) => (after.value === true
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.EXCLUSIVE_REPLACE_AFTER_TRUE
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.EXCLUSIVE_REPLACE_AFTER_NOT_TRUE),
+]
+
 export const exclusiveClassifier: ClassifyRule = [
   ({ after }) => (after.value === true ? breaking : unclassified),
   ({ before }) => (before.value === true ? nonBreaking : unclassified),

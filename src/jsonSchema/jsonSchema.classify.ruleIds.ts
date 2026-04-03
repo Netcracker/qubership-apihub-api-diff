@@ -152,6 +152,43 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    */
   MINIMUM_ADD_BEFORE_EXCLUSIVE_MIN_COVERS: 'json-schema.minimum.add.before-exclusive-min-covers',
   /**
+   * JSON Schema draft-04 boolean `exclusiveMinimum` / `exclusiveMaximum` — added with value
+   * `true`, activating the exclusive constraint.
+   * By default, breaking (request); non-breaking (response).
+   */
+  EXCLUSIVE_ADD_AFTER_TRUE: 'json-schema.exclusive.add.after-true',
+  /**
+   * JSON Schema draft-04 boolean `exclusiveMinimum` / `exclusiveMaximum` — added with a value
+   * other than `true` (e.g. `false`), so no exclusive constraint is activated.
+   * By default, unclassified (both request and response).
+   */
+  EXCLUSIVE_ADD_AFTER_NOT_TRUE: 'json-schema.exclusive.add.after-not-true',
+  /**
+   * JSON Schema draft-04 boolean `exclusiveMinimum` / `exclusiveMaximum` — removed when its
+   * before-value was `true`, deactivating the exclusive constraint.
+   * By default, non-breaking (request); breaking (response).
+   */
+  EXCLUSIVE_REMOVE_BEFORE_TRUE: 'json-schema.exclusive.remove.before-true',
+  /**
+   * JSON Schema draft-04 boolean `exclusiveMinimum` / `exclusiveMaximum` — removed when its
+   * before-value was not `true`, so no exclusive constraint was active.
+   * By default, unclassified (both request and response).
+   */
+  EXCLUSIVE_REMOVE_BEFORE_NOT_TRUE: 'json-schema.exclusive.remove.before-not-true',
+  /**
+   * JSON Schema draft-04 boolean `exclusiveMinimum` / `exclusiveMaximum` replaced — after-value
+   * is `true`, activating the exclusive constraint.
+   * By default, breaking (request); non-breaking (response).
+   */
+  EXCLUSIVE_REPLACE_AFTER_TRUE: 'json-schema.exclusive.replace.after-true',
+  /**
+   * JSON Schema draft-04 boolean `exclusiveMinimum` / `exclusiveMaximum` replaced — after-value
+   * is not `true`, so the exclusive constraint is deactivated or absent.
+   * By default, non-breaking (request); breaking (response).
+   */
+  EXCLUSIVE_REPLACE_AFTER_NOT_TRUE: 'json-schema.exclusive.replace.after-not-true',
+
+  /**
    * JSON Schema `minimum` keyword added — either no numeric `exclusiveMinimum` existed
    * in the before schema, or its value is less than the new `minimum`, meaning the new
    * `minimum` introduces a tighter lower bound.
