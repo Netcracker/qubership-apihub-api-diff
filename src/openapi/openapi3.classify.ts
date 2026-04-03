@@ -116,6 +116,14 @@ export const parameterAllowReservedClassifyRule: ClassifyRule = [
   },
 ]
 
+export const parameterNameClassifyRuleIdRule: ClassifyRuleIdRule = [
+  REST_CLASSIFY_RULE_IDS.PARAMETER_NAME_ADD,
+  REST_CLASSIFY_RULE_IDS.PARAMETER_NAME_REMOVE,
+  ({ before }) => (getKeyValue(before.parent, 'in') === 'path'
+    ? REST_CLASSIFY_RULE_IDS.PARAMETER_NAME_REPLACE_BEFORE_PATH_PARAM
+    : REST_CLASSIFY_RULE_IDS.PARAMETER_NAME_REPLACE_BEFORE_NON_PATH_PARAM),
+]
+
 export const parameterNameClassifyRule: ClassifyRule = [
   nonBreaking,
   breaking,

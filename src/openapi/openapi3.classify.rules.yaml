@@ -128,3 +128,27 @@
     classifyRuleId: rest.parameter.allow-reserved.replace.after-false
   set:
     type: breaking
+
+# ---------------------------------------------------------------------------
+# Parameter Object > name property
+# ---------------------------------------------------------------------------
+
+- match:
+    classifyRuleId: rest.parameter.name.add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.name.remove
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.name.replace.before-path-param
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.parameter.name.replace.before-non-path-param
+  set:
+    type: breaking

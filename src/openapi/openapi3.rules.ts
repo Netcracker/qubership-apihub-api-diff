@@ -54,6 +54,7 @@ import {
   parameterExplodeClassifyRule,
   parameterExplodeClassifyRuleIdRule,
   parameterNameClassifyRule,
+  parameterNameClassifyRuleIdRule,
   parameterRequiredClassifyRule,
   pathChangeClassifyRule,
 } from './openapi3.classify'
@@ -202,6 +203,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       },
       '/name': {
         $: parameterNameClassifyRule,
+        classifyRuleId: parameterNameClassifyRuleIdRule,
         description: diffDescription(`[{{${TEMPLATE_PARAM_ACTION}}}] {{${TEMPLATE_PARAM_PARAMETER_LOCATION}}} parameter '{{${GREP_TEMPLATE_PARAM_PARAMETER_NAME}}}'`),
       },
       '/required': {
