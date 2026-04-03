@@ -717,3 +717,46 @@
     scope: response
   set:
     type: breaking
+
+# ============================================================
+# readOnly keyword
+# Rule: [...booleanClassifier, ...allNonBreaking]
+# Response slots are all non-breaking (explicit override).
+# ============================================================
+# after-true (add/replace where readOnly=true): breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.read-only.after-true
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.read-only.after-true
+    scope: response
+  set:
+    type: non-breaking
+# after-not-true (add/replace where readOnly!=true): non-breaking (both)
+- match:
+    classifyRuleId: json-schema.read-only.after-not-true
+  set:
+    type: non-breaking
+# remove: non-breaking (both — response slot is non-breaking, not reversed)
+- match:
+    classifyRuleId: json-schema.read-only.remove
+  set:
+    type: non-breaking
+
+# ============================================================
+# writeOnly keyword
+# Rule: [...allNonBreaking, ...allNonBreaking] — non-breaking everywhere
+# ============================================================
+- match:
+    classifyRuleId: json-schema.write-only.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.write-only.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.write-only.replace
+  set:
+    type: non-breaking

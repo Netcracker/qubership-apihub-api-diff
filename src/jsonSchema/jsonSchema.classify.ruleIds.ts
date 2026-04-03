@@ -352,4 +352,36 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    * By default, non-breaking (request); breaking (response).
    */
   UNIQUE_ITEMS_REMOVE: 'json-schema.unique-items.remove',
+
+  /**
+   * JSON Schema `readOnly` changed — after-value is `true` (marking field as read-only).
+   * By default, breaking (request); non-breaking (response).
+   */
+  READ_ONLY_AFTER_TRUE: 'json-schema.read-only.after-true',
+  /**
+   * JSON Schema `readOnly` changed — after-value is not `true`.
+   * By default, non-breaking (both request and response).
+   */
+  READ_ONLY_AFTER_NOT_TRUE: 'json-schema.read-only.after-not-true',
+  /**
+   * JSON Schema `readOnly` removed.
+   * By default, non-breaking (both request and response).
+   */
+  READ_ONLY_REMOVE: 'json-schema.read-only.remove',
+
+  /**
+   * JSON Schema `writeOnly` added.
+   * By default, non-breaking (both request and response).
+   */
+  WRITE_ONLY_ADD: 'json-schema.write-only.add',
+  /**
+   * JSON Schema `writeOnly` removed.
+   * By default, non-breaking (both request and response).
+   */
+  WRITE_ONLY_REMOVE: 'json-schema.write-only.remove',
+  /**
+   * JSON Schema `writeOnly` replaced.
+   * By default, non-breaking (both request and response).
+   */
+  WRITE_ONLY_REPLACE: 'json-schema.write-only.replace',
 } as const

@@ -124,8 +124,18 @@ export const jsonSchemaRules = ({
     '/maxProperties': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxProperties validator')), classifyRuleId: maxClassifyRuleIdRule },
     '/minProperties': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minProperties validator')), classifyRuleId: minClassifyRuleIdRule },
 
-    '/readOnly': simpleRule([...booleanClassifier, ...allNonBreaking] as ClassifyRule, resolveSchemaDescriptionTemplates('readOnly status')),
-    '/writeOnly': simpleRule([...allNonBreaking, ...allNonBreaking] as ClassifyRule, resolveSchemaDescriptionTemplates('writeOnly status')),
+    '/readOnly': {
+      ...simpleRule([...booleanClassifier, ...allNonBreaking] as ClassifyRule, resolveSchemaDescriptionTemplates('readOnly status')),
+      classifyRuleId: [
+        ({ after }) => after.value === true ? JSON_SCHEMA_CLASSIFY_RULE_IDS.READ_ONLY_AFTER_TRUE : JSON_SCHEMA_CLASSIFY_RULE_IDS.READ_ONLY_AFTER_NOT_TRUE,
+        JSON_SCHEMA_CLASSIFY_RULE_IDS.READ_ONLY_REMOVE,
+        ({ after }) => after.value === true ? JSON_SCHEMA_CLASSIFY_RULE_IDS.READ_ONLY_AFTER_TRUE : JSON_SCHEMA_CLASSIFY_RULE_IDS.READ_ONLY_AFTER_NOT_TRUE,
+      ],
+    },
+    '/writeOnly': {
+      ...simpleRule([...allNonBreaking, ...allNonBreaking] as ClassifyRule, resolveSchemaDescriptionTemplates('writeOnly status')),
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.WRITE_ONLY_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.WRITE_ONLY_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.WRITE_ONLY_REPLACE],
+    },
     '/deprecated': simpleRule(allDeprecated, resolveSchemaDescriptionTemplates('deprecated status')),
     '/required': {
       mapping: deepEqualsUniqueItemsArrayMappingResolver,
