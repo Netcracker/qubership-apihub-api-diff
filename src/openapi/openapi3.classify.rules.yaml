@@ -63,3 +63,34 @@
     classifyRuleId: rest.parameter.replace
   set:
     type: unclassified
+
+# ---------------------------------------------------------------------------
+# Parameter Object > explode property
+# ---------------------------------------------------------------------------
+# annotation when the explode value matches the style default; breaking otherwise.
+# Replace is always breaking. No scope overrides (request context only).
+
+- match:
+    classifyRuleId: rest.parameter.explode.after-default-for-style
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.parameter.explode.after-non-default-for-style
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.explode.before-default-for-style
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.parameter.explode.before-non-default-for-style
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.explode.replace
+  set:
+    type: breaking

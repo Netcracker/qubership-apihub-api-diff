@@ -64,6 +64,20 @@ export const apihubParametersRemovalClassifyRule = (ctx: CompareContext): DiffTy
     : breaking
 }
 
+const isExplodeDefaultForStyle = (value: unknown, parent: unknown): boolean =>
+  (!!value && getKeyValue(parent, 'style') === 'form') ||
+  (!value && getKeyValue(parent, 'style') !== 'form')
+
+export const parameterExplodeClassifyRuleIdRule: ClassifyRuleIdRule = [
+  ({ after }) => (isExplodeDefaultForStyle(after.value, after.parent)
+    ? REST_CLASSIFY_RULE_IDS.PARAMETER_EXPLODE_AFTER_DEFAULT_FOR_STYLE
+    : REST_CLASSIFY_RULE_IDS.PARAMETER_EXPLODE_AFTER_NON_DEFAULT_FOR_STYLE),
+  ({ before }) => (isExplodeDefaultForStyle(before.value, before.parent)
+    ? REST_CLASSIFY_RULE_IDS.PARAMETER_EXPLODE_BEFORE_DEFAULT_FOR_STYLE
+    : REST_CLASSIFY_RULE_IDS.PARAMETER_EXPLODE_BEFORE_NON_DEFAULT_FOR_STYLE),
+  REST_CLASSIFY_RULE_IDS.PARAMETER_EXPLODE_REPLACE,
+]
+
 export const parameterExplodeClassifyRule: ClassifyRule = [
   ({ after }) => ((after.value && getKeyValue(after.parent, 'style') === 'form') || (!after.value && getKeyValue(after.parent, 'style') !== 'form') ? annotation : breaking),
   ({ before }) => ((before.value && getKeyValue(before.parent, 'style') === 'form') || (!before.value && getKeyValue(before.parent, 'style') !== 'form') ? annotation : breaking),

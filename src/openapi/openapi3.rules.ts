@@ -51,6 +51,7 @@ import {
   paramClassifyRuleIdRule,
   parameterAllowReservedClassifyRule,
   parameterExplodeClassifyRule,
+  parameterExplodeClassifyRuleIdRule,
   parameterNameClassifyRule,
   parameterRequiredClassifyRule,
   pathChangeClassifyRule,
@@ -190,6 +191,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       '/examples': examplesRules,
       '/explode': {
         $: parameterExplodeClassifyRule,
+        classifyRuleId: parameterExplodeClassifyRuleIdRule,
         description: diffDescription(resolveParameterDescriptionTemplates('explode status'))
       },
       '/in': {
