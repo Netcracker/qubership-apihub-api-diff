@@ -193,6 +193,63 @@
     type: non-breaking
 
 # ---------------------------------------------------------------------------
+# min* keywords (minLength, minItems, minProperties, exclusiveMinimum non-draft-04)
+# ---------------------------------------------------------------------------
+# All three actions flip for response schemas (reverseClassifyRuleTransformer).
+
+# add (introduces a lower-bound constraint):
+#   non-response → breaking
+#   response     → non-breaking
+- match:
+    classifyRuleId: json-schema.min.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.min.add
+    scope: response
+  set:
+    type: non-breaking
+
+# remove (drops the lower-bound constraint):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.min.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.min.remove
+    scope: response
+  set:
+    type: breaking
+
+# replace constraint-relaxed (after <= before, both numeric — lower bound lowered):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.min.replace.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.min.replace.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+# replace constraint-tightened (after > before, or either value non-numeric):
+#   non-response → breaking
+#   response     → non-breaking
+- match:
+    classifyRuleId: json-schema.min.replace.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.min.replace.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
 # enum array items
 # ---------------------------------------------------------------------------
 

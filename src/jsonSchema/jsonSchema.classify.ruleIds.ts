@@ -119,4 +119,28 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    * By default, breaking (request); non-breaking (response).
    */
   MAX_REPLACE_CONSTRAINT_TIGHTENED: 'json-schema.max.replace.constraint-tightened',
+
+  /**
+   * JSON Schema `min*` keyword (minLength, minItems, minProperties, non-draft-04 exclusiveMinimum)
+   * — the constraint is added to a previously unconstrained schema.
+   * By default, breaking (request); non-breaking (response).
+   */
+  MIN_ADD: 'json-schema.min.add',
+  /**
+   * JSON Schema `min*` keyword — the constraint is removed from the schema.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MIN_REMOVE: 'json-schema.min.remove',
+  /**
+   * JSON Schema `min*` keyword replace — the after value is less than or equal to the before
+   * value (both numeric), meaning the constraint was relaxed or kept the same.
+   * By default, non-breaking (request); breaking (response).
+   */
+  MIN_REPLACE_CONSTRAINT_RELAXED: 'json-schema.min.replace.constraint-relaxed',
+  /**
+   * JSON Schema `min*` keyword replace — the after value is greater than the before value, or
+   * either value is non-numeric, meaning the constraint was tightened or is indeterminate.
+   * By default, breaking (request); non-breaking (response).
+   */
+  MIN_REPLACE_CONSTRAINT_TIGHTENED: 'json-schema.min.replace.constraint-tightened',
 } as const

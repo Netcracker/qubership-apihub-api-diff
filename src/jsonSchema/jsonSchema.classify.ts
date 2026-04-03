@@ -67,6 +67,14 @@ export const maxClassifier: ClassifyRule = [
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value > after.value),
 ]
 
+export const minClassifyRuleIdRule: ClassifyRuleIdRule = [
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MIN_ADD,
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MIN_REMOVE,
+  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && before.value >= after.value
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MIN_REPLACE_CONSTRAINT_RELAXED
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.MIN_REPLACE_CONSTRAINT_TIGHTENED),
+]
+
 export const minClassifier: ClassifyRule = [
   breaking,
   nonBreaking,
