@@ -138,6 +138,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Parameter `description` changed. By default, always annotation. */
   PARAMETER_DESCRIPTION: 'rest.parameter.description',
 
+  /** Parameter `example` value changed. By default, always annotation. */
+  PARAMETER_EXAMPLE: 'rest.parameter.example',
+
   // ---------------------------------------------------------------------------
   // Parameter Object > allowEmptyValue property
   // ---------------------------------------------------------------------------

@@ -45,6 +45,11 @@
     type: annotation
 
 - match:
+    classifyRuleId: rest.parameter.example
+  set:
+    type: annotation
+
+- match:
     classifyRuleId: rest.parameter.after-ignored-header
   set:
     type: unclassified
