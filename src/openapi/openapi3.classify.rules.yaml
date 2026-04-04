@@ -556,3 +556,15 @@
     classifyRuleId: rest.operation.replace
   set:
     type: unclassified
+# ============================================================
+# Operation Object > responses map  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.operation.responses
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.operation.responses
+    action: add
+  set:
+    type: non-breaking

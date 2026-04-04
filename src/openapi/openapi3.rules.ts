@@ -444,6 +444,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/requestBody': requestBodiesRules,
     '/responses': {
       $: [nonBreaking, breaking, breaking],
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.OPERATION_RESPONSES,
       [START_NEW_COMPARE_SCOPE_RULE]: COMPARE_SCOPE_RESPONSE,
       mapping: apihubCaseInsensitiveKeyMappingResolver,
       ...openApiSpecificationExtensionRulesFunction(),

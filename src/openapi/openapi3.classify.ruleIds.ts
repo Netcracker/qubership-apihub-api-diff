@@ -360,4 +360,10 @@ export const REST_CLASSIFY_RULE_IDS = {
    * will return undefined and the engine type is preserved as-is.
    */
   OPERATION_NOT_APPLICABLE: 'rest.operation.not-applicable',
+
+  // ---------------------------------------------------------------------------
+  // Operation Object > responses map ($:)
+  // ---------------------------------------------------------------------------
+  /** Responses map added/removed/replaced. add=non-breaking, remove/replace=breaking. */
+  OPERATION_RESPONSES: 'rest.operation.responses',
 } as const
