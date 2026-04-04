@@ -220,6 +220,7 @@ export const jsonSchemaRules = ({
     '/additionalItems': () => ({
       ...rules,
       $: [nonBreaking, breaking, unclassified],
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_ITEMS_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_ITEMS_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_ITEMS_REPLACE],
     }),
     '/properties': {
       '/*': ({ key }) => {

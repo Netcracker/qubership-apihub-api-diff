@@ -12,6 +12,22 @@
  */
 export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
   /**
+   * JSON Schema `additionalItems` keyword added.
+   * By default, non-breaking (request); breaking (response).
+   */
+  ADDITIONAL_ITEMS_ADD: 'json-schema.additional-items.add',
+  /**
+   * JSON Schema `additionalItems` keyword removed.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ADDITIONAL_ITEMS_REMOVE: 'json-schema.additional-items.remove',
+  /**
+   * JSON Schema `additionalItems` keyword replaced.
+   * By default, unclassified (both request and response).
+   */
+  ADDITIONAL_ITEMS_REPLACE: 'json-schema.additional-items.replace',
+
+  /**
    * JSON Schema `oneOf` combiner item added.
    * By default, non-breaking (request); breaking (response).
    */

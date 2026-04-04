@@ -627,6 +627,33 @@
     type: risky
 
 # ============================================================
+# additionalItems keyword
+# Rule: [nonBreaking, breaking, unclassified]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.additional-items.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.additional-items.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.additional-items.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.additional-items.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.additional-items.replace
+  set:
+    type: unclassified
+
+# ============================================================
 # enum array (the /enum keyword node itself)
 # Rule: [breaking, nonBreaking, breaking, nonBreaking, risky, nonBreaking]
 # Response remove is risky (non-standard: reversal of nonBreaking would be breaking)
