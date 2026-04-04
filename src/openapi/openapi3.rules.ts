@@ -297,6 +297,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       }),
       '/style': {
         $: allUnclassified,
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.HEADER_STYLE,
         description: diffDescription(resolveHeaderDescriptionTemplates('delimited style')),
       },
       ...openApiSpecificationExtensionRulesFunction(),

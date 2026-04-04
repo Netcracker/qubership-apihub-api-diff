@@ -288,6 +288,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Header `explode` changed. By default, always unclassified. */
   HEADER_EXPLODE: 'rest.header.explode',
 
+  /** Header `style` changed. By default, always unclassified. */
+  HEADER_STYLE: 'rest.header.style',
+
   // ---------------------------------------------------------------------------
   // Header Object > required property
   // ---------------------------------------------------------------------------

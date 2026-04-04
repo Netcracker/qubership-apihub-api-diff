@@ -438,6 +438,11 @@
   set:
     type: unclassified
 
+- match:
+    classifyRuleId: rest.header.style
+  set:
+    type: unclassified
+
 # ============================================================
 # Header Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
 # ============================================================
