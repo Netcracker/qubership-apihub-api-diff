@@ -343,6 +343,13 @@
   set:
     type: non-breaking
 # ============================================================
+# Parameter Object > style property  [allBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.parameter.style
+  set:
+    type: breaking
+# ============================================================
 # Parameter Object > schema node  [allBreaking]
 # ============================================================
 - match:

@@ -226,6 +226,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       }),
       '/style': {
         $: allBreaking,
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.PARAMETER_STYLE,
         description: diffDescription(resolveParameterDescriptionTemplates('delimited style'))
       },
       ...openApiSpecificationExtensionRulesFunction(),
