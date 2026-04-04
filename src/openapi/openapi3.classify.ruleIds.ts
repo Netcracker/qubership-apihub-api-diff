@@ -221,4 +221,10 @@ export const REST_CLASSIFY_RULE_IDS = {
    * classifier without conflicting with the path-specific ruleIds above.
    */
   PATH_CHANGE_NOT_APPLICABLE: 'rest.path.not-applicable',
+
+  // ---------------------------------------------------------------------------
+  // Parameter Object > in property
+  // ---------------------------------------------------------------------------
+  /** Parameter `in` property changed. add/replace=non-breaking (add), breaking (remove/replace). */
+  PARAMETER_IN: 'rest.parameter.in',
 } as const

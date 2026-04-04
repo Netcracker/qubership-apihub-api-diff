@@ -330,3 +330,15 @@
     classifyRuleId: rest.path.not-applicable
   set:
     type: unclassified
+# ============================================================
+# Parameter Object > in property  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.parameter.in
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.parameter.in
+    action: add
+  set:
+    type: non-breaking

@@ -206,6 +206,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       },
       '/in': {
         $: [nonBreaking, breaking, breaking],
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.PARAMETER_IN,
         description: diffDescription(`[{{${TEMPLATE_PARAM_ACTION}}}] {{${TEMPLATE_PARAM_PARAMETER_LOCATION}}} parameter '{{${GREP_TEMPLATE_PARAM_PARAMETER_NAME}}}'`),
       },
       '/name': {
