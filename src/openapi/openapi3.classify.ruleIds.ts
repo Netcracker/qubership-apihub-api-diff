@@ -356,6 +356,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** External Documentation object root (`$`). By default, always annotation. */
   EXTERNAL_DOCS: 'rest.external-docs',
 
+  /** External Documentation object field (`url`, `description`, etc.). By default, always annotation. */
+  EXTERNAL_DOCS_FIELD: 'rest.external-docs.field',
+
   // ---------------------------------------------------------------------------
   // Content Object (media-type map)
   // ---------------------------------------------------------------------------

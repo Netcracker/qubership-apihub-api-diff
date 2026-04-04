@@ -574,6 +574,11 @@
   set:
     type: annotation
 
+- match:
+    classifyRuleId: rest.external-docs.field
+  set:
+    type: annotation
+
 # ============================================================
 # Content Object  [nonBreaking, breaking, breaking]
 # ============================================================
