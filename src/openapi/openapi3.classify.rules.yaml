@@ -368,3 +368,15 @@
     action: add
   set:
     type: non-breaking
+# ============================================================
+# Header Object (individual)  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.header
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.header
+    action: add
+  set:
+    type: non-breaking

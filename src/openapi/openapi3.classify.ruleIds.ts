@@ -245,4 +245,10 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Headers object added/removed/replaced. add=non-breaking, remove/replace=breaking. */
   HEADERS: 'rest.headers',
+
+  // ---------------------------------------------------------------------------
+  // Header Object (individual header)
+  // ---------------------------------------------------------------------------
+  /** Individual header added/removed/replaced. add=non-breaking, remove/replace=breaking. */
+  HEADER: 'rest.header',
 } as const
