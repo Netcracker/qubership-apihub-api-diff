@@ -635,6 +635,14 @@
     type: annotation
 
 # ============================================================
+# description keyword (annotation — symmetric, no scope override)
+# ============================================================
+- match:
+    classifyRuleId: json-schema.description
+  set:
+    type: annotation
+
+# ============================================================
 # examples keyword and per-item examples (annotation — symmetric, no scope override)
 # ============================================================
 - match:

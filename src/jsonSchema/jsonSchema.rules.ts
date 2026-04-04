@@ -94,7 +94,7 @@ export const jsonSchemaRules = ({
     mapping: jsonSchemaMappingResolver,
     // todo: add descriptionParamCalculator only for jsonScheme
     '/title': { ...simpleRule(allAnnotation, resolveSchemaDescriptionTemplates('title')), classifyRuleId: JSON_SCHEMA_CLASSIFY_RULE_IDS.TITLE },
-    '/description': simpleRule(allAnnotation, resolveSchemaDescriptionTemplates('description')),
+    '/description': { ...simpleRule(allAnnotation, resolveSchemaDescriptionTemplates('description')), classifyRuleId: JSON_SCHEMA_CLASSIFY_RULE_IDS.DESCRIPTION },
     '/type': {
       ...simpleRule(typeClassifier, resolveSchemaDescriptionTemplates('type')),
       classifyRuleId: schemaTypeClassifyRuleIdRule,

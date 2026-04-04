@@ -18,6 +18,12 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
   TITLE: 'json-schema.title',
 
   /**
+   * JSON Schema `description` keyword changed.
+   * By default, annotation (both request and response).
+   */
+  DESCRIPTION: 'json-schema.description',
+
+  /**
    * JSON Schema `examples` keyword change (the /examples node itself).
    * By default, annotation (both request and response).
    */
