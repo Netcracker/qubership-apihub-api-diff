@@ -329,6 +329,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     mapping: contentMediaTypeMappingResolver,
     '/*': {
       $: [nonBreaking, breaking, nonBreaking],
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.MEDIA_TYPE,
       description: diffDescription([
         `[{{${TEMPLATE_PARAM_ACTION}}}] '{{${GREP_TEMPLATE_PARAM_MEDIA_TYPE}}}' media type {{${TEMPLATE_PARAM_PREPOSITION}}} {{${TEMPLATE_PARAM_SCOPE}}} '{{${GREP_TEMPLATE_PARAM_RESPONSE_NAME}}}'`,
         `[{{${TEMPLATE_PARAM_ACTION}}}] '{{${GREP_TEMPLATE_PARAM_MEDIA_TYPE}}}' media type {{${TEMPLATE_PARAM_PREPOSITION}}} '{{${TEMPLATE_PARAM_COMPONENT_PATH}}}'`,

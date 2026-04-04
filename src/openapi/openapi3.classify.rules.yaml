@@ -472,3 +472,15 @@
     action: add
   set:
     type: non-breaking
+# ============================================================
+# Media Type Object  [nonBreaking, breaking, nonBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.media-type
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.media-type
+    action: remove
+  set:
+    type: breaking

@@ -289,4 +289,10 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Content object added/removed/replaced. add=non-breaking, remove/replace=breaking. */
   CONTENT: 'rest.content',
+
+  // ---------------------------------------------------------------------------
+  // Media Type Object (individual entry in content map)
+  // ---------------------------------------------------------------------------
+  /** Media type entry added/removed/replaced. add/replace=non-breaking, remove=breaking. */
+  MEDIA_TYPE: 'rest.media-type',
 } as const
