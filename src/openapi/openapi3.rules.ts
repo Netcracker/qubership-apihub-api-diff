@@ -430,6 +430,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/content': contentRules,
     '/description': {
       $: allAnnotation,
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.RESPONSE_DESCRIPTION,
       description: diffDescription([
         `[{{${TEMPLATE_PARAM_ACTION}}}] description {{${TEMPLATE_PARAM_PREPOSITION}}} '{{${TEMPLATE_PARAM_COMPONENT_PATH}}}'`,
         `[{{${TEMPLATE_PARAM_ACTION}}}] description {{${TEMPLATE_PARAM_PREPOSITION}}} response '{{${GREP_TEMPLATE_PARAM_RESPONSE_NAME}}}'`

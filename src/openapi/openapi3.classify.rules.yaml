@@ -677,6 +677,12 @@
     classifyRuleId: rest.response.replace.different-code
   set:
     type: breaking
+
+- match:
+    classifyRuleId: rest.response.description
+  set:
+    type: annotation
+
 # ============================================================
 # Operation Object  [nonBreaking, breaking, unclassified]
 # ============================================================

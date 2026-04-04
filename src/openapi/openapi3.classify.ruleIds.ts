@@ -417,6 +417,8 @@ export const REST_CLASSIFY_RULE_IDS = {
    * No YAML rule should map this; the OOB classifier will return undefined.
    */
   RESPONSE_NOT_APPLICABLE: 'rest.response.not-applicable',
+  /** Response object `description` changed. By default, always annotation. */
+  RESPONSE_DESCRIPTION: 'rest.response.description',
   /**
    * Response replaced — old and new status codes are the same (case-insensitive).
    * By default, non-breaking.
