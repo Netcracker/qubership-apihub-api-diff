@@ -481,8 +481,18 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/*': operationAnnotationRule,
   }
 
+  const OAUTH_FLOW_TYPES = new Set(['implicit', 'password', 'clientCredentials', 'authorizationCode'])
+
   const oAuthFlowObjectRules: CompareRules = {
     $: [breaking, nonBreaking, breaking],
+    // Guard: oAuthFlowObjectRules is the `/*` wildcard in oAuthFlowsObjectRules, so its
+    // classifyRuleId is merged into x-* extension diffs. Return OAUTH_FLOW_NOT_APPLICABLE
+    // for non-flow keys so OOB is a no-op for those leaked diffs.
+    classifyRuleId: [
+      ({ after }) => OAUTH_FLOW_TYPES.has(String(after.key)) ? REST_CLASSIFY_RULE_IDS.OAUTH_FLOW : REST_CLASSIFY_RULE_IDS.OAUTH_FLOW_NOT_APPLICABLE,
+      ({ before }) => OAUTH_FLOW_TYPES.has(String(before.key)) ? REST_CLASSIFY_RULE_IDS.OAUTH_FLOW : REST_CLASSIFY_RULE_IDS.OAUTH_FLOW_NOT_APPLICABLE,
+      (ctx) => OAUTH_FLOW_TYPES.has(String(ctx.before.key)) ? REST_CLASSIFY_RULE_IDS.OAUTH_FLOW : REST_CLASSIFY_RULE_IDS.OAUTH_FLOW_NOT_APPLICABLE,
+    ],
     ...openApiSpecificationExtensionRulesFunction(),
   }
 

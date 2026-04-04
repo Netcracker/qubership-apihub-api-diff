@@ -587,3 +587,15 @@
     action: remove
   set:
     type: non-breaking
+# ============================================================
+# OAuth Flow Object  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.oauth-flow
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.oauth-flow
+    action: remove
+  set:
+    type: non-breaking

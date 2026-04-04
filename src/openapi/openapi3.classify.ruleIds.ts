@@ -380,4 +380,16 @@ export const REST_CLASSIFY_RULE_IDS = {
    * add/replace=breaking, remove=non-breaking.
    */
   OPERATION_SECURITY_SCOPE: 'rest.operation.security.scope',
+
+  // ---------------------------------------------------------------------------
+  // OAuth Flow Object
+  // ---------------------------------------------------------------------------
+  /** OAuth flow added/removed/replaced. add/replace=breaking, remove=non-breaking. */
+  OAUTH_FLOW: 'rest.oauth-flow',
+  /**
+   * Sentinel: used when oAuthFlowObjectRules's classifyRuleId is inherited by
+   * a non-flow key (e.g. x-* extensions) via the `/*` wildcard merge.
+   * No YAML rule should map this; the OOB classifier will return undefined.
+   */
+  OAUTH_FLOW_NOT_APPLICABLE: 'rest.oauth-flow.not-applicable',
 } as const
