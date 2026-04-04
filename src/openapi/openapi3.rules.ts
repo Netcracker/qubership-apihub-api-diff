@@ -325,6 +325,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const contentRules: CompareRules = {
     $: [nonBreaking, breaking, breaking],
+    classifyRuleId: REST_CLASSIFY_RULE_IDS.CONTENT,
     mapping: contentMediaTypeMappingResolver,
     '/*': {
       $: [nonBreaking, breaking, nonBreaking],

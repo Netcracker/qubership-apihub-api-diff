@@ -283,4 +283,10 @@ export const REST_CLASSIFY_RULE_IDS = {
   ENCODING_EXPLODE: 'rest.encoding.explode',
   /** Encoding `style` changed. add=non-breaking, remove/replace=breaking. */
   ENCODING_STYLE: 'rest.encoding.style',
+
+  // ---------------------------------------------------------------------------
+  // Content Object (media-type map)
+  // ---------------------------------------------------------------------------
+  /** Content object added/removed/replaced. add=non-breaking, remove/replace=breaking. */
+  CONTENT: 'rest.content',
 } as const

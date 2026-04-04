@@ -460,3 +460,15 @@
     action: add
   set:
     type: non-breaking
+# ============================================================
+# Content Object  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.content
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.content
+    action: add
+  set:
+    type: non-breaking
