@@ -503,3 +503,22 @@
     action: add
   set:
     type: non-breaking
+# ============================================================
+# Request Body Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
+# ============================================================
+- match:
+    classifyRuleId: rest.request-body.required.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.request-body.required.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.request-body.required.replace.after-true
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.request-body.required.replace.after-not-true
+  set:
+    type: non-breaking

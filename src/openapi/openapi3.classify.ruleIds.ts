@@ -307,4 +307,16 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Request body added/removed/replaced. add=non-breaking, remove/replace=breaking. */
   REQUEST_BODY: 'rest.request-body',
+
+  // ---------------------------------------------------------------------------
+  // Request Body Object > required property
+  // ---------------------------------------------------------------------------
+  /** Request body `required` added. By default, breaking. */
+  REQUEST_BODY_REQUIRED_ADD: 'rest.request-body.required.add',
+  /** Request body `required` removed. By default, non-breaking. */
+  REQUEST_BODY_REQUIRED_REMOVE: 'rest.request-body.required.remove',
+  /** Request body `required` replaced — after-value is `true`. By default, breaking. */
+  REQUEST_BODY_REQUIRED_REPLACE_AFTER_TRUE: 'rest.request-body.required.replace.after-true',
+  /** Request body `required` replaced — after-value is not `true`. By default, non-breaking. */
+  REQUEST_BODY_REQUIRED_REPLACE_AFTER_NOT_TRUE: 'rest.request-body.required.replace.after-not-true',
 } as const

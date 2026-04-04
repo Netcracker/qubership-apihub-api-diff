@@ -376,6 +376,11 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     },
     '/required': {
       $: [breaking, nonBreaking, breakingIfAfterTrue],
+      classifyRuleId: [
+        REST_CLASSIFY_RULE_IDS.REQUEST_BODY_REQUIRED_ADD,
+        REST_CLASSIFY_RULE_IDS.REQUEST_BODY_REQUIRED_REMOVE,
+        ({ after }) => after.value === true ? REST_CLASSIFY_RULE_IDS.REQUEST_BODY_REQUIRED_REPLACE_AFTER_TRUE : REST_CLASSIFY_RULE_IDS.REQUEST_BODY_REQUIRED_REPLACE_AFTER_NOT_TRUE,
+      ],
       description: diffDescription(resolveRequestDescriptionTemplates('required status'))
     },
     ...openApiSpecificationExtensionRulesFunction(),
