@@ -516,6 +516,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/description': { $: allAnnotation },
     '/parameters': {
       $: [nonBreaking, breaking, breaking],
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.PATH_ITEM_PARAMETERS,
       mapping: paramMappingResolver(1),
       ...parametersRules,
     },

@@ -611,3 +611,15 @@
     action: remove
   set:
     type: non-breaking
+# ============================================================
+# Path Item Object > parameters array  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.path-item.parameters
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.path-item.parameters
+    action: add
+  set:
+    type: non-breaking

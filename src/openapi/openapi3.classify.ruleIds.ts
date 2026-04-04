@@ -398,4 +398,10 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** OAuth flows object added/removed/replaced. add/replace=breaking, remove=non-breaking. */
   OAUTH_FLOWS: 'rest.oauth-flows',
+
+  // ---------------------------------------------------------------------------
+  // Path Item Object > parameters array ($:)
+  // ---------------------------------------------------------------------------
+  /** Path-item-level parameters array changed. add=non-breaking, remove/replace=breaking. */
+  PATH_ITEM_PARAMETERS: 'rest.path-item.parameters',
 } as const
