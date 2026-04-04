@@ -458,9 +458,11 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         classifyRuleId: operationSecurityItemClassifyRuleIdRule,
         '/*': {
           $: allBreaking,
+          classifyRuleId: REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_SCOPE_GROUP,
           mapping: deepEqualsUniqueItemsArrayMappingResolver,
           '/*': {
             $: [breaking, nonBreaking, breaking],
+            classifyRuleId: REST_CLASSIFY_RULE_IDS.OPERATION_SECURITY_SCOPE,
             ignoreKeyDifference: true,
           },
         },

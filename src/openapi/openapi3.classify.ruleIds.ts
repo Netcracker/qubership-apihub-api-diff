@@ -366,4 +366,18 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Responses map added/removed/replaced. add=non-breaking, remove/replace=breaking. */
   OPERATION_RESPONSES: 'rest.operation.responses',
+
+  // ---------------------------------------------------------------------------
+  // Operation Object > security > item > scope group (/*/**) and individual scope (/*/*/*)
+  // ---------------------------------------------------------------------------
+  /**
+   * Security scope group object (e.g. `{ "bearerAuth": [...] }`) added/removed/replaced.
+   * By default, always breaking.
+   */
+  OPERATION_SECURITY_SCOPE_GROUP: 'rest.operation.security.scope-group',
+  /**
+   * Individual security scope string (e.g. `"read"`) added/removed/replaced.
+   * add/replace=breaking, remove=non-breaking.
+   */
+  OPERATION_SECURITY_SCOPE: 'rest.operation.security.scope',
 } as const

@@ -568,3 +568,22 @@
     action: add
   set:
     type: non-breaking
+# ============================================================
+# Operation Object > security scope group  [allBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.operation.security.scope-group
+  set:
+    type: breaking
+# ============================================================
+# Operation Object > security scope string  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.operation.security.scope
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.operation.security.scope
+    action: remove
+  set:
+    type: non-breaking
