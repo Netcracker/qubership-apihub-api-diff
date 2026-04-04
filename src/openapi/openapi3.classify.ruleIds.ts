@@ -301,4 +301,10 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Media type `schema` node changed. By default, always breaking. */
   MEDIA_TYPE_SCHEMA: 'rest.media-type.schema',
+
+  // ---------------------------------------------------------------------------
+  // Request Body Object
+  // ---------------------------------------------------------------------------
+  /** Request body added/removed/replaced. add=non-breaking, remove/replace=breaking. */
+  REQUEST_BODY: 'rest.request-body',
 } as const

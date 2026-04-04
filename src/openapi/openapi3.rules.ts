@@ -365,6 +365,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const requestBodiesRules: CompareRules = {
     $: [nonBreaking, breaking, breaking],
+    classifyRuleId: REST_CLASSIFY_RULE_IDS.REQUEST_BODY,
     description: diffDescription(`[{{${TEMPLATE_PARAM_ACTION}}}] request body`),
     descriptionParamCalculator: requestParamsCalculator,
     [START_NEW_COMPARE_SCOPE_RULE]: COMPARE_SCOPE_REQUEST,

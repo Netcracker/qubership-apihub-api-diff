@@ -491,3 +491,15 @@
     classifyRuleId: rest.media-type.schema
   set:
     type: breaking
+# ============================================================
+# Request Body Object  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.request-body
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.request-body
+    action: add
+  set:
+    type: non-breaking
