@@ -152,7 +152,7 @@ export const jsonSchemaRules = ({
     },
 
     '/format': { ...simpleRule([breaking, nonBreaking, breaking, nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('format')), classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.FORMAT_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.FORMAT_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.FORMAT_REPLACE] },
-    '/default': simpleRule([nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('default value')),
+    '/default': { ...simpleRule([nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('default value')), classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFAULT_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFAULT_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFAULT_REPLACE] },
 
     '/enum': {
       $: [breaking, nonBreaking, breaking, nonBreaking, risky, nonBreaking],

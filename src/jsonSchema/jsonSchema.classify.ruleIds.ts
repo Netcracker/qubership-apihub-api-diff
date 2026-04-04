@@ -384,4 +384,20 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    * By default, non-breaking (both request and response).
    */
   WRITE_ONLY_REPLACE: 'json-schema.write-only.replace',
+
+  /**
+   * JSON Schema `default` value added.
+   * By default, non-breaking (request); breaking (response).
+   */
+  DEFAULT_ADD: 'json-schema.default.add',
+  /**
+   * JSON Schema `default` value removed.
+   * By default, breaking (request); non-breaking (response).
+   */
+  DEFAULT_REMOVE: 'json-schema.default.remove',
+  /**
+   * JSON Schema `default` value replaced.
+   * By default, breaking (request); non-breaking (response).
+   */
+  DEFAULT_REPLACE: 'json-schema.default.replace',
 } as const

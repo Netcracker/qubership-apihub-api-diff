@@ -685,6 +685,38 @@
     type: breaking
 
 # ============================================================
+# default value
+# Rule: [nonBreaking, breaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.default.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.default.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.default.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.default.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.default.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.default.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
 # uniqueItems validator
 # ============================================================
 # after-true (add/replace where uniqueItems=true): breaking (request) / non-breaking (response)
