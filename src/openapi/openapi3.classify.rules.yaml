@@ -682,3 +682,39 @@
     action: add
   set:
     type: non-breaking
+# ============================================================
+# Components > Security Schemes map  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.components.security-schemes
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.security-schemes
+    action: remove
+  set:
+    type: non-breaking
+# ============================================================
+# Security Scheme Object  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.security-scheme
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.security-scheme
+    action: remove
+  set:
+    type: non-breaking
+# ============================================================
+# Security Scheme sub-properties (in, name, scheme, type)  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.security-scheme.property
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.security-scheme.property
+    action: remove
+  set:
+    type: non-breaking

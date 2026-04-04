@@ -424,4 +424,17 @@ export const REST_CLASSIFY_RULE_IDS = {
   COMPONENTS_SCHEMAS: 'rest.components.schemas',
   /** Components/pathItems map changed. add=non-breaking, remove/replace=breaking. */
   COMPONENTS_PATH_ITEMS: 'rest.components.path-items',
+
+  // ---------------------------------------------------------------------------
+  // Components > Security Schemes map and individual scheme
+  // ---------------------------------------------------------------------------
+  /** Components/securitySchemes map changed. add/replace=breaking, remove=non-breaking. */
+  COMPONENTS_SECURITY_SCHEMES: 'rest.components.security-schemes',
+  /** Individual security scheme added/removed/replaced. add/replace=breaking, remove=non-breaking. */
+  SECURITY_SCHEME: 'rest.security-scheme',
+  /**
+   * Security scheme sub-property (in, name, scheme, type) changed.
+   * add/replace=breaking, remove=non-breaking.
+   */
+  SECURITY_SCHEME_PROPERTY: 'rest.security-scheme.property',
 } as const
