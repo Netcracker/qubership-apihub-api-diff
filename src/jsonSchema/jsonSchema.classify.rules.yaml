@@ -627,6 +627,14 @@
     type: risky
 
 # ============================================================
+# title keyword (annotation — symmetric, no scope override)
+# ============================================================
+- match:
+    classifyRuleId: json-schema.title
+  set:
+    type: annotation
+
+# ============================================================
 # examples keyword and per-item examples (annotation — symmetric, no scope override)
 # ============================================================
 - match:
