@@ -597,6 +597,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/servers': serversRules,
     '/paths': {
       $: allUnclassified,
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.PATHS,
       mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : pathMappingResolver,
       syntheticDiffs: options.operationSyntheticDiffs && syntheticDiffsResolver,
       '/*': pathItemObjectRules(options),

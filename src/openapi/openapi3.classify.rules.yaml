@@ -718,3 +718,10 @@
     action: remove
   set:
     type: non-breaking
+# ============================================================
+# /paths object  [allUnclassified]
+# ============================================================
+- match:
+    classifyRuleId: rest.paths
+  set:
+    type: unclassified

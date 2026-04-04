@@ -437,4 +437,10 @@ export const REST_CLASSIFY_RULE_IDS = {
    * add/replace=breaking, remove=non-breaking.
    */
   SECURITY_SCHEME_PROPERTY: 'rest.security-scheme.property',
+
+  // ---------------------------------------------------------------------------
+  // /paths object ($:) — the paths map itself
+  // ---------------------------------------------------------------------------
+  /** Paths map node added/removed/replaced. By default, unclassified. */
+  PATHS: 'rest.paths',
 } as const
