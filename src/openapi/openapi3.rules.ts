@@ -388,6 +388,19 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const responseRules: CompareRules = {
     $: [nonBreaking, breaking, (ctx) => nonBreakingIf(ctx.before.key.toString().toLocaleLowerCase() === ctx.after.key.toString().toLocaleLowerCase())],
+    // Guard: responseRules is the `/*` wildcard in /responses containers, so its
+    // classifyRuleId is merged into x-* extension diffs via getNodeRules. Return
+    // RESPONSE_NOT_APPLICABLE for x-* keys so OOB is a no-op for those leaked diffs.
+    classifyRuleId: [
+      ({ after }) => String(after.key).startsWith('x-') ? REST_CLASSIFY_RULE_IDS.RESPONSE_NOT_APPLICABLE : REST_CLASSIFY_RULE_IDS.RESPONSE_ADD,
+      ({ before }) => String(before.key).startsWith('x-') ? REST_CLASSIFY_RULE_IDS.RESPONSE_NOT_APPLICABLE : REST_CLASSIFY_RULE_IDS.RESPONSE_REMOVE,
+      (ctx) => {
+        if (String(ctx.before.key).startsWith('x-')) { return REST_CLASSIFY_RULE_IDS.RESPONSE_NOT_APPLICABLE }
+        return ctx.before.key.toString().toLocaleLowerCase() === ctx.after.key.toString().toLocaleLowerCase()
+          ? REST_CLASSIFY_RULE_IDS.RESPONSE_REPLACE_SAME_CODE
+          : REST_CLASSIFY_RULE_IDS.RESPONSE_REPLACE_DIFFERENT_CODE
+      },
+    ],
     description: diffDescription(`[{{${TEMPLATE_PARAM_ACTION}}}] response '{{${GREP_TEMPLATE_PARAM_RESPONSE_NAME}}}'`),
     descriptionParamCalculator: responseParamsCalculator,
     '/content': contentRules,

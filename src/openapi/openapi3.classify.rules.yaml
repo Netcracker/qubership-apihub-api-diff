@@ -522,3 +522,22 @@
     classifyRuleId: rest.request-body.required.replace.after-not-true
   set:
     type: non-breaking
+# ============================================================
+# Response Object  [nonBreaking, breaking, nonBreakingIf(same-code)]
+# ============================================================
+- match:
+    classifyRuleId: rest.response.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.response.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.response.replace.same-code
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.response.replace.different-code
+  set:
+    type: breaking

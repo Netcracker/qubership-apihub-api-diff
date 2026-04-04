@@ -319,4 +319,28 @@ export const REST_CLASSIFY_RULE_IDS = {
   REQUEST_BODY_REQUIRED_REPLACE_AFTER_TRUE: 'rest.request-body.required.replace.after-true',
   /** Request body `required` replaced — after-value is not `true`. By default, non-breaking. */
   REQUEST_BODY_REQUIRED_REPLACE_AFTER_NOT_TRUE: 'rest.request-body.required.replace.after-not-true',
+
+  // ---------------------------------------------------------------------------
+  // Response Object (individual response entry)
+  // ---------------------------------------------------------------------------
+  /** Response added. By default, non-breaking. */
+  RESPONSE_ADD: 'rest.response.add',
+  /** Response removed. By default, breaking. */
+  RESPONSE_REMOVE: 'rest.response.remove',
+  /**
+   * Sentinel: used when responseRules's classifyRuleId is inherited by a
+   * non-response-code key (e.g. x-* extensions) via the `/*` wildcard merge.
+   * No YAML rule should map this; the OOB classifier will return undefined.
+   */
+  RESPONSE_NOT_APPLICABLE: 'rest.response.not-applicable',
+  /**
+   * Response replaced — old and new status codes are the same (case-insensitive).
+   * By default, non-breaking.
+   */
+  RESPONSE_REPLACE_SAME_CODE: 'rest.response.replace.same-code',
+  /**
+   * Response replaced — old and new status codes differ.
+   * By default, breaking.
+   */
+  RESPONSE_REPLACE_DIFFERENT_CODE: 'rest.response.replace.different-code',
 } as const
