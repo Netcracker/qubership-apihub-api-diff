@@ -138,7 +138,7 @@ export const jsonSchemaRules = ({
       ...simpleRule([...allNonBreaking, ...allNonBreaking] as ClassifyRule, resolveSchemaDescriptionTemplates('writeOnly status')),
       classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.WRITE_ONLY_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.WRITE_ONLY_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.WRITE_ONLY_REPLACE],
     },
-    '/deprecated': simpleRule(allDeprecated, resolveSchemaDescriptionTemplates('deprecated status')),
+    '/deprecated': { ...simpleRule(allDeprecated, resolveSchemaDescriptionTemplates('deprecated status')), classifyRuleId: JSON_SCHEMA_CLASSIFY_RULE_IDS.DEPRECATED },
     '/required': {
       mapping: deepEqualsUniqueItemsArrayMappingResolver,
       '/*': ({ key, value }) => {

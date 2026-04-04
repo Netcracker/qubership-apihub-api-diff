@@ -589,6 +589,12 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
   WRITE_ONLY_REPLACE: 'json-schema.write-only.replace',
 
   /**
+   * JSON Schema `deprecated` flag changed.
+   * By default, always deprecated (both request and response).
+   */
+  DEPRECATED: 'json-schema.deprecated',
+
+  /**
    * JSON Schema `default` value added.
    * By default, non-breaking (request); breaking (response).
    */

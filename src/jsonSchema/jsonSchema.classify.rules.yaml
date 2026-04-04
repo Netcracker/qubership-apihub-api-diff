@@ -1075,6 +1075,14 @@
     type: breaking
 
 # ============================================================
+# deprecated keyword  [allDeprecated]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.deprecated
+  set:
+    type: deprecated
+
+# ============================================================
 # default value
 # Rule: [nonBreaking, breaking, breaking] — standard reversal
 # ============================================================
