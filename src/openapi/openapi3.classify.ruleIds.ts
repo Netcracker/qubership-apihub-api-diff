@@ -329,6 +329,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** OpenAPI `examples` map node. By default, always annotation. */
   EXAMPLES_MAP: 'rest.examples.map',
 
+  /** Named Example Object in the `examples` map. By default, always annotation. */
+  EXAMPLES_ITEM: 'rest.examples.item',
+
   // ---------------------------------------------------------------------------
   // Content Object (media-type map)
   // ---------------------------------------------------------------------------

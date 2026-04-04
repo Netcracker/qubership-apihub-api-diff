@@ -138,6 +138,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     classifyRuleId: REST_CLASSIFY_RULE_IDS.EXAMPLES_MAP,
     '/*': {
       $: allAnnotation,
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.EXAMPLES_ITEM,
       description: diffDescription(`[{{${TEMPLATE_PARAM_ACTION}}}] example '{{${GREP_TEMPLATE_PARAM_EXAMPLE_NAME}}}'`),
       descriptionParamCalculator: examplesParamsCalculator,
       '/description': {
