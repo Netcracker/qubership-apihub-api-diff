@@ -110,7 +110,7 @@ export const jsonSchemaRules = ({
     },
     '/maxLength': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxLength validator')), classifyRuleId: maxClassifyRuleIdRule },
     '/minLength': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minLength validator')), classifyRuleId: minClassifyRuleIdRule },
-    '/pattern': simpleRule([breaking, nonBreaking, breaking, nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('pattern validator')),
+    '/pattern': { ...simpleRule([breaking, nonBreaking, breaking, nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('pattern validator')), classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_REPLACE] },
     '/maxItems': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxItems validator')), classifyRuleId: maxClassifyRuleIdRule },
     '/minItems': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minItems validator')), classifyRuleId: minClassifyRuleIdRule },
     '/uniqueItems': simpleRule(booleanClassifier, resolveSchemaDescriptionTemplates('uniqueItems validator')),

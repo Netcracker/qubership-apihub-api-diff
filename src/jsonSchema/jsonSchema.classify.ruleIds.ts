@@ -304,4 +304,20 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    * By default, breaking (request); non-breaking (response).
    */
   MAXIMUM_REPLACE_CONSTRAINT_TIGHTENED: 'json-schema.maximum.replace.constraint-tightened',
+
+  /**
+   * JSON Schema `pattern` validator added.
+   * By default, breaking (request); non-breaking (response).
+   */
+  PATTERN_ADD: 'json-schema.pattern.add',
+  /**
+   * JSON Schema `pattern` validator removed.
+   * By default, non-breaking (request); breaking (response).
+   */
+  PATTERN_REMOVE: 'json-schema.pattern.remove',
+  /**
+   * JSON Schema `pattern` validator replaced.
+   * By default, breaking (both request and response).
+   */
+  PATTERN_REPLACE: 'json-schema.pattern.replace',
 } as const
