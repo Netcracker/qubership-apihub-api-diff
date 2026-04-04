@@ -546,6 +546,11 @@
   set:
     type: annotation
 
+- match:
+    classifyRuleId: rest.examples.summary
+  set:
+    type: annotation
+
 # ============================================================
 # Content Object  [nonBreaking, breaking, breaking]
 # ============================================================
