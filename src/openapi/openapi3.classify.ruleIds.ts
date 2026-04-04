@@ -347,6 +347,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Deep content under Example Object `value` (`/**`). By default, always annotation. */
   EXAMPLES_VALUE_ITEM: 'rest.examples.value.item',
 
+  /** Deep paths under `examples` map (`/**` on map rules). By default, always annotation. */
+  EXAMPLES_DEEP: 'rest.examples.deep',
+
   // ---------------------------------------------------------------------------
   // Content Object (media-type map)
   // ---------------------------------------------------------------------------
