@@ -433,6 +433,11 @@
   set:
     type: unclassified
 
+- match:
+    classifyRuleId: rest.header.explode
+  set:
+    type: unclassified
+
 # ============================================================
 # Header Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
 # ============================================================
