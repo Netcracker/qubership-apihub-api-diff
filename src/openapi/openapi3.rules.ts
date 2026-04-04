@@ -252,6 +252,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       },
       '/allowReserved': {
         $: allUnclassified,
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.HEADER_ALLOW_RESERVED,
         description: diffDescription(resolveHeaderDescriptionTemplates('allowReserved status')),
       },
       '/deprecated': {

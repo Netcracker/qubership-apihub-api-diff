@@ -418,6 +418,11 @@
   set:
     type: unclassified
 
+- match:
+    classifyRuleId: rest.header.allow-reserved
+  set:
+    type: unclassified
+
 # ============================================================
 # Header Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
 # ============================================================

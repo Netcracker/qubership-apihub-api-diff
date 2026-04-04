@@ -276,6 +276,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Header `allowEmptyValue` changed. By default, always unclassified. */
   HEADER_ALLOW_EMPTY_VALUE: 'rest.header.allow-empty-value',
 
+  /** Header `allowReserved` changed. By default, always unclassified. */
+  HEADER_ALLOW_RESERVED: 'rest.header.allow-reserved',
+
   // ---------------------------------------------------------------------------
   // Header Object > required property
   // ---------------------------------------------------------------------------
