@@ -335,6 +335,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Example Object `description`. By default, always annotation. */
   EXAMPLES_DESCRIPTION: 'rest.examples.description',
 
+  /** Example Object `externalValue`. By default, always annotation. */
+  EXAMPLES_EXTERNAL_VALUE: 'rest.examples.external-value',
+
   // ---------------------------------------------------------------------------
   // Content Object (media-type map)
   // ---------------------------------------------------------------------------
