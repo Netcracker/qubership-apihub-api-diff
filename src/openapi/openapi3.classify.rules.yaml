@@ -406,3 +406,57 @@
     classifyRuleId: rest.header.schema
   set:
     type: breaking
+# ============================================================
+# Encoding Object  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.encoding
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.encoding
+    action: remove
+  set:
+    type: non-breaking
+# ============================================================
+# Encoding sub-properties  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.encoding.allow-reserved
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.encoding.allow-reserved
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.encoding.content-type
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.encoding.content-type
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.encoding.explode
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.encoding.explode
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.encoding.style
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.encoding.style
+    action: add
+  set:
+    type: non-breaking

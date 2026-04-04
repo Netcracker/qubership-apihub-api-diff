@@ -269,4 +269,18 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Header `schema` node changed. By default, always breaking. */
   HEADER_SCHEMA: 'rest.header.schema',
+
+  // ---------------------------------------------------------------------------
+  // Encoding Object (container and individual)
+  // ---------------------------------------------------------------------------
+  /** Encoding object added/removed/replaced. add/replace=breaking, remove=non-breaking. */
+  ENCODING: 'rest.encoding',
+  /** Encoding `allowReserved` changed. add=non-breaking, remove/replace=breaking. */
+  ENCODING_ALLOW_RESERVED: 'rest.encoding.allow-reserved',
+  /** Encoding `contentType` changed. add=non-breaking, remove/replace=breaking. */
+  ENCODING_CONTENT_TYPE: 'rest.encoding.content-type',
+  /** Encoding `explode` changed. add=non-breaking, remove/replace=breaking. */
+  ENCODING_EXPLODE: 'rest.encoding.explode',
+  /** Encoding `style` changed. add=non-breaking, remove/replace=breaking. */
+  ENCODING_STYLE: 'rest.encoding.style',
 } as const

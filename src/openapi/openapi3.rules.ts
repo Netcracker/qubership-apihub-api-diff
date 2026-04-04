@@ -294,24 +294,29 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const encodingRules: CompareRules = {
     $: [breaking, nonBreaking, breaking],
+    classifyRuleId: REST_CLASSIFY_RULE_IDS.ENCODING,
     descriptionParamCalculator: encodingParamsCalculator,
     '/*': {
       description: diffDescription(resolveEncodingDescriptionTemplates()),
       '/allowReserved': {
         $: [nonBreaking, breaking, breaking],
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.ENCODING_ALLOW_RESERVED,
         description: diffDescription(resolveEncodingDescriptionTemplates())
       },
       '/contentType': {
         $: [nonBreaking, breaking, breaking],
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.ENCODING_CONTENT_TYPE,
         description: diffDescription(resolveEncodingDescriptionTemplates())
       },
       '/explode': {
         $: [nonBreaking, breaking, breaking],
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.ENCODING_EXPLODE,
         description: diffDescription(resolveEncodingDescriptionTemplates())
       },
       '/headers': headersRules,
       '/style': {
         $: [nonBreaking, breaking, breaking],
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.ENCODING_STYLE,
         description: diffDescription(resolveEncodingDescriptionTemplates())
       },
       ...openApiSpecificationExtensionRulesFunction(),
