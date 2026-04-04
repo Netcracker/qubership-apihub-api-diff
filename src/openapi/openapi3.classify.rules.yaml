@@ -541,3 +541,18 @@
     classifyRuleId: rest.response.replace.different-code
   set:
     type: breaking
+# ============================================================
+# Operation Object  [nonBreaking, breaking, unclassified]
+# ============================================================
+- match:
+    classifyRuleId: rest.operation.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.operation.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.operation.replace
+  set:
+    type: unclassified

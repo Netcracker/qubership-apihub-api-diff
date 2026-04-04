@@ -415,8 +415,19 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     ...openApiSpecificationExtensionRulesFunction(),
   }
 
+  const HTTP_METHODS = new Set(['get', 'post', 'put', 'delete', 'patch', 'head', 'options', 'trace'])
+
   const operationRule: CompareRules = {
     $: [nonBreaking, breaking, unclassified],
+    // Guard: operationRule is the `/*` wildcard in pathItemObjectRules, so its
+    // classifyRuleId is merged into ALL path-item child rules (servers, description,
+    // etc.) via getNodeRules. Return OPERATION_NOT_APPLICABLE for non-HTTP-method
+    // keys so the OOB classifier is a no-op for those leaked diffs.
+    classifyRuleId: [
+      ({ after }) => HTTP_METHODS.has(String(after.key)) ? REST_CLASSIFY_RULE_IDS.OPERATION_ADD : REST_CLASSIFY_RULE_IDS.OPERATION_NOT_APPLICABLE,
+      ({ before }) => HTTP_METHODS.has(String(before.key)) ? REST_CLASSIFY_RULE_IDS.OPERATION_REMOVE : REST_CLASSIFY_RULE_IDS.OPERATION_NOT_APPLICABLE,
+      (ctx) => HTTP_METHODS.has(String(ctx.before.key)) ? REST_CLASSIFY_RULE_IDS.OPERATION_REPLACE : REST_CLASSIFY_RULE_IDS.OPERATION_NOT_APPLICABLE,
+    ],
     '/callbacks': {
       '/*': {
         //no support?

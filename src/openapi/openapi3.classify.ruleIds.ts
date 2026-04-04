@@ -343,4 +343,21 @@ export const REST_CLASSIFY_RULE_IDS = {
    * By default, breaking.
    */
   RESPONSE_REPLACE_DIFFERENT_CODE: 'rest.response.replace.different-code',
+
+  // ---------------------------------------------------------------------------
+  // Operation Object ($: node)
+  // ---------------------------------------------------------------------------
+  /** Operation added. By default, non-breaking. */
+  OPERATION_ADD: 'rest.operation.add',
+  /** Operation removed. By default, breaking. */
+  OPERATION_REMOVE: 'rest.operation.remove',
+  /** Operation replaced. By default, unclassified. */
+  OPERATION_REPLACE: 'rest.operation.replace',
+  /**
+   * Sentinel: used when operationRule's classifyRuleId is inherited by a
+   * non-operation key (e.g. servers, description, x-* extensions) via the
+   * `/*` wildcard merge. No YAML rule should map this; the OOB classifier
+   * will return undefined and the engine type is preserved as-is.
+   */
+  OPERATION_NOT_APPLICABLE: 'rest.operation.not-applicable',
 } as const
