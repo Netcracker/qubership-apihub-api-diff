@@ -443,4 +443,10 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Paths map node added/removed/replaced. By default, unclassified. */
   PATHS: 'rest.paths',
+
+  // ---------------------------------------------------------------------------
+  // /tags array ($:)
+  // ---------------------------------------------------------------------------
+  /** Tags array added/removed/replaced. By default, annotation. */
+  TAGS: 'rest.tags',
 } as const

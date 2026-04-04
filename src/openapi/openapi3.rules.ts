@@ -611,6 +611,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     },
     '/tags': {
       $: allAnnotation,
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.TAGS,
       '/*': tagObjectCompareRules,
     },
     '/externalDocs': externalDocumentationRules,

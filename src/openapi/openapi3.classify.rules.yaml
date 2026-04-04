@@ -725,3 +725,10 @@
     classifyRuleId: rest.paths
   set:
     type: unclassified
+# ============================================================
+# /tags array  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.tags
+  set:
+    type: annotation
