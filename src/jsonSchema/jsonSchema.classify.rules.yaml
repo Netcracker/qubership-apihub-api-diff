@@ -627,6 +627,14 @@
     type: risky
 
 # ============================================================
+# examples keyword (annotation — symmetric, no scope override)
+# ============================================================
+- match:
+    classifyRuleId: json-schema.examples
+  set:
+    type: annotation
+
+# ============================================================
 # additionalItems keyword
 # Rule: [nonBreaking, breaking, unclassified]
 # ============================================================

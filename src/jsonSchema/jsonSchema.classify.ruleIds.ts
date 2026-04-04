@@ -12,6 +12,12 @@
  */
 export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
   /**
+   * JSON Schema `examples` keyword change (the /examples node itself).
+   * By default, annotation (both request and response).
+   */
+  EXAMPLES: 'json-schema.examples',
+
+  /**
    * JSON Schema `additionalItems` keyword added.
    * By default, non-breaking (request); breaking (response).
    */

@@ -271,6 +271,7 @@ export const jsonSchemaRules = ({
     //TODO NOT BY SPECIFICATION. ONLY IN 06 VERSION. NC SPECIFIC EXCLUSION
     '/examples': {
       $: allAnnotation,
+      classifyRuleId: JSON_SCHEMA_CLASSIFY_RULE_IDS.EXAMPLES,
       '/*': { $: allAnnotation },
     },
 
