@@ -267,6 +267,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Individual header added/removed/replaced. add=non-breaking, remove/replace=breaking. */
   HEADER: 'rest.header',
 
+  /** Header `deprecated` flag changed. By default, always deprecated. */
+  HEADER_DEPRECATED: 'rest.header.deprecated',
+
   // ---------------------------------------------------------------------------
   // Header Object > required property
   // ---------------------------------------------------------------------------

@@ -401,6 +401,14 @@
   set:
     type: non-breaking
 # ============================================================
+# Header Object > deprecated property  [allDeprecated]
+# ============================================================
+- match:
+    classifyRuleId: rest.header.deprecated
+  set:
+    type: deprecated
+
+# ============================================================
 # Header Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
 # ============================================================
 - match:
