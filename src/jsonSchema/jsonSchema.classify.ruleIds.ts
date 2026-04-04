@@ -76,6 +76,22 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
   DEFINITIONS_ITEM_REPLACE: 'json-schema.definitions.item.replace',
 
   /**
+   * JSON Schema `$defs` sub-schema added.
+   * By default, non-breaking (request); breaking (response).
+   */
+  DEFS_ITEM_ADD: 'json-schema.defs.item.add',
+  /**
+   * JSON Schema `$defs` sub-schema removed.
+   * By default, non-breaking (request); breaking (response).
+   */
+  DEFS_ITEM_REMOVE: 'json-schema.defs.item.remove',
+  /**
+   * JSON Schema `$defs` sub-schema replaced.
+   * By default, non-breaking (request); breaking (response).
+   */
+  DEFS_ITEM_REPLACE: 'json-schema.defs.item.replace',
+
+  /**
    * JSON Schema `oneOf` combiner item added.
    * By default, non-breaking (request); breaking (response).
    */
