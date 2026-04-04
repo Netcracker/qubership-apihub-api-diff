@@ -63,6 +63,7 @@ const arrayItemsRules = (value: unknown, rules: CompareRules): CompareRules => {
     '/*': {
       ...rules,
       $: allBreaking,
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ITEMS_ARRAY_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ITEMS_ARRAY_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ITEMS_ARRAY_ITEM_REPLACE],
     },
   } : {
     ...rules,

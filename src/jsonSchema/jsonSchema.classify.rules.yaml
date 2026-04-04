@@ -639,6 +639,38 @@
     type: annotation
 
 # ============================================================
+# items keyword — array (tuple) variant: allBreaking
+# Rule: [breaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.items.array-item.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.items.array-item.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.items.array-item.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.items.array-item.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.items.array-item.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.items.array-item.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
 # additionalItems keyword
 # Rule: [nonBreaking, breaking, unclassified]
 # ============================================================

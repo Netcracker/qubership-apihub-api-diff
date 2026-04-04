@@ -21,6 +21,22 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    * By default, annotation (both request and response).
    */
   EXAMPLES_ITEM: 'json-schema.examples.item',
+  /**
+   * JSON Schema `items` node change when items is an array (tuple validation) —
+   * each individual item sub-schema added.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ITEMS_ARRAY_ITEM_ADD: 'json-schema.items.array-item.add',
+  /**
+   * JSON Schema `items` array item removed.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ITEMS_ARRAY_ITEM_REMOVE: 'json-schema.items.array-item.remove',
+  /**
+   * JSON Schema `items` array item replaced.
+   * By default, breaking (request); non-breaking (response).
+   */
+  ITEMS_ARRAY_ITEM_REPLACE: 'json-schema.items.array-item.replace',
 
   /**
    * JSON Schema `additionalItems` keyword added.
