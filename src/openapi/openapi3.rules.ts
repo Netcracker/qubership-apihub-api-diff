@@ -538,7 +538,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     $: pathChangeClassifyRule,
     classifyRuleId: pathChangeClassifyRuleIdRule,
     mapping: options.mode === COMPARE_MODE_OPERATION ? singleOperationPathMappingResolver : methodMappingResolver,
-    '/description': { $: allAnnotation },
+    '/description': { $: allAnnotation, classifyRuleId: REST_CLASSIFY_RULE_IDS.PATH_ITEM_DESCRIPTION },
     '/parameters': {
       $: [nonBreaking, breaking, breaking],
       classifyRuleId: REST_CLASSIFY_RULE_IDS.PATH_ITEM_PARAMETERS,

@@ -760,6 +760,14 @@
   set:
     type: non-breaking
 # ============================================================
+# Path Item Object > description / summary  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.path-item.description
+  set:
+    type: annotation
+
+# ============================================================
 # Path Item Object > parameters array  [nonBreaking, breaking, breaking]
 # ============================================================
 - match:
