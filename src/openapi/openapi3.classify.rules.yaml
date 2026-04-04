@@ -356,3 +356,15 @@
     classifyRuleId: rest.parameter.schema
   set:
     type: breaking
+# ============================================================
+# Headers Object  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.headers
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.headers
+    action: add
+  set:
+    type: non-breaking

@@ -235,6 +235,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const headersRules: CompareRules = {
     $: [nonBreaking, breaking, breaking],
+    classifyRuleId: REST_CLASSIFY_RULE_IDS.HEADERS,
     '/*': {
       $: [nonBreaking, breaking, breaking],
       description: diffDescription(`[{{${TEMPLATE_PARAM_ACTION}}}] header '{{${GREP_TEMPLATE_PARAM_HEADER_NAME}}}'`),

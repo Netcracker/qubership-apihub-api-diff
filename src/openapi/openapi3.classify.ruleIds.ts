@@ -239,4 +239,10 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Parameter `schema` node changed. By default, always breaking. */
   PARAMETER_SCHEMA: 'rest.parameter.schema',
+
+  // ---------------------------------------------------------------------------
+  // Headers Object (container)
+  // ---------------------------------------------------------------------------
+  /** Headers object added/removed/replaced. add=non-breaking, remove/replace=breaking. */
+  HEADERS: 'rest.headers',
 } as const
