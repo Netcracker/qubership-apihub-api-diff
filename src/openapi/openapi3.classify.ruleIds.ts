@@ -496,6 +496,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Path Item `description` changed. By default, always annotation. */
   PATH_ITEM_DESCRIPTION: 'rest.path-item.description',
 
+  /** Path Item `summary` changed. By default, always annotation. */
+  PATH_ITEM_SUMMARY: 'rest.path-item.summary',
+
   // ---------------------------------------------------------------------------
   // Components Object ($:)
   // ---------------------------------------------------------------------------

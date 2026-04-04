@@ -767,6 +767,11 @@
   set:
     type: annotation
 
+- match:
+    classifyRuleId: rest.path-item.summary
+  set:
+    type: annotation
+
 # ============================================================
 # Path Item Object > parameters array  [nonBreaking, breaking, breaking]
 # ============================================================

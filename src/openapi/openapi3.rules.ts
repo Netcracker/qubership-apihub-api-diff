@@ -546,7 +546,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       ...parametersRules,
     },
     '/servers': serversRules,
-    '/summary': { $: allAnnotation },
+    '/summary': { $: allAnnotation, classifyRuleId: REST_CLASSIFY_RULE_IDS.PATH_ITEM_SUMMARY },
     ...openApiSpecificationExtensionRulesFunction(),
     '/*': operationRule,
   })
