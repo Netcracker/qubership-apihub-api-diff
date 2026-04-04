@@ -273,6 +273,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Header `description` changed. By default, always annotation. */
   HEADER_DESCRIPTION: 'rest.header.description',
 
+  /** Header `allowEmptyValue` changed. By default, always unclassified. */
+  HEADER_ALLOW_EMPTY_VALUE: 'rest.header.allow-empty-value',
+
   // ---------------------------------------------------------------------------
   // Header Object > required property
   // ---------------------------------------------------------------------------

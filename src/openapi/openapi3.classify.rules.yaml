@@ -413,6 +413,11 @@
   set:
     type: annotation
 
+- match:
+    classifyRuleId: rest.header.allow-empty-value
+  set:
+    type: unclassified
+
 # ============================================================
 # Header Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
 # ============================================================

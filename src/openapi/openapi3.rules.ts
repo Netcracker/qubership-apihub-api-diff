@@ -247,6 +247,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       descriptionParamCalculator: headerParamsCalculator,
       '/allowEmptyValue': {
         $: allUnclassified,
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.HEADER_ALLOW_EMPTY_VALUE,
         description: diffDescription(resolveHeaderDescriptionTemplates('allowEmptyValue status')),
       },
       '/allowReserved': {
