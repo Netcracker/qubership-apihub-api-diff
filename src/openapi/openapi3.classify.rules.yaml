@@ -408,6 +408,11 @@
   set:
     type: deprecated
 
+- match:
+    classifyRuleId: rest.header.description
+  set:
+    type: annotation
+
 # ============================================================
 # Header Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
 # ============================================================

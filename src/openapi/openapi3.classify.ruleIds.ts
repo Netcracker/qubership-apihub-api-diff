@@ -270,6 +270,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Header `deprecated` flag changed. By default, always deprecated. */
   HEADER_DEPRECATED: 'rest.header.deprecated',
 
+  /** Header `description` changed. By default, always annotation. */
+  HEADER_DESCRIPTION: 'rest.header.description',
+
   // ---------------------------------------------------------------------------
   // Header Object > required property
   // ---------------------------------------------------------------------------
