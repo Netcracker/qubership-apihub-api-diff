@@ -341,6 +341,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Media type `schema` node changed. By default, always breaking. */
   MEDIA_TYPE_SCHEMA: 'rest.media-type.schema',
 
+  /** Media type `example` value changed. By default, always annotation. */
+  MEDIA_TYPE_EXAMPLE: 'rest.media-type.example',
+
   // ---------------------------------------------------------------------------
   // Request Body Object
   // ---------------------------------------------------------------------------

@@ -351,6 +351,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       '/encoding': encodingRules,
       '/example': {
         $: allAnnotation,
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.MEDIA_TYPE_EXAMPLE,
         description: diffDescription([
           `[{{${TEMPLATE_PARAM_ACTION}}}] {{${TEMPLATE_PARAM_PROPERTY_NAME}}} {{${TEMPLATE_PARAM_PREPOSITION}}} {{${TEMPLATE_PARAM_SCOPE}}} '{{${GREP_TEMPLATE_PARAM_RESPONSE_NAME}}}' ({{${GREP_TEMPLATE_PARAM_MEDIA_TYPE}}})`,
           `[{{${TEMPLATE_PARAM_ACTION}}}] {{${TEMPLATE_PARAM_PROPERTY_NAME}}} {{${TEMPLATE_PARAM_PREPOSITION}}} '{{${TEMPLATE_PARAM_COMPONENT_PATH}}}' ({{${GREP_TEMPLATE_PARAM_MEDIA_TYPE}}})`,
