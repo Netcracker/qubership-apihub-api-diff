@@ -654,6 +654,33 @@
     type: unclassified
 
 # ============================================================
+# patternProperties sub-schemas
+# Rule: [breaking, nonBreaking, unclassified]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.pattern-properties.item.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.pattern-properties.item.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.pattern-properties.item.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.pattern-properties.item.remove
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.pattern-properties.item.replace
+  set:
+    type: unclassified
+
+# ============================================================
 # enum array (the /enum keyword node itself)
 # Rule: [breaking, nonBreaking, breaking, nonBreaking, risky, nonBreaking]
 # Response remove is risky (non-standard: reversal of nonBreaking would be breaking)

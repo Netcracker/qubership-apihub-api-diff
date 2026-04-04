@@ -28,6 +28,22 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
   ADDITIONAL_ITEMS_REPLACE: 'json-schema.additional-items.replace',
 
   /**
+   * JSON Schema `patternProperties` sub-schema added.
+   * By default, breaking (request); non-breaking (response).
+   */
+  PATTERN_PROPERTIES_ITEM_ADD: 'json-schema.pattern-properties.item.add',
+  /**
+   * JSON Schema `patternProperties` sub-schema removed.
+   * By default, non-breaking (request); breaking (response).
+   */
+  PATTERN_PROPERTIES_ITEM_REMOVE: 'json-schema.pattern-properties.item.remove',
+  /**
+   * JSON Schema `patternProperties` sub-schema replaced.
+   * By default, unclassified (both request and response).
+   */
+  PATTERN_PROPERTIES_ITEM_REPLACE: 'json-schema.pattern-properties.item.replace',
+
+  /**
    * JSON Schema `oneOf` combiner item added.
    * By default, non-breaking (request); breaking (response).
    */
