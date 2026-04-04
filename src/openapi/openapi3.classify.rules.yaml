@@ -342,3 +342,10 @@
     action: add
   set:
     type: non-breaking
+# ============================================================
+# Parameter Object > schema node  [allBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.parameter.schema
+  set:
+    type: breaking

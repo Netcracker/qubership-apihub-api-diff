@@ -227,4 +227,16 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Parameter `in` property changed. add/replace=non-breaking (add), breaking (remove/replace). */
   PARAMETER_IN: 'rest.parameter.in',
+
+  // ---------------------------------------------------------------------------
+  // Parameter Object > style property
+  // ---------------------------------------------------------------------------
+  /** Parameter `style` changed. By default, always breaking. */
+  PARAMETER_STYLE: 'rest.parameter.style',
+
+  // ---------------------------------------------------------------------------
+  // Parameter Object > schema node ($:)
+  // ---------------------------------------------------------------------------
+  /** Parameter `schema` node changed. By default, always breaking. */
+  PARAMETER_SCHEMA: 'rest.parameter.schema',
 } as const

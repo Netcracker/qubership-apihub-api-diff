@@ -221,6 +221,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       },
       '/schema': () => ({
         $: allBreaking,
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.PARAMETER_SCHEMA,
         ...requestSchemaRules,
       }),
       '/style': {
