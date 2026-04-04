@@ -534,18 +534,22 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/headers': headersRules,
     '/parameters': {
       $: [nonBreaking, breaking, breaking],
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.COMPONENTS_PARAMETERS,
       ...parametersRules,
     },
     '/requestBodies': {
       $: [nonBreaking, breaking, breaking],
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.COMPONENTS_REQUEST_BODIES,
       '/*': requestBodiesRules,
     },
     '/responses': {
       $: [nonBreaking, breaking, breaking],
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.COMPONENTS_RESPONSES,
       '/*': responseRules,
     },
     '/schemas': {
       $: [nonBreaking, breaking, breaking],
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.COMPONENTS_SCHEMAS,
       '/*': () => ({
         $: allUnclassified,/*for mode One operation*/
         ...requestSchemaRules,
@@ -553,6 +557,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     },
     '/pathItems': {
       $: [nonBreaking, breaking, breaking],
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.COMPONENTS_PATH_ITEMS,
       '/*': pathItemObjectRules(options),
     },
     '/securitySchemes': {

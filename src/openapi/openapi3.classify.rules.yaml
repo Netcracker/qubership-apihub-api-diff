@@ -630,3 +630,55 @@
     classifyRuleId: rest.components
   set:
     type: non-breaking
+# ============================================================
+# Components sub-collections  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.components.parameters
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.parameters
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.components.request-bodies
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.request-bodies
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.components.responses
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.responses
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.components.schemas
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.schemas
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.components.path-items
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.path-items
+    action: add
+  set:
+    type: non-breaking

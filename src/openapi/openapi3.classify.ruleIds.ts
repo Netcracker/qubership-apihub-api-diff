@@ -410,4 +410,18 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Components object added/removed/replaced. By default, always non-breaking. */
   COMPONENTS: 'rest.components',
+
+  // ---------------------------------------------------------------------------
+  // Components sub-collections (parameters, requestBodies, responses, schemas, pathItems)
+  // ---------------------------------------------------------------------------
+  /** Components/parameters map changed. add=non-breaking, remove/replace=breaking. */
+  COMPONENTS_PARAMETERS: 'rest.components.parameters',
+  /** Components/requestBodies map changed. add=non-breaking, remove/replace=breaking. */
+  COMPONENTS_REQUEST_BODIES: 'rest.components.request-bodies',
+  /** Components/responses map changed. add=non-breaking, remove/replace=breaking. */
+  COMPONENTS_RESPONSES: 'rest.components.responses',
+  /** Components/schemas map changed. add=non-breaking, remove/replace=breaking. */
+  COMPONENTS_SCHEMAS: 'rest.components.schemas',
+  /** Components/pathItems map changed. add=non-breaking, remove/replace=breaking. */
+  COMPONENTS_PATH_ITEMS: 'rest.components.path-items',
 } as const
