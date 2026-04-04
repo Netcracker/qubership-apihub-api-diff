@@ -271,6 +271,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         description: diffDescription(resolveHeaderDescriptionTemplates('example')),
         '/**': {
           $: allUnclassified,
+          classifyRuleId: REST_CLASSIFY_RULE_IDS.HEADER_EXAMPLE_ITEM,
           description: diffDescription(resolveHeaderDescriptionTemplates())
         }
       },

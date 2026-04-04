@@ -282,6 +282,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Header `example` value changed. By default, always unclassified. */
   HEADER_EXAMPLE: 'rest.header.example',
 
+  /** Nested content under header `example`. By default, always unclassified. */
+  HEADER_EXAMPLE_ITEM: 'rest.header.example.item',
+
   // ---------------------------------------------------------------------------
   // Header Object > required property
   // ---------------------------------------------------------------------------

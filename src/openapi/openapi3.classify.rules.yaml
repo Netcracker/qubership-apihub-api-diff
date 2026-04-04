@@ -428,6 +428,11 @@
   set:
     type: unclassified
 
+- match:
+    classifyRuleId: rest.header.example.item
+  set:
+    type: unclassified
+
 # ============================================================
 # Header Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
 # ============================================================
