@@ -577,6 +577,12 @@
     action: add
   set:
     type: non-breaking
+
+- match:
+    classifyRuleId: rest.request-body.description
+  set:
+    type: annotation
+
 # ============================================================
 # Request Body Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
 # ============================================================

@@ -386,6 +386,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     '/content': contentRules,
     '/description': {
       $: allAnnotation,
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.REQUEST_BODY_DESCRIPTION,
       description: diffDescription(resolveRequestDescriptionTemplates('description'))
     },
     '/required': {

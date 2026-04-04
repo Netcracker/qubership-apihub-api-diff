@@ -353,6 +353,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Request body added/removed/replaced. add=non-breaking, remove/replace=breaking. */
   REQUEST_BODY: 'rest.request-body',
 
+  /** Request body `description` changed. By default, always annotation. */
+  REQUEST_BODY_DESCRIPTION: 'rest.request-body.description',
+
   // ---------------------------------------------------------------------------
   // Request Body Object > required property
   // ---------------------------------------------------------------------------
