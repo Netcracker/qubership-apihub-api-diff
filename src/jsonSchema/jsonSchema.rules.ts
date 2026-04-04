@@ -272,7 +272,7 @@ export const jsonSchemaRules = ({
     '/examples': {
       $: allAnnotation,
       classifyRuleId: JSON_SCHEMA_CLASSIFY_RULE_IDS.EXAMPLES,
-      '/*': { $: allAnnotation },
+      '/*': { $: allAnnotation, classifyRuleId: JSON_SCHEMA_CLASSIFY_RULE_IDS.EXAMPLES_ITEM },
     },
 
     // unknown tags
