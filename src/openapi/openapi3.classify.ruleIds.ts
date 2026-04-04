@@ -251,4 +251,16 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Individual header added/removed/replaced. add=non-breaking, remove/replace=breaking. */
   HEADER: 'rest.header',
+
+  // ---------------------------------------------------------------------------
+  // Header Object > required property
+  // ---------------------------------------------------------------------------
+  /** Header `required` added. By default, breaking. */
+  HEADER_REQUIRED_ADD: 'rest.header.required.add',
+  /** Header `required` removed. By default, non-breaking. */
+  HEADER_REQUIRED_REMOVE: 'rest.header.required.remove',
+  /** Header `required` replaced — after-value is `true`. By default, breaking. */
+  HEADER_REQUIRED_REPLACE_AFTER_TRUE: 'rest.header.required.replace.after-true',
+  /** Header `required` replaced — after-value is not `true`. By default, non-breaking. */
+  HEADER_REQUIRED_REPLACE_AFTER_NOT_TRUE: 'rest.header.required.replace.after-not-true',
 } as const

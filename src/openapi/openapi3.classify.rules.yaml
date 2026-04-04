@@ -380,3 +380,22 @@
     action: add
   set:
     type: non-breaking
+# ============================================================
+# Header Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
+# ============================================================
+- match:
+    classifyRuleId: rest.header.required.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.header.required.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.header.required.replace.after-true
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.header.required.replace.after-not-true
+  set:
+    type: non-breaking
