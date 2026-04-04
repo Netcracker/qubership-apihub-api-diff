@@ -127,6 +127,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const externalDocumentationRules: CompareRules = {
     $: allAnnotation,
+    classifyRuleId: REST_CLASSIFY_RULE_IDS.EXTERNAL_DOCS,
     ...openApiSpecificationExtensionRulesFunction(allAnnotation),
     '/*': {
       $: allAnnotation,

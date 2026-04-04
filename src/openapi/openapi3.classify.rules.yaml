@@ -567,6 +567,14 @@
     type: annotation
 
 # ============================================================
+# External Documentation Object  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.external-docs
+  set:
+    type: annotation
+
+# ============================================================
 # Content Object  [nonBreaking, breaking, breaking]
 # ============================================================
 - match:

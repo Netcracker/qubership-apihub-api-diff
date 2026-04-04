@@ -351,6 +351,12 @@ export const REST_CLASSIFY_RULE_IDS = {
   EXAMPLES_DEEP: 'rest.examples.deep',
 
   // ---------------------------------------------------------------------------
+  // External Documentation Object
+  // ---------------------------------------------------------------------------
+  /** External Documentation object root (`$`). By default, always annotation. */
+  EXTERNAL_DOCS: 'rest.external-docs',
+
+  // ---------------------------------------------------------------------------
   // Content Object (media-type map)
   // ---------------------------------------------------------------------------
   /** Content object added/removed/replaced. add=non-breaking, remove/replace=breaking. */
