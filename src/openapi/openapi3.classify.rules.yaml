@@ -619,6 +619,12 @@
     classifyRuleId: rest.operation.replace
   set:
     type: unclassified
+
+- match:
+    classifyRuleId: rest.operation.deprecated
+  set:
+    type: deprecated
+
 # ============================================================
 # Operation Object > responses map  [nonBreaking, breaking, breaking]
 # ============================================================

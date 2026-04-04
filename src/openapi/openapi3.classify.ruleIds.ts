@@ -392,6 +392,8 @@ export const REST_CLASSIFY_RULE_IDS = {
   OPERATION_REMOVE: 'rest.operation.remove',
   /** Operation replaced. By default, unclassified. */
   OPERATION_REPLACE: 'rest.operation.replace',
+  /** Operation `deprecated` flag changed. By default, always deprecated. */
+  OPERATION_DEPRECATED: 'rest.operation.deprecated',
   /**
    * Sentinel: used when operationRule's classifyRuleId is inherited by a
    * non-operation key (e.g. servers, description, x-* extensions) via the

@@ -445,7 +445,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
         //no support?
       },
     },
-    '/deprecated': { $: allDeprecated },
+    '/deprecated': { $: allDeprecated, classifyRuleId: REST_CLASSIFY_RULE_IDS.OPERATION_DEPRECATED },
     '/externalDocs': externalDocumentationRules,
     '/parameters': {
       $: [nonBreaking, apihubParametersRemovalClassifyRule, breaking],
