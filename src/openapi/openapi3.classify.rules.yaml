@@ -399,3 +399,10 @@
     classifyRuleId: rest.header.required.replace.after-not-true
   set:
     type: non-breaking
+# ============================================================
+# Header Object > schema node  [allBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.header.schema
+  set:
+    type: breaking

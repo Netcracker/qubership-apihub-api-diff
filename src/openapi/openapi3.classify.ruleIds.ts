@@ -263,4 +263,10 @@ export const REST_CLASSIFY_RULE_IDS = {
   HEADER_REQUIRED_REPLACE_AFTER_TRUE: 'rest.header.required.replace.after-true',
   /** Header `required` replaced — after-value is not `true`. By default, non-breaking. */
   HEADER_REQUIRED_REPLACE_AFTER_NOT_TRUE: 'rest.header.required.replace.after-not-true',
+
+  // ---------------------------------------------------------------------------
+  // Header Object > schema node ($:)
+  // ---------------------------------------------------------------------------
+  /** Header `schema` node changed. By default, always breaking. */
+  HEADER_SCHEMA: 'rest.header.schema',
 } as const
