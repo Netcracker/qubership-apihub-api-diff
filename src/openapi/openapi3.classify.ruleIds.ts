@@ -135,6 +135,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Parameter `deprecated` flag changed. By default, always deprecated. */
   PARAMETER_DEPRECATED: 'rest.parameter.deprecated',
 
+  /** Parameter `description` changed. By default, always annotation. */
+  PARAMETER_DESCRIPTION: 'rest.parameter.description',
+
   // ---------------------------------------------------------------------------
   // Parameter Object > allowEmptyValue property
   // ---------------------------------------------------------------------------

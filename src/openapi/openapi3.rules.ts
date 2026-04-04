@@ -189,6 +189,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       },
       '/description': {
         $: allAnnotation,
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.PARAMETER_DESCRIPTION,
         description: diffDescription(resolveParameterDescriptionTemplates('description'))
       },
       '/example': {

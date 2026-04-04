@@ -40,6 +40,11 @@
     type: deprecated
 
 - match:
+    classifyRuleId: rest.parameter.description
+  set:
+    type: annotation
+
+- match:
     classifyRuleId: rest.parameter.after-ignored-header
   set:
     type: unclassified
