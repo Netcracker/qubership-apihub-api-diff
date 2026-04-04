@@ -295,4 +295,10 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Media type entry added/removed/replaced. add/replace=non-breaking, remove=breaking. */
   MEDIA_TYPE: 'rest.media-type',
+
+  // ---------------------------------------------------------------------------
+  // Media Type Object > schema node ($:)
+  // ---------------------------------------------------------------------------
+  /** Media type `schema` node changed. By default, always breaking. */
+  MEDIA_TYPE_SCHEMA: 'rest.media-type.schema',
 } as const

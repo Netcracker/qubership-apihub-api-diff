@@ -356,6 +356,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       '/examples': examplesRules,
       '/schema': ({ path }) => ({
         $: allBreaking,
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.MEDIA_TYPE_SCHEMA,
         ...isResponseSchema(path) ? responseSchemaRules : requestSchemaRules,
       }),
       ...openApiSpecificationExtensionRulesFunction(),

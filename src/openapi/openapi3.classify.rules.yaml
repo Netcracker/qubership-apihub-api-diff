@@ -484,3 +484,10 @@
     action: remove
   set:
     type: breaking
+# ============================================================
+# Media Type Object > schema node  [allBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.media-type.schema
+  set:
+    type: breaking
