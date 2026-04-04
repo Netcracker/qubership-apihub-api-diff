@@ -528,6 +528,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const componentsRule: CompareRules = {
     $: allNonBreaking,
+    classifyRuleId: REST_CLASSIFY_RULE_IDS.COMPONENTS,
     [START_NEW_COMPARE_SCOPE_RULE]: COMPARE_SCOPE_COMPONENTS,
     '/examples': examplesRules,
     '/headers': headersRules,

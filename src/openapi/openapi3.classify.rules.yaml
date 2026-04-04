@@ -623,3 +623,10 @@
     action: add
   set:
     type: non-breaking
+# ============================================================
+# Components Object  [allNonBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.components
+  set:
+    type: non-breaking

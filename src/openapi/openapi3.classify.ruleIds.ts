@@ -404,4 +404,10 @@ export const REST_CLASSIFY_RULE_IDS = {
   // ---------------------------------------------------------------------------
   /** Path-item-level parameters array changed. add=non-breaking, remove/replace=breaking. */
   PATH_ITEM_PARAMETERS: 'rest.path-item.parameters',
+
+  // ---------------------------------------------------------------------------
+  // Components Object ($:)
+  // ---------------------------------------------------------------------------
+  /** Components object added/removed/replaced. By default, always non-breaking. */
+  COMPONENTS: 'rest.components',
 } as const
