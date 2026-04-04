@@ -257,6 +257,7 @@ export const jsonSchemaRules = ({
       '/*': () => ({
         ...rules,
         $: allNonBreaking,
+        classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFINITIONS_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFINITIONS_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFINITIONS_ITEM_REPLACE],
       }),
     },
     '/$defs': {

@@ -60,6 +60,22 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
   PROPERTY_NAMES_REPLACE: 'json-schema.property-names.replace',
 
   /**
+   * JSON Schema `definitions` sub-schema added.
+   * By default, non-breaking (request); breaking (response).
+   */
+  DEFINITIONS_ITEM_ADD: 'json-schema.definitions.item.add',
+  /**
+   * JSON Schema `definitions` sub-schema removed.
+   * By default, non-breaking (request); breaking (response).
+   */
+  DEFINITIONS_ITEM_REMOVE: 'json-schema.definitions.item.remove',
+  /**
+   * JSON Schema `definitions` sub-schema replaced.
+   * By default, non-breaking (request); breaking (response).
+   */
+  DEFINITIONS_ITEM_REPLACE: 'json-schema.definitions.item.replace',
+
+  /**
    * JSON Schema `oneOf` combiner item added.
    * By default, non-breaking (request); breaking (response).
    */

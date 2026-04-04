@@ -713,6 +713,38 @@
     type: breaking
 
 # ============================================================
+# definitions/* sub-schemas
+# Rule: allNonBreaking [nonBreaking, nonBreaking, nonBreaking]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.definitions.item.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.definitions.item.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.definitions.item.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.definitions.item.remove
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.definitions.item.replace
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.definitions.item.replace
+    scope: response
+  set:
+    type: breaking
+
+# ============================================================
 # enum array (the /enum keyword node itself)
 # Rule: [breaking, nonBreaking, breaking, nonBreaking, risky, nonBreaking]
 # Response remove is risky (non-standard: reversal of nonBreaking would be breaking)
