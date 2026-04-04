@@ -524,6 +524,14 @@
   set:
     type: non-breaking
 # ============================================================
+# Examples map (`examples` object root `$`)  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.examples.map
+  set:
+    type: annotation
+
+# ============================================================
 # Content Object  [nonBreaking, breaking, breaking]
 # ============================================================
 - match:

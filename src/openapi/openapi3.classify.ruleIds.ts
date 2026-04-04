@@ -324,6 +324,12 @@ export const REST_CLASSIFY_RULE_IDS = {
   ENCODING_STYLE: 'rest.encoding.style',
 
   // ---------------------------------------------------------------------------
+  // Examples map (OpenAPI `examples` object — map node `$`)
+  // ---------------------------------------------------------------------------
+  /** OpenAPI `examples` map node. By default, always annotation. */
+  EXAMPLES_MAP: 'rest.examples.map',
+
+  // ---------------------------------------------------------------------------
   // Content Object (media-type map)
   // ---------------------------------------------------------------------------
   /** Content object added/removed/replaced. add=non-breaking, remove/replace=breaking. */
