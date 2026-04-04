@@ -536,6 +536,11 @@
   set:
     type: annotation
 
+- match:
+    classifyRuleId: rest.examples.description
+  set:
+    type: annotation
+
 # ============================================================
 # Content Object  [nonBreaking, breaking, breaking]
 # ============================================================
