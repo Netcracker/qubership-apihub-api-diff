@@ -39,6 +39,22 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
   ITEMS_ARRAY_ITEM_REPLACE: 'json-schema.items.array-item.replace',
 
   /**
+   * JSON Schema `items` node added when items is a single schema (all-items validation).
+   * By default, non-breaking (request); breaking (response).
+   */
+  ITEMS_SCHEMA_ADD: 'json-schema.items.schema.add',
+  /**
+   * JSON Schema `items` schema removed.
+   * By default, non-breaking (request); breaking (response).
+   */
+  ITEMS_SCHEMA_REMOVE: 'json-schema.items.schema.remove',
+  /**
+   * JSON Schema `items` schema replaced.
+   * By default, non-breaking (request); breaking (response).
+   */
+  ITEMS_SCHEMA_REPLACE: 'json-schema.items.schema.replace',
+
+  /**
    * JSON Schema `additionalItems` keyword added.
    * By default, non-breaking (request); breaking (response).
    */

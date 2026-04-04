@@ -671,6 +671,38 @@
     type: non-breaking
 
 # ============================================================
+# items keyword — schema (all-items) variant: allNonBreaking
+# Rule: [nonBreaking, nonBreaking, nonBreaking]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.items.schema.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.items.schema.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.items.schema.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.items.schema.remove
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.items.schema.replace
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.items.schema.replace
+    scope: response
+  set:
+    type: breaking
+
+# ============================================================
 # additionalItems keyword
 # Rule: [nonBreaking, breaking, unclassified]
 # ============================================================
