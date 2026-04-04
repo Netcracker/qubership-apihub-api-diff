@@ -498,6 +498,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const oAuthFlowsObjectRules: CompareRules = {
     $: [breaking, nonBreaking, breaking],
+    classifyRuleId: REST_CLASSIFY_RULE_IDS.OAUTH_FLOWS,
     ...openApiSpecificationExtensionRulesFunction(),
     '/*': oAuthFlowObjectRules,
   }

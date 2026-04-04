@@ -392,4 +392,10 @@ export const REST_CLASSIFY_RULE_IDS = {
    * No YAML rule should map this; the OOB classifier will return undefined.
    */
   OAUTH_FLOW_NOT_APPLICABLE: 'rest.oauth-flow.not-applicable',
+
+  // ---------------------------------------------------------------------------
+  // OAuth Flows Object
+  // ---------------------------------------------------------------------------
+  /** OAuth flows object added/removed/replaced. add/replace=breaking, remove=non-breaking. */
+  OAUTH_FLOWS: 'rest.oauth-flows',
 } as const
