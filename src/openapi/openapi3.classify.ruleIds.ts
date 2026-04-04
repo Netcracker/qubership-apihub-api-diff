@@ -130,6 +130,12 @@ export const REST_CLASSIFY_RULE_IDS = {
   PARAMETER_REQUIRED_REPLACE_AFTER_FALSE: 'rest.parameter.required.replace.after-false',
 
   // ---------------------------------------------------------------------------
+  // Parameter Object > deprecated property
+  // ---------------------------------------------------------------------------
+  /** Parameter `deprecated` flag changed. By default, always deprecated. */
+  PARAMETER_DEPRECATED: 'rest.parameter.deprecated',
+
+  // ---------------------------------------------------------------------------
   // Parameter Object > allowEmptyValue property
   // ---------------------------------------------------------------------------
 

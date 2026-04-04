@@ -184,6 +184,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       },
       '/deprecated': {
         $: allDeprecated,
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.PARAMETER_DEPRECATED,
         description: diffDescription(resolveParameterDescriptionTemplates('deprecated status'))
       },
       '/description': {

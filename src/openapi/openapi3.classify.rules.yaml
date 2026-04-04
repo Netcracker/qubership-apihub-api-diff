@@ -35,6 +35,11 @@
 # Parameters are always in request context; no scope overrides needed.
 
 - match:
+    classifyRuleId: rest.parameter.deprecated
+  set:
+    type: deprecated
+
+- match:
     classifyRuleId: rest.parameter.after-ignored-header
   set:
     type: unclassified
