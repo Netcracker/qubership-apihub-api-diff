@@ -893,3 +893,71 @@
     classifyRuleId: rest.tags
   set:
     type: annotation
+
+# ============================================================
+# Document metadata (`/openapi`, `/info`, `/**` under `info`)  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.document.annotation
+  set:
+    type: annotation
+
+# ============================================================
+# Operation > tags array  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.operation.tags
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.operation.tags.item
+  set:
+    type: annotation
+
+# ============================================================
+# Servers  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.servers
+  set:
+    type: annotation
+
+# ============================================================
+# Security Scheme — annotation-only fields
+# ============================================================
+- match:
+    classifyRuleId: rest.security-scheme.bearer-format
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.security-scheme.description
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.security-scheme.open-id-connect-url
+  set:
+    type: annotation
+
+# ============================================================
+# Components > named schema definition wrapper  [allUnclassified]
+# ============================================================
+- match:
+    classifyRuleId: rest.components.schema-definition
+  set:
+    type: unclassified
+
+# ============================================================
+# Tag Object (items in `/tags` array)  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.tag
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.tag.field
+  set:
+    type: annotation

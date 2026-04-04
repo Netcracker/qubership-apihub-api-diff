@@ -539,6 +539,50 @@ export const REST_CLASSIFY_RULE_IDS = {
   PATHS: 'rest.paths',
 
   // ---------------------------------------------------------------------------
+  // OpenAPI document root (`/openapi`, `/info` metadata, `/**` under `info`)
+  // ---------------------------------------------------------------------------
+  /** Document-level annotation-only metadata. By default, always annotation. */
+  DOCUMENT_ANNOTATION: 'rest.document.annotation',
+
+  // ---------------------------------------------------------------------------
+  // Operation Object > `tags` array (string list on the operation)
+  // ---------------------------------------------------------------------------
+  /** Operation `tags` array node (`$`). By default, always annotation. */
+  OPERATION_TAGS: 'rest.operation.tags',
+  /** Single tag string entry in the operation `tags` array (`/*`). By default, always annotation. */
+  OPERATION_TAGS_ITEM: 'rest.operation.tags.item',
+
+  // ---------------------------------------------------------------------------
+  // Servers array (`servers` keyword)
+  // ---------------------------------------------------------------------------
+  /** Servers list node (`$`). By default, always annotation. */
+  SERVERS: 'rest.servers',
+
+  // ---------------------------------------------------------------------------
+  // Security Scheme Object — annotation-only properties
+  // ---------------------------------------------------------------------------
+  /** Security scheme `bearerFormat`. By default, always annotation. */
+  SECURITY_SCHEME_BEARER_FORMAT: 'rest.security-scheme.bearer-format',
+  /** Security scheme `description`. By default, always annotation. */
+  SECURITY_SCHEME_DESCRIPTION: 'rest.security-scheme.description',
+  /** Security scheme `openIdConnectUrl`. By default, always annotation. */
+  SECURITY_SCHEME_OPEN_ID_CONNECT_URL: 'rest.security-scheme.open-id-connect-url',
+
+  // ---------------------------------------------------------------------------
+  // Components > individual schema definition (`$` on each entry in `/schemas`)
+  // ---------------------------------------------------------------------------
+  /** Named schema under `components.schemas` (wrapper `$` before JSON Schema rules). By default, unclassified. */
+  COMPONENTS_SCHEMA_DEFINITION: 'rest.components.schema-definition',
+
+  // ---------------------------------------------------------------------------
+  // Tag Object (root `/tags` array items)
+  // ---------------------------------------------------------------------------
+  /** Tag object root (`$`). By default, always annotation. */
+  TAG_OBJECT: 'rest.tag',
+  /** Tag object field via wildcard (`/*`). By default, always annotation. */
+  TAG_OBJECT_FIELD: 'rest.tag.field',
+
+  // ---------------------------------------------------------------------------
   // /tags array ($:)
   // ---------------------------------------------------------------------------
   /** Tags array added/removed/replaced. By default, annotation. */

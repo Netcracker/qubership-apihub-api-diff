@@ -86,7 +86,7 @@ import { encodingParamsCalculator } from './openapi3.description.encoding'
 import { openApiSpecificationExtensionRulesFunction } from './openapi3.compare.rules'
 import { REST_CLASSIFY_RULE_IDS } from './openapi3.classify.ruleIds'
 
-const documentAnnotationRule: CompareRules = { $: allAnnotation }
+const documentAnnotationRule: CompareRules = { $: allAnnotation, classifyRuleId: REST_CLASSIFY_RULE_IDS.DOCUMENT_ANNOTATION }
 const operationAnnotationRule: CompareRules = { $: allAnnotation }
 
 
@@ -108,6 +108,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const serversRules: CompareRules = {
     $: allAnnotation,
+    classifyRuleId: REST_CLASSIFY_RULE_IDS.SERVERS,
     '/*': {
       '/variables': {
         '/*': {
@@ -495,10 +496,12 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
     },
     '/servers': serversRules,
     '/tags': {
-      ...operationAnnotationRule,
+      $: allAnnotation,
+      classifyRuleId: REST_CLASSIFY_RULE_IDS.OPERATION_TAGS,
       mapping: deepEqualsUniqueItemsArrayMappingResolver,
       '/*': {
-        ...operationAnnotationRule,
+        $: allAnnotation,
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.OPERATION_TAGS_ITEM,
         [IGNORE_DIFFERENCE_IN_KEYS_RULE]: true,
       },
     },
@@ -530,9 +533,10 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const tagObjectCompareRules: CompareRules = {
     $: allAnnotation,
+    classifyRuleId: REST_CLASSIFY_RULE_IDS.TAG_OBJECT,
     '/externalDocs': externalDocumentationRules,
     ...openApiSpecificationExtensionRulesFunction(allAnnotation),
-    '/*': { $: allAnnotation },
+    '/*': { $: allAnnotation, classifyRuleId: REST_CLASSIFY_RULE_IDS.TAG_OBJECT_FIELD },
   }
   const pathItemObjectRules = (options: OpenApi3RulesOptions): CompareRules => ({
     $: pathChangeClassifyRule,
@@ -577,6 +581,7 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       classifyRuleId: REST_CLASSIFY_RULE_IDS.COMPONENTS_SCHEMAS,
       '/*': () => ({
         $: allUnclassified,/*for mode One operation*/
+        classifyRuleId: REST_CLASSIFY_RULE_IDS.COMPONENTS_SCHEMA_DEFINITION,
         ...requestSchemaRules,
       }),
     },
@@ -591,12 +596,12 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
       '/*': {
         $: [breaking, nonBreaking, breaking],
         classifyRuleId: REST_CLASSIFY_RULE_IDS.SECURITY_SCHEME,
-        '/bearerFormat': { $: allAnnotation },
-        '/description': { $: allAnnotation },
+        '/bearerFormat': { $: allAnnotation, classifyRuleId: REST_CLASSIFY_RULE_IDS.SECURITY_SCHEME_BEARER_FORMAT },
+        '/description': { $: allAnnotation, classifyRuleId: REST_CLASSIFY_RULE_IDS.SECURITY_SCHEME_DESCRIPTION },
         '/flows': oAuthFlowsObjectRules,
         '/in': { $: [breaking, nonBreaking, breaking], classifyRuleId: REST_CLASSIFY_RULE_IDS.SECURITY_SCHEME_PROPERTY },
         '/name': { $: [breaking, nonBreaking, breaking], classifyRuleId: REST_CLASSIFY_RULE_IDS.SECURITY_SCHEME_PROPERTY },
-        '/openIdConnectUrl': { $: allAnnotation },
+        '/openIdConnectUrl': { $: allAnnotation, classifyRuleId: REST_CLASSIFY_RULE_IDS.SECURITY_SCHEME_OPEN_ID_CONNECT_URL },
         '/scheme': { $: [breaking, nonBreaking, breaking], classifyRuleId: REST_CLASSIFY_RULE_IDS.SECURITY_SCHEME_PROPERTY },
         '/type': { $: [breaking, nonBreaking, breaking], classifyRuleId: REST_CLASSIFY_RULE_IDS.SECURITY_SCHEME_PROPERTY },
         ...openApiSpecificationExtensionRulesFunction(),
