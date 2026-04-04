@@ -205,7 +205,7 @@ export const jsonSchemaRules = ({
       }),
     },
 
-    '/const': simpleRule([breaking, nonBreaking, breaking], resolveSchemaDescriptionTemplates('const')),
+    '/const': { ...simpleRule([breaking, nonBreaking, breaking], resolveSchemaDescriptionTemplates('const')), classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.CONST_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.CONST_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.CONST_REPLACE] },
     '/not': () => ({
       // TODO check
       ...transformCompareRules(rules, reverseClassifyRuleTransformer),

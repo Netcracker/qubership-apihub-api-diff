@@ -717,6 +717,38 @@
     type: non-breaking
 
 # ============================================================
+# const keyword
+# Rule: [breaking, nonBreaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.const.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.const.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.const.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.const.remove
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.const.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.const.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
 # uniqueItems validator
 # ============================================================
 # after-true (add/replace where uniqueItems=true): breaking (request) / non-breaking (response)

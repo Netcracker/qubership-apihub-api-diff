@@ -400,4 +400,20 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    * By default, breaking (request); non-breaking (response).
    */
   DEFAULT_REPLACE: 'json-schema.default.replace',
+
+  /**
+   * JSON Schema `const` keyword added.
+   * By default, breaking (request); non-breaking (response).
+   */
+  CONST_ADD: 'json-schema.const.add',
+  /**
+   * JSON Schema `const` keyword removed.
+   * By default, non-breaking (request); breaking (response).
+   */
+  CONST_REMOVE: 'json-schema.const.remove',
+  /**
+   * JSON Schema `const` keyword replaced.
+   * By default, breaking (request); non-breaking (response).
+   */
+  CONST_REPLACE: 'json-schema.const.replace',
 } as const
