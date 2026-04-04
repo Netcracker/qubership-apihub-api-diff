@@ -560,6 +560,11 @@
   set:
     type: annotation
 
+- match:
+    classifyRuleId: rest.media-type.example.item
+  set:
+    type: annotation
+
 # ============================================================
 # Request Body Object  [nonBreaking, breaking, breaking]
 # ============================================================

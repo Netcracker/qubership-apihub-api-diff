@@ -344,6 +344,9 @@ export const REST_CLASSIFY_RULE_IDS = {
   /** Media type `example` value changed. By default, always annotation. */
   MEDIA_TYPE_EXAMPLE: 'rest.media-type.example',
 
+  /** Nested content under media type `example`. By default, always annotation. */
+  MEDIA_TYPE_EXAMPLE_ITEM: 'rest.media-type.example.item',
+
   // ---------------------------------------------------------------------------
   // Request Body Object
   // ---------------------------------------------------------------------------
