@@ -247,7 +247,11 @@ export const jsonSchemaRules = ({
         classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_PROPERTIES_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_PROPERTIES_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_PROPERTIES_ITEM_REPLACE],
       }),
     },
-    '/propertyNames': () => ({ ...rules, $: onlyAddBreaking }),
+    '/propertyNames': () => ({
+      ...rules,
+      $: onlyAddBreaking,
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.PROPERTY_NAMES_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.PROPERTY_NAMES_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.PROPERTY_NAMES_REPLACE],
+    }),
     // TODO "/dependencies": {},
     '/definitions': {
       '/*': () => ({

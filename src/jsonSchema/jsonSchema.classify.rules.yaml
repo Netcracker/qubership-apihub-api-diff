@@ -681,6 +681,38 @@
     type: unclassified
 
 # ============================================================
+# propertyNames keyword
+# Rule: onlyAddBreaking [breaking, nonBreaking, nonBreaking]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.property-names.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.property-names.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.property-names.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.property-names.remove
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.property-names.replace
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.property-names.replace
+    scope: response
+  set:
+    type: breaking
+
+# ============================================================
 # enum array (the /enum keyword node itself)
 # Rule: [breaking, nonBreaking, breaking, nonBreaking, risky, nonBreaking]
 # Response remove is risky (non-standard: reversal of nonBreaking would be breaking)

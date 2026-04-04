@@ -44,6 +44,22 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
   PATTERN_PROPERTIES_ITEM_REPLACE: 'json-schema.pattern-properties.item.replace',
 
   /**
+   * JSON Schema `propertyNames` keyword added.
+   * By default, breaking (request); non-breaking (response).
+   */
+  PROPERTY_NAMES_ADD: 'json-schema.property-names.add',
+  /**
+   * JSON Schema `propertyNames` keyword removed.
+   * By default, non-breaking (both request and response).
+   */
+  PROPERTY_NAMES_REMOVE: 'json-schema.property-names.remove',
+  /**
+   * JSON Schema `propertyNames` keyword replaced.
+   * By default, non-breaking (both request and response).
+   */
+  PROPERTY_NAMES_REPLACE: 'json-schema.property-names.replace',
+
+  /**
    * JSON Schema `oneOf` combiner item added.
    * By default, non-breaking (request); breaking (response).
    */
