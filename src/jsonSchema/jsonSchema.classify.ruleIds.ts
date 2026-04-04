@@ -320,4 +320,20 @@ export const JSON_SCHEMA_CLASSIFY_RULE_IDS = {
    * By default, breaking (both request and response).
    */
   PATTERN_REPLACE: 'json-schema.pattern.replace',
+
+  /**
+   * JSON Schema `format` keyword added.
+   * By default, breaking (request); non-breaking (response).
+   */
+  FORMAT_ADD: 'json-schema.format.add',
+  /**
+   * JSON Schema `format` keyword removed.
+   * By default, non-breaking (request); breaking (response).
+   */
+  FORMAT_REMOVE: 'json-schema.format.remove',
+  /**
+   * JSON Schema `format` keyword replaced.
+   * By default, breaking (both request and response).
+   */
+  FORMAT_REPLACE: 'json-schema.format.replace',
 } as const
