@@ -27,8 +27,11 @@ import {
   enumItemClassifyRuleIdRule,
   exclusiveClassifier,
   exclusiveClassifyRuleIdRule,
+  exclusiveMaximumClassifyRuleIdRule,
   maxClassifier,
-  maxClassifyRuleIdRule,
+  maxLengthClassifyRuleIdRule,
+  maxItemsClassifyRuleIdRule,
+  maxPropertiesClassifyRuleIdRule,
   maximumClassifier,
   maximumClassifyRuleIdRule,
   minClassifier,
@@ -107,13 +110,13 @@ export const jsonSchemaRules = ({
       '/exclusiveMaximum': { ...simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')), classifyRuleId: exclusiveClassifyRuleIdRule },
       '/exclusiveMinimum': { ...simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')), classifyRuleId: exclusiveClassifyRuleIdRule },
     } : {
-      '/exclusiveMaximum': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')), classifyRuleId: maxClassifyRuleIdRule },
+      '/exclusiveMaximum': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')), classifyRuleId: exclusiveMaximumClassifyRuleIdRule },
       '/exclusiveMinimum': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')), classifyRuleId: minClassifyRuleIdRule },
     },
-    '/maxLength': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxLength validator')), classifyRuleId: maxClassifyRuleIdRule },
+    '/maxLength': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxLength validator')), classifyRuleId: maxLengthClassifyRuleIdRule },
     '/minLength': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minLength validator')), classifyRuleId: minClassifyRuleIdRule },
     '/pattern': { ...simpleRule([breaking, nonBreaking, breaking, nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('pattern validator')), classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_REPLACE] },
-    '/maxItems': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxItems validator')), classifyRuleId: maxClassifyRuleIdRule },
+    '/maxItems': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxItems validator')), classifyRuleId: maxItemsClassifyRuleIdRule },
     '/minItems': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minItems validator')), classifyRuleId: minClassifyRuleIdRule },
     '/uniqueItems': {
       ...simpleRule(booleanClassifier, resolveSchemaDescriptionTemplates('uniqueItems validator')),
@@ -123,7 +126,7 @@ export const jsonSchemaRules = ({
         ({ after }) => after.value === true ? JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_AFTER_TRUE : JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_AFTER_NOT_TRUE,
       ],
     },
-    '/maxProperties': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxProperties validator')), classifyRuleId: maxClassifyRuleIdRule },
+    '/maxProperties': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxProperties validator')), classifyRuleId: maxPropertiesClassifyRuleIdRule },
     '/minProperties': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minProperties validator')), classifyRuleId: minClassifyRuleIdRule },
 
     '/readOnly': {

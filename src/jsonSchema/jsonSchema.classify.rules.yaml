@@ -370,130 +370,116 @@
     type: non-breaking
 
 # ---------------------------------------------------------------------------
-# maximum keyword (interacts with draft-04 exclusiveMaximum in the add case)
+# maximum keyword
 # ---------------------------------------------------------------------------
-# All actions flip for response schemas (reverseClassifyRuleTransformer).
-
-# add — before exclusiveMaximum already covers the new maximum
-# (exclusiveMaximum exists and is <= new maximum value, so no new constraint):
-#   non-response → non-breaking
-#   response     → breaking
 - match:
-    classifyRuleId: json-schema.maximum.add.before-exclusive-max-covers
+    classifyRuleId: json-schema.maximum.constraint-relaxed
   set:
     type: non-breaking
 - match:
-    classifyRuleId: json-schema.maximum.add.before-exclusive-max-covers
+    classifyRuleId: json-schema.maximum.constraint-relaxed
     scope: response
   set:
     type: breaking
 
-# add — before exclusiveMaximum does not cover the new maximum
-# (missing, non-numeric, or greater than the new maximum — a new tighter bound):
-#   non-response → breaking
-#   response     → non-breaking
 - match:
-    classifyRuleId: json-schema.maximum.add.before-exclusive-max-not-covers
+    classifyRuleId: json-schema.maximum.constraint-tightened
   set:
     type: breaking
 - match:
-    classifyRuleId: json-schema.maximum.add.before-exclusive-max-not-covers
-    scope: response
-  set:
-    type: non-breaking
-
-# remove (drops the upper-bound constraint):
-#   non-response → non-breaking
-#   response     → breaking
-- match:
-    classifyRuleId: json-schema.maximum.remove
-  set:
-    type: non-breaking
-- match:
-    classifyRuleId: json-schema.maximum.remove
-    scope: response
-  set:
-    type: breaking
-
-# replace constraint-relaxed (after >= before, both numeric — upper bound raised):
-#   non-response → non-breaking
-#   response     → breaking
-- match:
-    classifyRuleId: json-schema.maximum.replace.constraint-relaxed
-  set:
-    type: non-breaking
-- match:
-    classifyRuleId: json-schema.maximum.replace.constraint-relaxed
-    scope: response
-  set:
-    type: breaking
-
-# replace constraint-tightened (after < before, or either value non-numeric):
-#   non-response → breaking
-#   response     → non-breaking
-- match:
-    classifyRuleId: json-schema.maximum.replace.constraint-tightened
-  set:
-    type: breaking
-- match:
-    classifyRuleId: json-schema.maximum.replace.constraint-tightened
+    classifyRuleId: json-schema.maximum.constraint-tightened
     scope: response
   set:
     type: non-breaking
 
 # ---------------------------------------------------------------------------
-# max* keywords (maxLength, maxItems, maxProperties, exclusiveMaximum non-draft-04)
+# maxLength keyword
 # ---------------------------------------------------------------------------
-# All three actions flip for response schemas (reverseClassifyRuleTransformer).
-
-# add (introduces an upper-bound constraint):
-#   non-response → breaking
-#   response     → non-breaking
 - match:
-    classifyRuleId: json-schema.max.add
-  set:
-    type: breaking
-- match:
-    classifyRuleId: json-schema.max.add
-    scope: response
-  set:
-    type: non-breaking
-
-# remove (drops the upper-bound constraint):
-#   non-response → non-breaking
-#   response     → breaking
-- match:
-    classifyRuleId: json-schema.max.remove
+    classifyRuleId: json-schema.maxLength.constraint-relaxed
   set:
     type: non-breaking
 - match:
-    classifyRuleId: json-schema.max.remove
+    classifyRuleId: json-schema.maxLength.constraint-relaxed
     scope: response
   set:
     type: breaking
 
-# replace constraint-relaxed (after >= before, both numeric — upper bound raised):
-#   non-response → non-breaking
-#   response     → breaking
 - match:
-    classifyRuleId: json-schema.max.replace.constraint-relaxed
+    classifyRuleId: json-schema.maxLength.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.maxLength.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# maxItems keyword
+# ---------------------------------------------------------------------------
+- match:
+    classifyRuleId: json-schema.maxItems.constraint-relaxed
   set:
     type: non-breaking
 - match:
-    classifyRuleId: json-schema.max.replace.constraint-relaxed
+    classifyRuleId: json-schema.maxItems.constraint-relaxed
     scope: response
   set:
     type: breaking
 
-# replace constraint-tightened (after < before, or either value non-numeric):
-#   non-response → breaking
-#   response     → non-breaking
 - match:
-    classifyRuleId: json-schema.max.replace.constraint-tightened
+    classifyRuleId: json-schema.maxItems.constraint-tightened
   set:
     type: breaking
 - match:
-    classifyRuleId: json-schema.max.replace.constraint-tightened
+    classifyRuleId: json-schema.maxItems.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# maxProperties keyword
+# ---------------------------------------------------------------------------
+- match:
+    classifyRuleId: json-schema.maxProperties.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.maxProperties.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: json-schema.maxProperties.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.maxProperties.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# exclusiveMaximum keyword (non-draft-04)
+# ---------------------------------------------------------------------------
+- match:
+    classifyRuleId: json-schema.exclusiveMaximum.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.exclusiveMaximum.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: json-schema.exclusiveMaximum.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.exclusiveMaximum.constraint-tightened
     scope: response
   set:
     type: non-breaking

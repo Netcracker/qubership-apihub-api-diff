@@ -53,12 +53,36 @@ export const typeClassifier: ClassifyRule = [
   ({ before, after }) => nonBreakingIf(isTypeAssignable(before.value, after.value, true)),
 ]
 
-export const maxClassifyRuleIdRule: ClassifyRuleIdRule = [
-  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_ADD,
-  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_REMOVE,
-  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && before.value <= after.value
-    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_REPLACE_CONSTRAINT_RELAXED
-    : JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_REPLACE_CONSTRAINT_TIGHTENED),
+export const maxLengthClassifyRuleIdRule: ClassifyRuleIdRule = [
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_LENGTH_CONSTRAINT_TIGHTENED,
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_LENGTH_CONSTRAINT_RELAXED,
+  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && before.value < after.value
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_LENGTH_CONSTRAINT_RELAXED
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_LENGTH_CONSTRAINT_TIGHTENED),
+]
+
+export const maxItemsClassifyRuleIdRule: ClassifyRuleIdRule = [
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_ITEMS_CONSTRAINT_TIGHTENED,
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_ITEMS_CONSTRAINT_RELAXED,
+  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && before.value < after.value
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_ITEMS_CONSTRAINT_RELAXED
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_ITEMS_CONSTRAINT_TIGHTENED),
+]
+
+export const maxPropertiesClassifyRuleIdRule: ClassifyRuleIdRule = [
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_PROPERTIES_CONSTRAINT_TIGHTENED,
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_PROPERTIES_CONSTRAINT_RELAXED,
+  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && before.value < after.value
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_PROPERTIES_CONSTRAINT_RELAXED
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.MAX_PROPERTIES_CONSTRAINT_TIGHTENED),
+]
+
+export const exclusiveMaximumClassifyRuleIdRule: ClassifyRuleIdRule = [
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.EXCLUSIVE_MAXIMUM_CONSTRAINT_TIGHTENED,
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.EXCLUSIVE_MAXIMUM_CONSTRAINT_RELAXED,
+  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && before.value < after.value
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.EXCLUSIVE_MAXIMUM_CONSTRAINT_RELAXED
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.EXCLUSIVE_MAXIMUM_CONSTRAINT_TIGHTENED),
 ]
 
 export const maxClassifier: ClassifyRule = [
@@ -107,13 +131,13 @@ export const maximumClassifyRuleIdRule: ClassifyRuleIdRule = [
   ({ before, after }) => {
     const beforeExclusiveMaximum = getKeyValue(before.parent, 'exclusiveMaximum')
     return (isNumber(beforeExclusiveMaximum) && isNumber(after.value) && beforeExclusiveMaximum <= after.value)
-      ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_ADD_BEFORE_EXCLUSIVE_MAX_COVERS
-      : JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_ADD_BEFORE_EXCLUSIVE_MAX_NOT_COVERS
+      ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_CONSTRAINT_RELAXED
+      : JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_CONSTRAINT_TIGHTENED
   },
-  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_REMOVE,
-  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && before.value <= after.value
-    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_REPLACE_CONSTRAINT_RELAXED
-    : JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_REPLACE_CONSTRAINT_TIGHTENED),
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_CONSTRAINT_RELAXED,
+  ({ before, after }) => (isNumber(before.value) && isNumber(after.value) && before.value < after.value
+    ? JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_CONSTRAINT_RELAXED
+    : JSON_SCHEMA_CLASSIFY_RULE_IDS.MAXIMUM_CONSTRAINT_TIGHTENED),
 ]
 
 export const maximumClassifier: ClassifyRule = [
