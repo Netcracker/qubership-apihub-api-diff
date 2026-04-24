@@ -253,11 +253,7 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
 
   // Operation rules factory based on action type
   const operationRules = (isSendAction: boolean): CompareRules => ({
-    // For send operations: add=non-breaking (can send new types), remove=breaking
-    // For receive operations: add=breaking (must handle new types), remove=non-breaking
-    $: isSendAction
-      ? [nonBreaking, breaking, unclassified]
-      : [breaking, nonBreaking, unclassified],
+    $: [nonBreaking, breaking, unclassified],
     [START_NEW_COMPARE_SCOPE_RULE]: isSendAction ? COMPARE_SCOPE_SEND : COMPARE_SCOPE_RECEIVE,
     '/title': { $: allAnnotation },
     '/summary': { $: allAnnotation },
