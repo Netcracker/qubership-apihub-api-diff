@@ -253,7 +253,7 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
 
   // Operation rules factory based on action type
   const operationRules = (isSendAction: boolean): CompareRules => ({
-    $: [nonBreaking, breaking, unclassified],
+    $: [unclassified, unclassified, unclassified],
     [START_NEW_COMPARE_SCOPE_RULE]: isSendAction ? COMPARE_SCOPE_SEND : COMPARE_SCOPE_RECEIVE,
     '/title': { $: allAnnotation },
     '/summary': { $: allAnnotation },
@@ -274,7 +274,7 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
       mapping: firstReferenceKeyMapping,
       '/*': {
         ...messageRules,
-        $: [nonBreaking, breaking, unclassified],
+        $: [unclassified, unclassified, unclassified],
         ignoreKeyDifference: true
       },
     },

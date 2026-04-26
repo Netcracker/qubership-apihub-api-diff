@@ -1,4 +1,4 @@
-import { apiDiff, CompareOptions, DiffAction, nonBreaking } from '../src'
+import { apiDiff, CompareOptions, DiffAction, unclassified } from '../src'
 import { parseAsyncApiAndAssertValid } from './helper/asyncapi'
 import { diffsMatcher } from './helper/matchers'
 
@@ -21,7 +21,7 @@ const operation = (operationId: string, action: 'send' | 'receive') => ({
 })
 
 describe('AsyncAPI diff — whole operations', () => {
-  it('classifies adding a send operation as non-breaking', async () => {
+  it('classifies adding a send operation as unclassified', async () => {
     const before = {
       asyncapi: '3.0.0',
       info: { title: 'Test', version: '1.0.0' },
@@ -47,13 +47,13 @@ describe('AsyncAPI diff — whole operations', () => {
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        type: nonBreaking,
+        type: unclassified,
         afterDeclarationPaths: [['operations', 'op2']],
       }),
     ]))
   })
 
-  it('classifies adding a receive operation as non-breaking', async () => {
+  it('classifies adding a receive operation as unclassified', async () => {
     const before = {
       asyncapi: '3.0.0',
       info: { title: 'Test', version: '1.0.0' },
@@ -79,7 +79,7 @@ describe('AsyncAPI diff — whole operations', () => {
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        type: nonBreaking,
+        type: unclassified,
         afterDeclarationPaths: [['operations', 'op2']],
       }),
     ]))
