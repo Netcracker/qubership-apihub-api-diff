@@ -274,11 +274,7 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
       mapping: firstReferenceKeyMapping,
       '/*': {
         ...messageRules,
-        $: [
-          (ctx) => (ctx.scope === COMPARE_SCOPE_SEND ? nonBreaking : breaking),
-          (ctx) => (ctx.scope === COMPARE_SCOPE_SEND ? breaking : nonBreaking),
-          unclassified,
-        ],
+        $: [nonBreaking, breaking, unclassified],
         ignoreKeyDifference: true
       },
     },
