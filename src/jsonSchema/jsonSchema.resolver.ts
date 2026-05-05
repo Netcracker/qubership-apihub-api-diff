@@ -3,12 +3,14 @@ import {
   addDiffObjectToContainer,
   ANY_COMBINER_INDEX,
   ANY_COMBINER_PATH,
+  breaking,
   createChildContext,
   diffFactory,
   getOrCreateChildDiffAdd,
   getOrCreateChildDiffRemove,
   nestedCompare,
   createDiffEntry,
+  risky,
 } from '../core'
 import type { CompareResolver, Diff, DiffEntry } from '../types'
 import { isArray, isObject, onlyExistedArrayIndexes } from '../utils'
@@ -81,10 +83,15 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
     }
   }
 
+  const dangerousSeverityCount = (diffs: Diff[]) =>
+    diffs.filter(d => d.type === breaking || d.type === risky).length
+
   comparedItems.sort((a, b) => {
-    const mainDiff = a.diffs.length - b.diffs.length
+    const dangerousSeverityDiff = dangerousSeverityCount(a.diffs) - dangerousSeverityCount(b.diffs)
+    if (dangerousSeverityDiff !== 0) { return dangerousSeverityDiff }
+    const totalDiff = a.diffs.length - b.diffs.length
     //reduce randomization when same diffs count
-    return mainDiff !== 0 ? mainDiff : Math.abs(a.before - a.after) - Math.abs(b.before - b.after)
+    return totalDiff !== 0 ? totalDiff : Math.abs(a.before - a.after) - Math.abs(b.before - b.after)
   })
 
   for (const compared of comparedItems) {
