@@ -16,6 +16,11 @@ import type { CompareResolver, Diff, DiffEntry } from '../types'
 import { isArray, isObject, onlyExistedArrayIndexes } from '../utils'
 import { copyDescriptors } from '@netcracker/qubership-apihub-api-unifier'
 
+const haveCommonRef = (a: string[], b: string[]): boolean => {
+  const bSet = new Set(b)
+  return a.some(ref => bSet.has(ref))
+}
+
 export const combinersCompareResolver: CompareResolver = (ctx) => {
   const { before, after, options, scope } = ctx
   const { metaKey } = options
@@ -40,8 +45,44 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
 
   const rules = getNodeRules(ctx.rules, ANY_COMBINER_INDEX, ANY_COMBINER_PATH, before.value) || {}
 
+  // First pass: definitively match combiner options that share the same $ref origin.
+  // The assumption is that in real world cases if schema names are the same, then
+  // this is what we want to compare.
+  const { inlineRefsFlag } = options
+  if (inlineRefsFlag) {
+    for (const i of beforeArrayIndexes) {
+      if (!beforeMatchedArrayIndexes.has(i)) { continue }
+      const beforeItem = before.value[i]
+      if (!isObject(beforeItem)) { continue }
+      const beforeRefs = beforeItem[inlineRefsFlag] as string[] | undefined
+      if (!beforeRefs?.length) { continue }
+
+      for (const j of afterArrayIndexes) {
+        if (!afterMatchedArrayIndexes.has(j)) { continue }
+        const afterItem = after.value[j]
+        if (!isObject(afterItem)) { continue }
+        const afterRefs = afterItem[inlineRefsFlag] as string[] | undefined
+        if (!afterRefs?.length) { continue }
+
+        if (haveCommonRef(beforeRefs, afterRefs)) {
+          beforeMatchedArrayIndexes.delete(i)
+          afterMatchedArrayIndexes.delete(j)
+          const { diffs: localDiffs, merged } = nestedCompare(beforeItem, afterItem, {
+            ...options,
+            rules,
+            compareScope: ctx.scope,
+          })
+          mergedCombinerJsoArray[j] = merged
+          localDiffs.forEach(diff => diffs.add(diff))
+          break
+        }
+      }
+    }
+  }
+
   // compare all combinations, find min diffs
   for (const i of beforeArrayIndexes) {
+    if (!beforeMatchedArrayIndexes.has(i)) { continue }
     const beforeCombinerJso = before.value[i]
     for (const j of afterArrayIndexes) {
       if (!afterMatchedArrayIndexes.has(j)) { continue }
