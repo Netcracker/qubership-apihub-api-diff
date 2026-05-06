@@ -37,8 +37,8 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
   // match combiners
   const beforeArrayIndexes = onlyExistedArrayIndexes(before.value)
   const afterArrayIndexes = onlyExistedArrayIndexes(after.value)
-  const beforeMatchedArrayIndexes = new Set<number>(beforeArrayIndexes)
-  const afterMatchedArrayIndexes = new Set<number>(afterArrayIndexes)
+  const beforeUnmatchedIndexes = new Set<number>(beforeArrayIndexes)
+  const afterUnmatchedIndexes = new Set<number>(afterArrayIndexes)
   const comparedItems = []
   const mergedCombinerJsoArray: unknown[] = []
   const diffs: Set<Diff> = new Set()
@@ -65,22 +65,22 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
   const { inlineRefsFlag } = options
   if (inlineRefsFlag) {
     for (const i of beforeArrayIndexes) {
-      if (!beforeMatchedArrayIndexes.has(i)) { continue }
+      if (!beforeUnmatchedIndexes.has(i)) { continue }
       const beforeItem = before.value[i]
       if (!isObject(beforeItem)) { continue }
       const beforeRefs = beforeItem[inlineRefsFlag] as string[] | undefined
       if (!beforeRefs?.length) { continue }
 
       for (const j of afterArrayIndexes) {
-        if (!afterMatchedArrayIndexes.has(j)) { continue }
+        if (!afterUnmatchedIndexes.has(j)) { continue }
         const afterItem = after.value[j]
         if (!isObject(afterItem)) { continue }
         const afterRefs = afterItem[inlineRefsFlag] as string[] | undefined
         if (!afterRefs?.length) { continue }
 
         if (haveCommonRef(beforeRefs, afterRefs)) {
-          beforeMatchedArrayIndexes.delete(i)
-          afterMatchedArrayIndexes.delete(j)
+          beforeUnmatchedIndexes.delete(i)
+          afterUnmatchedIndexes.delete(j)
           const { diffs: localDiffs, merged } = compareCombinerItems(beforeItem, afterItem)
           mergedCombinerJsoArray[j] = merged
           localDiffs.forEach(diff => diffs.add(diff))
@@ -92,17 +92,17 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
 
   // compare all combinations, find min diffs
   for (const i of beforeArrayIndexes) {
-    if (!beforeMatchedArrayIndexes.has(i)) { continue }
+    if (!beforeUnmatchedIndexes.has(i)) { continue }
     const beforeCombinerJso = before.value[i]
     for (const j of afterArrayIndexes) {
-      if (!afterMatchedArrayIndexes.has(j)) { continue }
+      if (!afterUnmatchedIndexes.has(j)) { continue }
       const afterCombinerJso = after.value[j]
 
       const { diffs: localDiffs, merged } = compareCombinerItems(beforeCombinerJso, afterCombinerJso)
 
       if (!localDiffs.length) {
-        afterMatchedArrayIndexes.delete(j)
-        beforeMatchedArrayIndexes.delete(i)
+        afterUnmatchedIndexes.delete(j)
+        beforeUnmatchedIndexes.delete(i)
         mergedCombinerJsoArray[j] = merged
         break
       }
@@ -127,14 +127,14 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
   })
 
   for (const compared of comparedItems) {
-    if (!afterMatchedArrayIndexes.has(compared.after) || !beforeMatchedArrayIndexes.has(compared.before)) { continue }
-    afterMatchedArrayIndexes.delete(compared.after)
-    beforeMatchedArrayIndexes.delete(compared.before)
+    if (!afterUnmatchedIndexes.has(compared.after) || !beforeUnmatchedIndexes.has(compared.before)) { continue }
+    afterUnmatchedIndexes.delete(compared.after)
+    beforeUnmatchedIndexes.delete(compared.before)
     mergedCombinerJsoArray[compared.after] = compared.merged
     compared.diffs.forEach(diff => diffs.add(diff))
   }
   const arrayMetaDiffEntries: DiffEntry<Diff>[] = []
-  for (const j of afterMatchedArrayIndexes.values()) {
+  for (const j of afterUnmatchedIndexes.values()) {
     mergedCombinerJsoArray[j] = after.value[j]
     const childCtx = createChildContext(ctx, j, undefined, j)
     const diffEntry = getOrCreateChildDiffAdd(options.diffUniquenessCache, childCtx)
@@ -153,7 +153,7 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
     }
   }
 
-  for (const i of beforeMatchedArrayIndexes.values()) {
+  for (const i of beforeUnmatchedIndexes.values()) {
     const safeInsertIndex = freeIndexesArray.shift()!/*length enough*/
     mergedCombinerJsoArray[safeInsertIndex] = before.value[i]
     const childCtx = createChildContext(ctx, safeInsertIndex, i, undefined)
