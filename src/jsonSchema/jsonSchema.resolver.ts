@@ -45,6 +45,20 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
 
   const rules = getNodeRules(ctx.rules, ANY_COMBINER_INDEX, ANY_COMBINER_PATH, before.value) || {}
 
+  const compareCombinerItems = (beforeItem: unknown, afterItem: unknown) =>
+    ctx.options.mergedJsoCache.cacheEvaluationResultByFootprint(
+      [beforeItem, afterItem, scope],
+      ([b, a]) => nestedCompare(b, a, { ...options, rules, compareScope: ctx.scope }),
+      { diffs: [], ownerDiffEntry: undefined, merged: {} },
+      (result, guard) => {
+        guard.diffs.push(...result.diffs)
+        if (isObject(guard.merged) && isObject(result.merged))
+          guard.merged = copyDescriptors(guard.merged, result.merged)
+        else
+          guard.merged = result.merged
+        return guard
+      })
+
   // First pass: definitively match combiner options that share the same $ref origin.
   // The assumption is that in real world cases if schema names are the same, then
   // this is what we want to compare.
@@ -67,11 +81,7 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
         if (haveCommonRef(beforeRefs, afterRefs)) {
           beforeMatchedArrayIndexes.delete(i)
           afterMatchedArrayIndexes.delete(j)
-          const { diffs: localDiffs, merged } = nestedCompare(beforeItem, afterItem, {
-            ...options,
-            rules,
-            compareScope: ctx.scope,
-          })
+          const { diffs: localDiffs, merged } = compareCombinerItems(beforeItem, afterItem)
           mergedCombinerJsoArray[j] = merged
           localDiffs.forEach(diff => diffs.add(diff))
           break
@@ -88,26 +98,7 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
       if (!afterMatchedArrayIndexes.has(j)) { continue }
       const afterCombinerJso = after.value[j]
 
-      const {
-        diffs: localDiffs,
-        merged,
-      } = ctx.options.mergedJsoCache.cacheEvaluationResultByFootprint(
-        [beforeCombinerJso, afterCombinerJso, scope],
-        ([beforeCombinerJso, afterCombinerJso]) =>
-          nestedCompare(beforeCombinerJso, afterCombinerJso, {
-            ...options,
-            rules,
-            compareScope: ctx.scope,
-          }),
-        { diffs: [], ownerDiffEntry: undefined, merged: {} },
-        (result, guard) => {
-          guard.diffs.push(...result.diffs)
-          if (isObject(guard.merged) && isObject(result.merged))
-            guard.merged = copyDescriptors(guard.merged, result.merged)
-          else
-            guard.merged = result.merged
-          return guard
-        })
+      const { diffs: localDiffs, merged } = compareCombinerItems(beforeCombinerJso, afterCombinerJso)
 
       if (!localDiffs.length) {
         afterMatchedArrayIndexes.delete(j)
