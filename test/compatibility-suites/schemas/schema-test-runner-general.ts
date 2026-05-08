@@ -450,6 +450,210 @@ export function runGeneralSchemaTests(
         ], skipScopesRoot))
       })
 
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'change-from-exclusive-minimum-to-inclusive-minimum',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.remove,
+              beforeDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
+              type: nonBreaking,
+            }),
+            expect.objectContaining({
+              action: DiffAction.add,
+              afterDeclarationPaths: [[...commonPath, 'minimum']],
+              type: expectedType(nonBreaking, breaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'change-from-inclusive-minimum-to-exclusive-minimum',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.remove,
+              beforeDeclarationPaths: [[...commonPath, 'minimum']],
+              type: nonBreaking,
+            }),
+            expect.objectContaining({
+              action: DiffAction.add,
+              afterDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
+              type: expectedType(breaking, nonBreaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'add-exclusive-minimum',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.add,
+              afterDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
+              type: expectedType(breaking, nonBreaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'remove-exclusive-minimum',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.remove,
+              beforeDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
+              type: expectedType(nonBreaking, breaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'increase-exclusive-minimum-value',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.replace,
+              beforeDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
+              afterDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
+              type: expectedType(breaking, nonBreaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'decrease-exclusive-minimum-value',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.replace,
+              beforeDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
+              afterDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
+              type: expectedType(nonBreaking, breaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'change-from-exclusive-maximum-to-inclusive-maximum',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.remove,
+              beforeDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
+              type: nonBreaking,
+            }),
+            expect.objectContaining({
+              action: DiffAction.add,
+              afterDeclarationPaths: [[...commonPath, 'maximum']],
+              type: expectedType(nonBreaking, breaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'change-from-inclusive-maximum-to-exclusive-maximum',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.remove,
+              beforeDeclarationPaths: [[...commonPath, 'maximum']],
+              type: nonBreaking,
+            }),
+            expect.objectContaining({
+              action: DiffAction.add,
+              afterDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
+              type: expectedType(breaking, nonBreaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'add-exclusive-maximum',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.add,
+              afterDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
+              type: expectedType(breaking, nonBreaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'remove-exclusive-maximum',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.remove,
+              beforeDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
+              type: expectedType(nonBreaking, breaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'increase-exclusive-maximum-value',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.replace,
+              beforeDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
+              afterDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
+              type: expectedType(nonBreaking, breaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'decrease-exclusive-maximum-value',
+        suiteId,
+        async ({ diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expect.objectContaining({
+              action: DiffAction.replace,
+              beforeDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
+              afterDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
+              type: expectedType(breaking, nonBreaking),
+            }),
+          ], skipScopesRoot))
+        },
+      )
+
       test('add-multiple-of-for-number-property', async () => {
         const result = await compareFiles(suiteId, currentTestId(), suiteType)
         expect(result).toEqual(diffsMatcher([

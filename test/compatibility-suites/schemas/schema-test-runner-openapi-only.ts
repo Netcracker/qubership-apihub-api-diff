@@ -398,6 +398,28 @@ export function runOpenApiOnlySchemaTests(
           }),
         ]))
       })
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'replace-boolean-exclusive-minimum-to-numeric',
+        suiteId,
+        async ({ beforeVersion, afterVersion, diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expectSpecVersionChange(suiteType, beforeVersion, afterVersion),
+          ]))
+        },
+      )
+
+      test.caseForSpecVersionPairs(
+        suiteType,
+        'replace-boolean-exclusive-maximum-to-numeric',
+        suiteId,
+        async ({ beforeVersion, afterVersion, diffs }) => {
+          expect(diffs).toEqual(diffsMatcher([
+            expectSpecVersionChange(suiteType, beforeVersion, afterVersion),
+          ]))
+        },
+      )
     })
 
     describe('Reference Sibling Properties', () => {

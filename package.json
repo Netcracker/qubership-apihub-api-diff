@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@asyncapi/parser": "3.4.0",
-    "@netcracker/qubership-apihub-compatibility-suites": "2.5.0",
+    "@netcracker/qubership-apihub-compatibility-suites": "feature-exclusive-min-max",
     "@netcracker/qubership-apihub-graphapi": "1.0.9",
     "@netcracker/qubership-apihub-npm-gitflow": "3.1.0",
     "@types/jest": "30.0.0",
