@@ -41,6 +41,7 @@ import { ClassifyRule, CompareRules, DescriptionTemplates } from '../types'
 import { JsonSchemaRulesOptions, NativeAnySchemaFactory } from './jsonSchema.types'
 import { normalize, SPEC_TYPE_JSON_SCHEMA_04 } from '@netcracker/qubership-apihub-api-unifier'
 import { isBoolean, isNumber, isString } from '../utils'
+import { createEffectiveLowerBoundClassifier, createEffectiveUpperBoundClassifier } from './jsonSchema.exclusive-bounds'
 
 const simpleRule = (classify: ClassifyRule, descriptionTemplate: DescriptionTemplates) => ({
   $: classify,
@@ -85,15 +86,29 @@ export const jsonSchemaRules = ({
     '/type': simpleRule(typeClassifier, resolveSchemaDescriptionTemplates('type')),
 
     '/multipleOf': simpleRule(multipleOfClassifier, resolveSchemaDescriptionTemplates('multipleOf validator')),
-    '/maximum': simpleRule(maximumClassifier, resolveSchemaDescriptionTemplates('maximum validator')),
-    '/minimum': simpleRule(minimumClassifier, resolveSchemaDescriptionTemplates('minimum validator')),
-    ...version === SPEC_TYPE_JSON_SCHEMA_04 ? {
+    ...(version === SPEC_TYPE_JSON_SCHEMA_04 ? {
+      '/maximum': simpleRule(maximumClassifier, resolveSchemaDescriptionTemplates('maximum validator')),
+      '/minimum': simpleRule(minimumClassifier, resolveSchemaDescriptionTemplates('minimum validator')),
       '/exclusiveMaximum': simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')),
       '/exclusiveMinimum': simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')),
     } : {
-      '/exclusiveMaximum': simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')),
-      '/exclusiveMinimum': simpleRule(minClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')),
-    },
+      '/maximum': {
+        $: createEffectiveUpperBoundClassifier('maximum'),
+        description: diffDescription(resolveSchemaDescriptionTemplates('maximum validator')),
+      },
+      '/minimum': {
+        $: createEffectiveLowerBoundClassifier('minimum'),
+        description: diffDescription(resolveSchemaDescriptionTemplates('minimum validator')),
+      },
+      '/exclusiveMaximum': {
+        $: createEffectiveUpperBoundClassifier('exclusiveMaximum'),
+        description: diffDescription(resolveSchemaDescriptionTemplates('exclusiveMaximum validator')),
+      },
+      '/exclusiveMinimum': {
+        $: createEffectiveLowerBoundClassifier('exclusiveMinimum'),
+        description: diffDescription(resolveSchemaDescriptionTemplates('exclusiveMinimum validator')),
+      },
+    }),
     '/maxLength': simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxLength validator')),
     '/minLength': simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minLength validator')),
     '/pattern': simpleRule([breaking, nonBreaking, breaking, nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('pattern validator')),
