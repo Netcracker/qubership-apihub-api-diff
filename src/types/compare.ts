@@ -17,6 +17,15 @@ interface DiffBase<T> {
   type: T
   scope: CompareScope
   description?: string
+  classifyRuleId?: string
+  /**
+   * The effective backward-compatibility scope at the point where the diff was
+   * created, as computed by `apiCompatibilityScopeFunction`. Captures the BWC
+   * scope so that post-processing classifiers (e.g. matching rules) can
+   * replicate the `reclassifyBreakingToRisky` logic without requiring access to
+   * the original compare context.
+   */
+  effectiveBwcScope?: ApiCompatibilityKind
 }
 
 export interface DiffAdd<T = DiffType> extends DiffBase<T> {
@@ -69,6 +78,12 @@ export interface DiffRename<T = DiffType> extends DiffBase<T> {
 }
 
 export type Diff<T = DiffType> = DiffAdd<T> | DiffRemove<T> | DiffReplace<T> | DiffRename<T>
+
+export type DiffClassifierResult = {
+  type?: DiffType
+}
+
+export type DiffClassifier = (diff: Diff) => DiffClassifierResult | undefined
 
 export interface CompareResult {
   diffs: Diff[]
@@ -123,6 +138,14 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
    * Set automatically by the AsyncAPI engine when `firstReferenceKeyProperty` is user-provided.
    */
   retainFirstReferenceKeyProperty?: boolean
+
+  /**
+   * Optional function to post-process diffs after classification.
+   * Called for each diff after all diffs are collected.
+   * Return a non-undefined value to override the diff's `type`.
+   * Return `undefined` to leave the diff unchanged.
+   */
+  diffClassifier?: DiffClassifier
 }
 
 export type DiffCallback = (diff: Diff/*, ctx: CompareContext*/) => void

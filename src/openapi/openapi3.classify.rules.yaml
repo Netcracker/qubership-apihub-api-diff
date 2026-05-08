@@ -1,0 +1,963 @@
+# OOB matching rules for REST (OpenAPI 3.x) classify rule IDs.
+#
+# The classifyRuleId already encodes the subset/not-subset condition, so a
+# single rule per ruleId is sufficient — no action or scope disambiguation.
+#
+# Rule ordering convention: rules are applied in direct array order; the LAST
+# matching rule wins. Place more-specific rules after the general catch-all.
+#
+# breaking → risky reclassification (effectiveBwcScope: NOT_BACKWARD_COMPATIBLE)
+# is handled for all ruleIds by general.classify.rules.yaml via the wildcard '*'.
+
+- match:
+    classifyRuleId: rest.operation.security.after-security-requirements-are-subset-of-before
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.operation.security.after-security-requirements-are-not-a-subset-of-before
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.operation.security.item.after-security-requirements-are-subset-of-before
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.operation.security.item.after-security-requirements-are-not-a-subset-of-before
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# Parameter Object (add / remove the whole parameter)
+# ---------------------------------------------------------------------------
+# Parameters are always in request context; no scope overrides needed.
+
+- match:
+    classifyRuleId: rest.parameter.deprecated
+  set:
+    type: deprecated
+
+- match:
+    classifyRuleId: rest.parameter.description
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.parameter.example
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.parameter.example.item
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.parameter.after-ignored-header
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.parameter.after-required-no-default
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.after-optional-or-has-default
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.before-ignored-header
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.parameter.before-not-ignored-header
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.replace
+  set:
+    type: unclassified
+
+# ---------------------------------------------------------------------------
+# Parameter Object > explode property
+# ---------------------------------------------------------------------------
+# annotation when the explode value matches the style default; breaking otherwise.
+# Replace is always breaking. No scope overrides (request context only).
+
+- match:
+    classifyRuleId: rest.parameter.explode.after-default-for-style
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.parameter.explode.after-non-default-for-style
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.explode.before-default-for-style
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.parameter.explode.before-non-default-for-style
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.explode.replace
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# Parameter Object > allowReserved property
+# ---------------------------------------------------------------------------
+# allowReserved only applies to query parameters; path/cookie/header → unclassified.
+# For add and remove the same ruleId is used; the YAML action filter distinguishes
+# the outcome (add→non-breaking, remove→breaking).
+
+- match:
+    classifyRuleId: rest.parameter.allow-reserved.after-in-non-query
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.parameter.allow-reserved.after-in-query
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.allow-reserved.after-in-query
+    action: remove
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.allow-reserved.replace.after-true
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.allow-reserved.replace.after-false
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# Parameter Object > name property
+# ---------------------------------------------------------------------------
+
+- match:
+    classifyRuleId: rest.parameter.name.add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.name.remove
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.name.replace.before-path-param
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.parameter.name.replace.before-non-path-param
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# Parameter Object > required property
+# ---------------------------------------------------------------------------
+
+- match:
+    classifyRuleId: rest.parameter.required.add
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.required.remove
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.required.replace.after-has-schema-default
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.required.replace.after-true-no-schema-default
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameter.required.replace.after-false
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# Parameter Object > allowEmptyValue property
+# ---------------------------------------------------------------------------
+# Only applies to query parameters. Uses reverseClassifyRule(booleanClassifier):
+#   booleanClassifier = [breakingIfAfterTrue, nonBreaking, breakingIfAfterTrue]
+# After reversal: add/replace → nonBreaking when after=true, breaking when after≠true;
+#   remove → always breaking (reversed nonBreaking).
+# Non-query params always yield unclassified.
+
+- match:
+    classifyRuleId: rest.parameter.allow-empty-value.after-not-query
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.parameter.allow-empty-value.after-true
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameter.allow-empty-value.after-not-true
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# Parameters array node (/parameters)
+# ---------------------------------------------------------------------------
+# Covers the parameters array itself, not its items.
+# Remove is non-breaking only when all entries were ignored header params.
+
+- match:
+    classifyRuleId: rest.parameters-array.add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameters-array.remove.before-all-ignored-headers
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.parameters-array.remove.before-has-non-ignored
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.parameters-array.replace
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# Root-level security array
+# ---------------------------------------------------------------------------
+
+- match:
+    classifyRuleId: rest.global-security.add.after-empty
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.add.after-non-empty
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.global-security.remove
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.replace.after-subset-or-empty
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.replace.after-not-subset
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# Root-level security array items
+# ---------------------------------------------------------------------------
+# Add: breaking when the before-parent OR-list was empty (first requirement introduced).
+# Remove: breaking when the after-parent OR-list is empty (last requirement removed).
+
+- match:
+    classifyRuleId: rest.global-security.item.before-non-empty
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.item.before-empty
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.global-security.item.after-non-empty
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.item.after-empty
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.global-security.item.replace.after-subset-or-empty
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.global-security.item.replace.after-not-subset
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# Path item (path rename / change)
+# ---------------------------------------------------------------------------
+# Replace yields annotation when the unified (server-prefixed) path is unchanged
+# — i.e. only path parameter placeholder names changed, not the effective path.
+
+- match:
+    classifyRuleId: rest.path.add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.path.remove
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.path.replace.same-effective-path
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.path.replace.different-effective-path
+  set:
+    type: breaking
+
+# Spec extensions (x-*) inside /paths share the /* wildcard with path items and
+# therefore inherit the pathChangeClassifyRuleIdRule. Their engine type is
+# unclassified; this ruleId conveys that to the OOB classifier.
+- match:
+    classifyRuleId: rest.path.not-applicable
+  set:
+    type: unclassified
+# ============================================================
+# Parameter Object > in property  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.parameter.in
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.parameter.in
+    action: add
+  set:
+    type: non-breaking
+# ============================================================
+# Parameter Object > style property  [allBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.parameter.style
+  set:
+    type: breaking
+# ============================================================
+# Parameter Object > schema node  [allBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.parameter.schema
+  set:
+    type: breaking
+# ============================================================
+# Headers Object  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.headers
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.headers
+    action: add
+  set:
+    type: non-breaking
+# ============================================================
+# Header Object (individual)  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.header
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.header
+    action: add
+  set:
+    type: non-breaking
+# ============================================================
+# Header Object > deprecated property  [allDeprecated]
+# ============================================================
+- match:
+    classifyRuleId: rest.header.deprecated
+  set:
+    type: deprecated
+
+- match:
+    classifyRuleId: rest.header.description
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.header.allow-empty-value
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.header.allow-reserved
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.header.example
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.header.example.item
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.header.explode
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.header.style
+  set:
+    type: unclassified
+
+# ============================================================
+# Header Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
+# ============================================================
+- match:
+    classifyRuleId: rest.header.required.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.header.required.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.header.required.replace.after-true
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.header.required.replace.after-not-true
+  set:
+    type: non-breaking
+# ============================================================
+# Header Object > schema node  [allBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.header.schema
+  set:
+    type: breaking
+# ============================================================
+# Encoding Object  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.encoding
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.encoding
+    action: remove
+  set:
+    type: non-breaking
+# ============================================================
+# Encoding sub-properties  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.encoding.allow-reserved
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.encoding.allow-reserved
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.encoding.content-type
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.encoding.content-type
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.encoding.explode
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.encoding.explode
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.encoding.style
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.encoding.style
+    action: add
+  set:
+    type: non-breaking
+# ============================================================
+# Examples map (`examples` object root `$`)  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.examples.map
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.examples.item
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.examples.description
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.examples.external-value
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.examples.summary
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.examples.value
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.examples.value.item
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.examples.deep
+  set:
+    type: annotation
+
+# ============================================================
+# External Documentation Object  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.external-docs
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.external-docs.field
+  set:
+    type: annotation
+
+# ============================================================
+# Content Object  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.content
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.content
+    action: add
+  set:
+    type: non-breaking
+# ============================================================
+# Media Type Object  [nonBreaking, breaking, nonBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.media-type
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.media-type
+    action: remove
+  set:
+    type: breaking
+# ============================================================
+# Media Type Object > schema node  [allBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.media-type.schema
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.media-type.example
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.media-type.example.item
+  set:
+    type: annotation
+
+# ============================================================
+# Request Body Object  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.request-body
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.request-body
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.request-body.description
+  set:
+    type: annotation
+
+# ============================================================
+# Request Body Object > required property  [breaking, nonBreaking, breakingIfAfterTrue]
+# ============================================================
+- match:
+    classifyRuleId: rest.request-body.required.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.request-body.required.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.request-body.required.replace.after-true
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.request-body.required.replace.after-not-true
+  set:
+    type: non-breaking
+# ============================================================
+# Response Object  [nonBreaking, breaking, nonBreakingIf(same-code)]
+# ============================================================
+- match:
+    classifyRuleId: rest.response.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.response.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.response.replace.same-code
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.response.replace.different-code
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: rest.response.description
+  set:
+    type: annotation
+
+# ============================================================
+# Operation Object  [nonBreaking, breaking, unclassified]
+# ============================================================
+- match:
+    classifyRuleId: rest.operation.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: rest.operation.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.operation.replace
+  set:
+    type: unclassified
+
+- match:
+    classifyRuleId: rest.operation.deprecated
+  set:
+    type: deprecated
+
+# ============================================================
+# Operation Object > responses map  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.operation.responses
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.operation.responses
+    action: add
+  set:
+    type: non-breaking
+# ============================================================
+# Operation Object > security scope group  [allBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.operation.security.scope-group
+  set:
+    type: breaking
+# ============================================================
+# Operation Object > security scope string  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.operation.security.scope
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.operation.security.scope
+    action: remove
+  set:
+    type: non-breaking
+# ============================================================
+# OAuth Flow Object  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.oauth-flow
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.oauth-flow
+    action: remove
+  set:
+    type: non-breaking
+# ============================================================
+# OAuth Flows Object  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.oauth-flows
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.oauth-flows
+    action: remove
+  set:
+    type: non-breaking
+# ============================================================
+# Path Item Object > description / summary  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.path-item.description
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.path-item.summary
+  set:
+    type: annotation
+
+# ============================================================
+# Path Item Object > parameters array  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.path-item.parameters
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.path-item.parameters
+    action: add
+  set:
+    type: non-breaking
+# ============================================================
+# Components Object  [allNonBreaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.components
+  set:
+    type: non-breaking
+# ============================================================
+# Components sub-collections  [nonBreaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.components.parameters
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.parameters
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.components.request-bodies
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.request-bodies
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.components.responses
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.responses
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.components.schemas
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.schemas
+    action: add
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: rest.components.path-items
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.path-items
+    action: add
+  set:
+    type: non-breaking
+# ============================================================
+# Components > Security Schemes map  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.components.security-schemes
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.components.security-schemes
+    action: remove
+  set:
+    type: non-breaking
+# ============================================================
+# Security Scheme Object  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.security-scheme
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.security-scheme
+    action: remove
+  set:
+    type: non-breaking
+# ============================================================
+# Security Scheme sub-properties (in, name, scheme, type)  [breaking, nonBreaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: rest.security-scheme.property
+  set:
+    type: breaking
+- match:
+    classifyRuleId: rest.security-scheme.property
+    action: remove
+  set:
+    type: non-breaking
+# ============================================================
+# /paths object  [allUnclassified]
+# ============================================================
+- match:
+    classifyRuleId: rest.paths
+  set:
+    type: unclassified
+# ============================================================
+# /tags array  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.tags
+  set:
+    type: annotation
+
+# ============================================================
+# Document metadata (`/openapi`, `/info`, `/**` under `info`)  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.document.annotation
+  set:
+    type: annotation
+
+# ============================================================
+# Operation > tags array  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.operation.tags
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.operation.tags.item
+  set:
+    type: annotation
+
+# ============================================================
+# Servers  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.servers
+  set:
+    type: annotation
+
+# ============================================================
+# Security Scheme — annotation-only fields
+# ============================================================
+- match:
+    classifyRuleId: rest.security-scheme.bearer-format
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.security-scheme.description
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.security-scheme.open-id-connect-url
+  set:
+    type: annotation
+
+# ============================================================
+# Components > named schema definition wrapper  [allUnclassified]
+# ============================================================
+- match:
+    classifyRuleId: rest.components.schema-definition
+  set:
+    type: unclassified
+
+# ============================================================
+# Tag Object (items in `/tags` array)  [allAnnotation]
+# ============================================================
+- match:
+    classifyRuleId: rest.tag
+  set:
+    type: annotation
+
+- match:
+    classifyRuleId: rest.tag.field
+  set:
+    type: annotation

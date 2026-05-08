@@ -3,6 +3,7 @@ module.exports = {
   testTimeout: 100000,
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
+    '^.+\\.ya?ml$': '<rootDir>/test/transforms/yaml-transform.cjs',
   },
   transformIgnorePatterns: [
     '<rootDir>/node_modules/',

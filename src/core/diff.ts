@@ -22,12 +22,16 @@ export const NEVER_KEY = Symbol('never-key')
 
 export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareContext): D => {
   const classifierRule = ctx.rules?.$ ?? {}//todo. rules should be evaluated, like in json-crawl
-  const mutableDiffCopy = { ...diff, type: unclassified } as D
+  const index = diff.action === DiffAction.rename ? 2 : [DiffAction.add, DiffAction.remove, DiffAction.replace].indexOf(diff.action)
+
+  const classifyRuleIdDef = ctx.rules?.classifyRuleId
+  const classifyRuleIdElement = Array.isArray(classifyRuleIdDef) ? classifyRuleIdDef[index] : classifyRuleIdDef
+  const classifyRuleId = isFunc(classifyRuleIdElement) ? classifyRuleIdElement(ctx) : classifyRuleIdElement
+  const mutableDiffCopy = { ...diff, type: unclassified, classifyRuleId, effectiveBwcScope: ctx.apiCompatibilityScope } as D
 
   if (classifierRule) {
     const classifier = Array.isArray(classifierRule) ? classifierRule : allUnclassified
 
-    const index = diff.action === DiffAction.rename ? 2 : [DiffAction.add, DiffAction.remove, DiffAction.replace].indexOf(diff.action)
     const changeType = classifier[index]
 
     try {

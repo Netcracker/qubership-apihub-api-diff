@@ -1,4 +1,4 @@
-import { COMPARE_MODE_DEFAULT, COMPARE_SCOPE_ROOT, CompareEngine, CompareOptions, CompareResult } from './types'
+import { COMPARE_MODE_DEFAULT, COMPARE_SCOPE_ROOT, CompareEngine, CompareOptions, CompareResult, Diff, DiffClassifier, DiffType } from './types'
 import { compareJsonSchema } from './jsonSchema'
 import { compareGraphApi } from './graphapi'
 import { compareAsyncApi } from './asyncapi'
@@ -17,6 +17,10 @@ import {
   OpenApiSpecVersion,
 } from '@netcracker/qubership-apihub-api-unifier'
 import { DEFAULT_NORMALIZED_RESULT, DEFAULT_OPTION_DEFAULTS_META_KEY, DEFAULT_OPTION_ORIGINS_META_KEY, DIFF_META_KEY } from './core'
+import { matchingDiffClassifier, MatchingRule } from './core'
+import openapi3Rules from './openapi/openapi3.classify.rules.yaml'
+import jsonSchemaRules from './jsonSchema/jsonSchema.classify.rules.yaml'
+import generalRules from './core/general.classify.rules.yaml'
 
 function isOpenApiSpecVersion(specType: SpecType): specType is OpenApiSpecVersion {
   return specType === SPEC_TYPE_OPEN_API_30 || specType === SPEC_TYPE_OPEN_API_31
@@ -54,6 +58,17 @@ export const COMPARE_ENGINES_MAP: Record<SpecType, CompareEngine> = {
   [SPEC_TYPE_GRAPH_API]: compareGraphApi,
 }
 
+function buildOobClassifier(specType: SpecType): DiffClassifier | undefined {
+  if (isOpenApiSpecVersion(specType)) {
+    return matchingDiffClassifier([
+      ...(jsonSchemaRules as MatchingRule[]),
+      ...(openapi3Rules as MatchingRule[]),
+      ...(generalRules as MatchingRule[]),
+    ])
+  }
+  return undefined
+}
+
 // Wrapper function. Use it!
 export function apiDiff(before: unknown, after: unknown, options: CompareOptions = {}): CompareResult {
   const beforeSpec = resolveSpec(before)
@@ -61,8 +76,9 @@ export function apiDiff(before: unknown, after: unknown, options: CompareOptions
   if (!areSpecTypesCompatible(beforeSpec.type, afterSpec.type)) {
     throw new Error(`Specification cannot be different. Got ${beforeSpec.type} and ${afterSpec.type}`)
   }
-  const engine = COMPARE_ENGINES_MAP[selectEngineSpecType(beforeSpec.type, afterSpec.type)]
-  return engine(before, after, {
+  const engineSpecType = selectEngineSpecType(beforeSpec.type, afterSpec.type)
+  const engine = COMPARE_ENGINES_MAP[engineSpecType]
+  const result = engine(before, after, {
     mode: COMPARE_MODE_DEFAULT,
     normalizedResult: DEFAULT_NORMALIZED_RESULT,
     metaKey: DIFF_META_KEY,
@@ -75,4 +91,35 @@ export function apiDiff(before: unknown, after: unknown, options: CompareOptions
     createdMergedJso: new Set(),
     ...options,
   })
+
+  const oobClassifier = buildOobClassifier(engineSpecType)
+
+  if (oobClassifier || options.diffClassifier) {
+    for (const diff of result.diffs) {
+      const preType = diff.type
+
+      if (oobClassifier) {
+        const oobResult = oobClassifier(diff)
+        if (oobResult?.type !== undefined) {
+          //TODO this a a part of validation harness for transition period
+          // from classify rules to separate diff identification and classification
+          if (oobResult.type !== preType) {
+            throw new Error(
+              `OOB classifier type mismatch for classifyRuleId '${diff.classifyRuleId}': engine='${preType}', oob='${oobResult.type}'`,
+            )
+          }
+          diff.type = oobResult.type
+        }
+      }
+
+      if (options.diffClassifier) {
+        const userResult = options.diffClassifier(diff)
+        if (userResult?.type !== undefined) {
+          diff.type = userResult.type
+        }
+      }
+    }
+  }
+
+  return result
 }

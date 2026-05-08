@@ -6,6 +6,18 @@ import { DiffAction } from '../core'
 import { OriginLeafs } from '@netcracker/qubership-apihub-api-unifier'
 
 export type DiffTypeClassifier = (ctx: CompareContext) => DiffType
+export type ClassifyRuleIdResolver = (ctx: CompareContext) => string
+
+/** A single element in a RuleIdRule tuple — constant string, function resolver, or undefined (not yet assigned). */
+export type ClassifyRuleIdElement = string | ClassifyRuleIdResolver
+
+/**
+ * Specifies which ruleId to attach to a diff, mirroring the structure of ClassifyRule:
+ *  - string | RuleIdResolver  — same ruleId (or resolver) for all action types
+ *  - [add, remove, replace]   — different string/resolver per action, matching ClassifyRule tuple positions
+ *  - undefined                — ruleId not yet assigned for this rule
+ */
+export type ClassifyRuleIdRule = undefined | ClassifyRuleIdElement | [ClassifyRuleIdElement, ClassifyRuleIdElement, ClassifyRuleIdElement]
 
 export type ClassifyRule =
   [AddDiffType, RemoveDiffType, ReplaceDiffType] |
@@ -77,6 +89,7 @@ export type DynamicParams = Record<PropertyKey, PrimitiveType | undefined>
 export const FAILED_PARAMS_CALCULATION = {} as DynamicParams
 
 export const CLASSIFIER_RULE = '$'
+export const CLASSIFY_RULE_ID = 'classifyRuleId'
 export const COMPARE_RULE = 'compare'
 export const ADAPTER_RULE = 'adapter'
 export const MAPPING_RULE = 'mapping'
@@ -89,6 +102,7 @@ export const SYNTHETIC_DIFF = 'syntheticDiffs'
 
 export type CompareRule = {
   [CLASSIFIER_RULE]?: ClassifyRule                           // classifier for current node
+  [CLASSIFY_RULE_ID]?: ClassifyRuleIdRule                    // stable identifier for the rule
   [COMPARE_RULE]?: CompareResolver                           // compare handler for current node
   [ADAPTER_RULE]?: AdapterResolver[]                       // mutations (not deep)
   [MAPPING_RULE]?: MappingResolver<PropertyKey>              // key mapping rules

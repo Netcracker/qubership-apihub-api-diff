@@ -27,7 +27,15 @@ export type {
   DiffReplace,
   DiffRename,
   DiffMetaRecord,
+  DiffClassifier,
+  DiffClassifierResult,
+  ClassifyRuleIdResolver,
+  ClassifyRuleIdElement,
+  ClassifyRuleIdRule,
 } from './types'
+
+export { matchingDiffClassifier, WILDCARD_CLASSIFY_RULE_ID } from './core'
+export type { MatchingRule, MatchingRuleMatch } from './core'
 
 export {
   isDiffAdd,
@@ -42,3 +50,5 @@ export {
   onlyExistedArrayIndexes
 } from './utils'
 
+export { REST_CLASSIFY_RULE_IDS } from './openapi'
+export { JSON_SCHEMA_CLASSIFY_RULE_IDS } from './jsonSchema'

@@ -24,23 +24,37 @@ import {
 } from '../core'
 import {
   enumClassifyRule,
+  enumItemClassifyRuleIdRule,
   exclusiveClassifier,
+  exclusiveClassifyRuleIdRule,
+  exclusiveMaximumClassifyRuleIdRule,
   maxClassifier,
+  maxLengthClassifyRuleIdRule,
+  maxItemsClassifyRuleIdRule,
+  maxPropertiesClassifyRuleIdRule,
   maximumClassifier,
+  maximumClassifyRuleIdRule,
   minClassifier,
+  minClassifyRuleIdRule,
   minimumClassifier,
+  minimumClassifyRuleIdRule,
   multipleOfClassifier,
+  multipleOfClassifyRuleIdRule,
   propertyClassifyRule,
+  propertyClassifyRuleIdRule,
   requiredItemClassifyRule,
+  requiredItemClassifyRuleIdRule,
+  schemaTypeClassifyRuleIdRule,
   typeClassifier,
 } from './jsonSchema.classify'
 import { jsonSchemaAdapter } from './jsonSchema.adapter'
 import { jsonSchemaMappingResolver } from './jsonSchema.mapping'
 import { combinersCompareResolver } from './jsonSchema.resolver'
-import { ClassifyRule, CompareRules, DescriptionTemplates } from '../types'
+import { ClassifyRule, ClassifyRuleIdRule, CompareRules, DescriptionTemplates } from '../types'
 import { JsonSchemaRulesOptions, NativeAnySchemaFactory } from './jsonSchema.types'
 import { normalize, SPEC_TYPE_JSON_SCHEMA_04 } from '@netcracker/qubership-apihub-api-unifier'
 import { isBoolean, isNumber, isString } from '../utils'
+import { JSON_SCHEMA_CLASSIFY_RULE_IDS } from './jsonSchema.classify.ruleIds'
 
 const simpleRule = (classify: ClassifyRule, descriptionTemplate: DescriptionTemplates) => ({
   $: classify,
@@ -52,10 +66,12 @@ const arrayItemsRules = (value: unknown, rules: CompareRules): CompareRules => {
     '/*': {
       ...rules,
       $: allBreaking,
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ITEMS_ARRAY_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ITEMS_ARRAY_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ITEMS_ARRAY_ITEM_REPLACE],
     },
   } : {
     ...rules,
     $: allNonBreaking,
+    classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ITEMS_SCHEMA_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ITEMS_SCHEMA_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ITEMS_SCHEMA_REPLACE],
   }
 }
 
@@ -80,32 +96,52 @@ export const jsonSchemaRules = ({
     ],
     mapping: jsonSchemaMappingResolver,
     // todo: add descriptionParamCalculator only for jsonScheme
-    '/title': simpleRule(allAnnotation, resolveSchemaDescriptionTemplates('title')),
-    '/description': simpleRule(allAnnotation, resolveSchemaDescriptionTemplates('description')),
-    '/type': simpleRule(typeClassifier, resolveSchemaDescriptionTemplates('type')),
-
-    '/multipleOf': simpleRule(multipleOfClassifier, resolveSchemaDescriptionTemplates('multipleOf validator')),
-    '/maximum': simpleRule(maximumClassifier, resolveSchemaDescriptionTemplates('maximum validator')),
-    '/minimum': simpleRule(minimumClassifier, resolveSchemaDescriptionTemplates('minimum validator')),
-    ...version === SPEC_TYPE_JSON_SCHEMA_04 ? {
-      '/exclusiveMaximum': simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')),
-      '/exclusiveMinimum': simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')),
-    } : {
-      '/exclusiveMaximum': simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')),
-      '/exclusiveMinimum': simpleRule(minClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')),
+    '/title': { ...simpleRule(allAnnotation, resolveSchemaDescriptionTemplates('title')), classifyRuleId: JSON_SCHEMA_CLASSIFY_RULE_IDS.TITLE },
+    '/description': { ...simpleRule(allAnnotation, resolveSchemaDescriptionTemplates('description')), classifyRuleId: JSON_SCHEMA_CLASSIFY_RULE_IDS.DESCRIPTION },
+    '/type': {
+      ...simpleRule(typeClassifier, resolveSchemaDescriptionTemplates('type')),
+      classifyRuleId: schemaTypeClassifyRuleIdRule,
     },
-    '/maxLength': simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxLength validator')),
-    '/minLength': simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minLength validator')),
-    '/pattern': simpleRule([breaking, nonBreaking, breaking, nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('pattern validator')),
-    '/maxItems': simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxItems validator')),
-    '/minItems': simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minItems validator')),
-    '/uniqueItems': simpleRule(booleanClassifier, resolveSchemaDescriptionTemplates('uniqueItems validator')),
-    '/maxProperties': simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxProperties validator')),
-    '/minProperties': simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minProperties validator')),
 
-    '/readOnly': simpleRule([...booleanClassifier, ...allNonBreaking] as ClassifyRule, resolveSchemaDescriptionTemplates('readOnly status')),
-    '/writeOnly': simpleRule([...allNonBreaking, ...allNonBreaking] as ClassifyRule, resolveSchemaDescriptionTemplates('writeOnly status')),
-    '/deprecated': simpleRule(allDeprecated, resolveSchemaDescriptionTemplates('deprecated status')),
+    '/multipleOf': { ...simpleRule(multipleOfClassifier, resolveSchemaDescriptionTemplates('multipleOf validator')), classifyRuleId: multipleOfClassifyRuleIdRule },
+    '/maximum': { ...simpleRule(maximumClassifier, resolveSchemaDescriptionTemplates('maximum validator')), classifyRuleId: maximumClassifyRuleIdRule },
+    '/minimum': { ...simpleRule(minimumClassifier, resolveSchemaDescriptionTemplates('minimum validator')), classifyRuleId: minimumClassifyRuleIdRule },
+    ...version === SPEC_TYPE_JSON_SCHEMA_04 ? {
+      '/exclusiveMaximum': { ...simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')), classifyRuleId: exclusiveClassifyRuleIdRule },
+      '/exclusiveMinimum': { ...simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')), classifyRuleId: exclusiveClassifyRuleIdRule },
+    } : {
+      '/exclusiveMaximum': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')), classifyRuleId: exclusiveMaximumClassifyRuleIdRule },
+      '/exclusiveMinimum': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')), classifyRuleId: minClassifyRuleIdRule },
+    },
+    '/maxLength': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxLength validator')), classifyRuleId: maxLengthClassifyRuleIdRule },
+    '/minLength': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minLength validator')), classifyRuleId: minClassifyRuleIdRule },
+    '/pattern': { ...simpleRule([breaking, nonBreaking, breaking, nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('pattern validator')), classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_REPLACE] },
+    '/maxItems': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxItems validator')), classifyRuleId: maxItemsClassifyRuleIdRule },
+    '/minItems': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minItems validator')), classifyRuleId: minClassifyRuleIdRule },
+    '/uniqueItems': {
+      ...simpleRule(booleanClassifier, resolveSchemaDescriptionTemplates('uniqueItems validator')),
+      classifyRuleId: [
+        ({ after }) => after.value === true ? JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_AFTER_TRUE : JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_AFTER_NOT_TRUE,
+        JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_REMOVE,
+        ({ after }) => after.value === true ? JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_AFTER_TRUE : JSON_SCHEMA_CLASSIFY_RULE_IDS.UNIQUE_ITEMS_AFTER_NOT_TRUE,
+      ],
+    },
+    '/maxProperties': { ...simpleRule(maxClassifier, resolveSchemaDescriptionTemplates('maxProperties validator')), classifyRuleId: maxPropertiesClassifyRuleIdRule },
+    '/minProperties': { ...simpleRule(minClassifier, resolveSchemaDescriptionTemplates('minProperties validator')), classifyRuleId: minClassifyRuleIdRule },
+
+    '/readOnly': {
+      ...simpleRule([...booleanClassifier, ...allNonBreaking] as ClassifyRule, resolveSchemaDescriptionTemplates('readOnly status')),
+      classifyRuleId: [
+        ({ after }) => after.value === true ? JSON_SCHEMA_CLASSIFY_RULE_IDS.READ_ONLY_AFTER_TRUE : JSON_SCHEMA_CLASSIFY_RULE_IDS.READ_ONLY_AFTER_NOT_TRUE,
+        JSON_SCHEMA_CLASSIFY_RULE_IDS.READ_ONLY_REMOVE,
+        ({ after }) => after.value === true ? JSON_SCHEMA_CLASSIFY_RULE_IDS.READ_ONLY_AFTER_TRUE : JSON_SCHEMA_CLASSIFY_RULE_IDS.READ_ONLY_AFTER_NOT_TRUE,
+      ],
+    },
+    '/writeOnly': {
+      ...simpleRule([...allNonBreaking, ...allNonBreaking] as ClassifyRule, resolveSchemaDescriptionTemplates('writeOnly status')),
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.WRITE_ONLY_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.WRITE_ONLY_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.WRITE_ONLY_REPLACE],
+    },
+    '/deprecated': { ...simpleRule(allDeprecated, resolveSchemaDescriptionTemplates('deprecated status')), classifyRuleId: JSON_SCHEMA_CLASSIFY_RULE_IDS.DEPRECATED },
     '/required': {
       mapping: deepEqualsUniqueItemsArrayMappingResolver,
       '/*': ({ key, value }) => {
@@ -114,16 +150,18 @@ export const jsonSchemaRules = ({
         }
         return ({
           ...simpleRule(requiredItemClassifyRule, resolveSchemaDescriptionTemplates(`required status for property '${value}'`)),
+          classifyRuleId: requiredItemClassifyRuleIdRule,
           ignoreKeyDifference: true,
         })
       },
     },
 
-    '/format': simpleRule([breaking, nonBreaking, breaking, nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('format')),
-    '/default': simpleRule([nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('default value')),
+    '/format': { ...simpleRule([breaking, nonBreaking, breaking, nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('format')), classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.FORMAT_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.FORMAT_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.FORMAT_REPLACE] },
+    '/default': { ...simpleRule([nonBreaking, breaking, breaking], resolveSchemaDescriptionTemplates('default value')), classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFAULT_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFAULT_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFAULT_REPLACE] },
 
     '/enum': {
       $: [breaking, nonBreaking, breaking, nonBreaking, risky, nonBreaking],
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ENUM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ENUM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ENUM_REPLACE],
       mapping: deepEqualsUniqueItemsArrayMappingResolver,
       '/*': ({ key, value }) => {
         if (!isNumber(key)) {
@@ -131,6 +169,7 @@ export const jsonSchemaRules = ({
         }
         return ({
           $: enumClassifyRule,
+          classifyRuleId: enumItemClassifyRuleIdRule,
           description: diffDescription(resolveSchemaDescriptionTemplates(isString(value) || isBoolean(value) || isNumber(value) ? `possible value '${value.toString()}'` : 'some possible value')),
           ignoreKeyDifference: true,
         })
@@ -146,6 +185,7 @@ export const jsonSchemaRules = ({
         return ({
           ...rules,
           $: [nonBreaking, breaking, breaking],
+          classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ONE_OF_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ONE_OF_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ONE_OF_ITEM_REPLACE],
           description: diffDescription(resolveSchemaDescriptionTemplates(`oneOf[${key.toString()}]`)),
         })
       },
@@ -159,6 +199,7 @@ export const jsonSchemaRules = ({
         return ({
           ...rules,
           $: [nonBreaking, breaking, breaking],
+          classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ANY_OF_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ANY_OF_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ANY_OF_ITEM_REPLACE],
           description: diffDescription(resolveSchemaDescriptionTemplates(`anyOf[${key.toString()}]`)),
         })
       },
@@ -169,19 +210,22 @@ export const jsonSchemaRules = ({
       '/*': () => ({
         ...rules,
         $: allBreaking,
+        classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ALL_OF_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ALL_OF_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ALL_OF_ITEM_REPLACE],
       }),
     },
 
-    '/const': simpleRule([breaking, nonBreaking, breaking], resolveSchemaDescriptionTemplates('const')),
+    '/const': { ...simpleRule([breaking, nonBreaking, breaking], resolveSchemaDescriptionTemplates('const')), classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.CONST_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.CONST_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.CONST_REPLACE] },
     '/not': () => ({
       // TODO check
       ...transformCompareRules(rules, reverseClassifyRuleTransformer),
       $: allBreaking,
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.NOT_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.NOT_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.NOT_REPLACE],
     }),
     '/items': ({ value }) => arrayItemsRules(value, rules),
     '/additionalItems': () => ({
       ...rules,
       $: [nonBreaking, breaking, unclassified],
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_ITEMS_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_ITEMS_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_ITEMS_REPLACE],
     }),
     '/properties': {
       '/*': ({ key }) => {
@@ -191,6 +235,7 @@ export const jsonSchemaRules = ({
         return ({
           ...rules,
           $: propertyClassifyRule,
+          classifyRuleId: propertyClassifyRuleIdRule,
           description: diffDescription(resolveSchemaDescriptionTemplates(`property '${key.toString()}'`)),
         })
       },
@@ -198,32 +243,41 @@ export const jsonSchemaRules = ({
     '/additionalProperties': () => ({
       ...rules,
       $: additionalPropertiesClassifier,
+      classifyRuleId: additionalPropertiesClassifyRuleIdRule,
     }),
     '/patternProperties': {
       '/*': () => ({
         ...rules,
         $: [breaking, nonBreaking, unclassified],
+        classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_PROPERTIES_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_PROPERTIES_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.PATTERN_PROPERTIES_ITEM_REPLACE],
       }),
     },
-    '/propertyNames': () => ({ ...rules, $: onlyAddBreaking }),
+    '/propertyNames': () => ({
+      ...rules,
+      $: onlyAddBreaking,
+      classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.PROPERTY_NAMES_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.PROPERTY_NAMES_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.PROPERTY_NAMES_REPLACE],
+    }),
     // TODO "/dependencies": {},
     '/definitions': {
       '/*': () => ({
         ...rules,
         $: allNonBreaking,
+        classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFINITIONS_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFINITIONS_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFINITIONS_ITEM_REPLACE],
       }),
     },
     '/$defs': {
       '/*': () => ({
         ...rules,
         $: allNonBreaking,
+        classifyRuleId: [JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFS_ITEM_ADD, JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFS_ITEM_REMOVE, JSON_SCHEMA_CLASSIFY_RULE_IDS.DEFS_ITEM_REPLACE],
       }),
     },
 
     //TODO NOT BY SPECIFICATION. ONLY IN 06 VERSION. NC SPECIFIC EXCLUSION
     '/examples': {
       $: allAnnotation,
-      '/*': { $: allAnnotation },
+      classifyRuleId: JSON_SCHEMA_CLASSIFY_RULE_IDS.EXAMPLES,
+      '/*': { $: allAnnotation, classifyRuleId: JSON_SCHEMA_CLASSIFY_RULE_IDS.EXAMPLES_ITEM },
     },
 
     // unknown tags
@@ -234,6 +288,19 @@ export const jsonSchemaRules = ({
   }
   return rules
 }
+
+const additionalPropertiesClassifyRuleIdRule: ClassifyRuleIdRule = [
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_ADD,
+  JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_REMOVE,
+  ({ before, after }) => {
+    const beforeTruthy = !!before.value
+    const afterTruthy = !!after.value
+    if (beforeTruthy && afterTruthy) { return JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_REPLACE_BEFORE_TRUTHY_AFTER_TRUTHY }
+    if (beforeTruthy) { return JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_REPLACE_BEFORE_TRUTHY_AFTER_FALSY }
+    if (afterTruthy) { return JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_REPLACE_BEFORE_FALSY_AFTER_TRUTHY }
+    return JSON_SCHEMA_CLASSIFY_RULE_IDS.ADDITIONAL_PROPERTIES_REPLACE_BEFORE_FALSY_AFTER_FALSY
+  },
+]
 
 const additionalPropertiesClassifier: ClassifyRule = [
   breaking,

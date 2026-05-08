@@ -1,0 +1,1226 @@
+# OOB matching rules for JSON Schema classify rule IDs.
+#
+# Several ruleIds produce a different type in response schemas (scope: response)
+# because openApiSchemaRules applies reverseClassifyRuleTransformer for response
+# schemas. Scope values: 'root' (raw JSON Schema), 'request', 'response'.
+#
+# Rule ordering convention: rules are applied in direct array order; the LAST
+# matching rule wins. General catch-all rules come first; more-specific rules
+# (with scope/action filters) come after and override the general rule.
+#
+# breaking → risky reclassification (effectiveBwcScope: NOT_BACKWARD_COMPATIBLE)
+# is handled for all ruleIds by general.classify.rules.yaml via the wildcard '*'.
+
+# ---------------------------------------------------------------------------
+# type keyword
+# ---------------------------------------------------------------------------
+
+- match:
+    classifyRuleId: json-schema.type.add
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: json-schema.type.remove
+  set:
+    type: breaking
+
+# after-is-superset-of-before (e.g. integer → number):
+#   request / root → non-breaking   (general, lower priority)
+#   response       → breaking       (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.type.replace.after-is-superset-of-before
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.type.replace.after-is-superset-of-before
+    scope: response
+  set:
+    type: breaking
+
+# after-is-subset-of-before (e.g. number → integer):
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.type.replace.after-is-subset-of-before
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.type.replace.after-is-subset-of-before
+    scope: response
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: json-schema.type.replace.incompatible
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# required array items
+# ---------------------------------------------------------------------------
+
+# after-property-has-default:
+#   everything else                → non-breaking (general, lower priority)
+#   response + (remove or replace) → breaking     (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.required.item.after-property-has-default
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.required.item.after-property-has-default
+    action:
+      - remove
+      - replace
+    scope: response
+  set:
+    type: breaking
+
+# after-property-has-no-default (only occurs for add and replace actions):
+#   general (all)        → breaking     (lower priority)
+#   add + response       → non-breaking (higher priority)
+- match:
+    classifyRuleId: json-schema.required.item.after-property-has-no-default
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.required.item.after-property-has-no-default
+    action: add
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# properties items
+# ---------------------------------------------------------------------------
+
+# after-required-no-default (add):
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.property.after-required-no-default
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.property.after-required-no-default
+    scope: response
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: json-schema.property.after-optional-or-has-default
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: json-schema.property.before-required
+  set:
+    type: breaking
+
+# before-not-required (remove):
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.property.before-not-required
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.property.before-not-required
+    scope: response
+  set:
+    type: non-breaking
+
+- match:
+    classifyRuleId: json-schema.property
+  set:
+    type: unclassified
+
+# ---------------------------------------------------------------------------
+# additionalProperties
+# ---------------------------------------------------------------------------
+# add and remove are always breaking regardless of scope (position[3]=breaking,
+# position[4]=breaking in the 6-element classifier).
+# replace uses 4 ruleIds encoding the (before-truthy × after-truthy) combination:
+#   request checks !!before.value; response checks !!after.value.
+
+- match:
+    classifyRuleId: json-schema.additional-properties.add
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: json-schema.additional-properties.remove
+  set:
+    type: breaking
+
+# replace before-truthy-after-truthy: breaking (both)
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-truthy-after-truthy
+  set:
+    type: breaking
+
+# replace before-truthy-after-falsy: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-truthy-after-falsy
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-truthy-after-falsy
+    scope: response
+  set:
+    type: non-breaking
+
+# replace before-falsy-after-truthy: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-falsy-after-truthy
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-falsy-after-truthy
+    scope: response
+  set:
+    type: breaking
+
+# replace before-falsy-after-falsy: non-breaking (both)
+- match:
+    classifyRuleId: json-schema.additional-properties.replace.before-falsy-after-falsy
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# multipleOf keyword
+# ---------------------------------------------------------------------------
+# Add and remove flip for response (reverseClassifyRuleTransformer).
+# replace new-is-divisor-of-old also flips (request=non-breaking, response=breaking)
+# because position[5] of the 6-element classifier is explicit `breaking`.
+# replace new-is-not-divisor-of-old is breaking in both contexts (no scope override needed).
+
+# add: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.multiple-of.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.multiple-of.add
+    scope: response
+  set:
+    type: non-breaking
+
+# remove: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.multiple-of.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.multiple-of.remove
+    scope: response
+  set:
+    type: breaking
+
+# replace new-is-divisor-of-old: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.multiple-of.replace.new-is-divisor-of-old
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.multiple-of.replace.new-is-divisor-of-old
+    scope: response
+  set:
+    type: breaking
+
+# replace new-is-not-divisor-of-old: breaking (both)
+- match:
+    classifyRuleId: json-schema.multiple-of.replace.new-is-not-divisor-of-old
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# exclusive keyword (draft-04 boolean exclusiveMinimum / exclusiveMaximum)
+# ---------------------------------------------------------------------------
+# `true` activates the exclusive constraint; any other value is a no-op.
+# All flipping cases reverse for response schemas (reverseClassifyRuleTransformer).
+# `unclassified` is the same for request and response (not reversed).
+
+# add after-true: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.exclusive.add.after-true
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.exclusive.add.after-true
+    scope: response
+  set:
+    type: non-breaking
+
+# add after-not-true: unclassified (both)
+- match:
+    classifyRuleId: json-schema.exclusive.add.after-not-true
+  set:
+    type: unclassified
+
+# remove before-true: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.exclusive.remove.before-true
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.exclusive.remove.before-true
+    scope: response
+  set:
+    type: breaking
+
+# remove before-not-true: unclassified (both)
+- match:
+    classifyRuleId: json-schema.exclusive.remove.before-not-true
+  set:
+    type: unclassified
+
+# replace after-true: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.exclusive.replace.after-true
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.exclusive.replace.after-true
+    scope: response
+  set:
+    type: non-breaking
+
+# replace after-not-true: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.exclusive.replace.after-not-true
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.exclusive.replace.after-not-true
+    scope: response
+  set:
+    type: breaking
+
+# ---------------------------------------------------------------------------
+# minimum keyword (interacts with draft-04 exclusiveMinimum in the add case)
+# ---------------------------------------------------------------------------
+# All actions flip for response schemas (reverseClassifyRuleTransformer).
+
+# add — before exclusiveMinimum already covers the new minimum
+# (exclusiveMinimum exists and is >= new minimum value, so no new constraint):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.minimum.add.before-exclusive-min-covers
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.minimum.add.before-exclusive-min-covers
+    scope: response
+  set:
+    type: breaking
+
+# add — before exclusiveMinimum does not cover the new minimum
+# (missing, non-numeric, or less than the new minimum — a new tighter bound):
+#   non-response → breaking
+#   response     → non-breaking
+- match:
+    classifyRuleId: json-schema.minimum.add.before-exclusive-min-not-covers
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.minimum.add.before-exclusive-min-not-covers
+    scope: response
+  set:
+    type: non-breaking
+
+# remove (drops the lower-bound constraint):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.minimum.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.minimum.remove
+    scope: response
+  set:
+    type: breaking
+
+# replace constraint-relaxed (after <= before, both numeric — lower bound lowered):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.minimum.replace.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.minimum.replace.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+# replace constraint-tightened (after > before, or either value non-numeric):
+#   non-response → breaking
+#   response     → non-breaking
+- match:
+    classifyRuleId: json-schema.minimum.replace.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.minimum.replace.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# maximum keyword
+# ---------------------------------------------------------------------------
+- match:
+    classifyRuleId: json-schema.maximum.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.maximum.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: json-schema.maximum.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.maximum.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# maxLength keyword
+# ---------------------------------------------------------------------------
+- match:
+    classifyRuleId: json-schema.maxLength.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.maxLength.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: json-schema.maxLength.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.maxLength.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# maxItems keyword
+# ---------------------------------------------------------------------------
+- match:
+    classifyRuleId: json-schema.maxItems.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.maxItems.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: json-schema.maxItems.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.maxItems.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# maxProperties keyword
+# ---------------------------------------------------------------------------
+- match:
+    classifyRuleId: json-schema.maxProperties.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.maxProperties.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: json-schema.maxProperties.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.maxProperties.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# exclusiveMaximum keyword (non-draft-04)
+# ---------------------------------------------------------------------------
+- match:
+    classifyRuleId: json-schema.exclusiveMaximum.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.exclusiveMaximum.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+- match:
+    classifyRuleId: json-schema.exclusiveMaximum.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.exclusiveMaximum.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# min* keywords (minLength, minItems, minProperties, exclusiveMinimum non-draft-04)
+# ---------------------------------------------------------------------------
+# All three actions flip for response schemas (reverseClassifyRuleTransformer).
+
+# add (introduces a lower-bound constraint):
+#   non-response → breaking
+#   response     → non-breaking
+- match:
+    classifyRuleId: json-schema.min.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.min.add
+    scope: response
+  set:
+    type: non-breaking
+
+# remove (drops the lower-bound constraint):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.min.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.min.remove
+    scope: response
+  set:
+    type: breaking
+
+# replace constraint-relaxed (after <= before, both numeric — lower bound lowered):
+#   non-response → non-breaking
+#   response     → breaking
+- match:
+    classifyRuleId: json-schema.min.replace.constraint-relaxed
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.min.replace.constraint-relaxed
+    scope: response
+  set:
+    type: breaking
+
+# replace constraint-tightened (after > before, or either value non-numeric):
+#   non-response → breaking
+#   response     → non-breaking
+- match:
+    classifyRuleId: json-schema.min.replace.constraint-tightened
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.min.replace.constraint-tightened
+    scope: response
+  set:
+    type: non-breaking
+
+# ---------------------------------------------------------------------------
+# enum array items
+# ---------------------------------------------------------------------------
+
+# replace:
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.enum.item
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.enum.item
+    scope: response
+  set:
+    type: non-breaking
+
+# before-enum-non-empty (add):
+#   non-response → non-breaking (general, lower priority)
+#   response     → risky        (specific, higher priority)
+#   (risky from reverseClassifier — not from reclassifyBreakingToRisky)
+- match:
+    classifyRuleId: json-schema.enum.item.before-enum-non-empty
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.enum.item.before-enum-non-empty
+    scope: response
+  set:
+    type: risky
+
+# before-enum-empty (add):
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.enum.item.before-enum-empty
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.enum.item.before-enum-empty
+    scope: response
+  set:
+    type: non-breaking
+
+# after-enum-non-empty (remove):
+#   non-response → breaking     (general, lower priority)
+#   response     → non-breaking (specific, higher priority)
+- match:
+    classifyRuleId: json-schema.enum.item.after-enum-non-empty
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.enum.item.after-enum-non-empty
+    scope: response
+  set:
+    type: non-breaking
+
+# after-enum-empty (remove):
+#   non-response → non-breaking (general, lower priority)
+#   response     → risky        (specific, higher priority)
+#   (risky from reverseClassifier — not from reclassifyBreakingToRisky)
+- match:
+    classifyRuleId: json-schema.enum.item.after-enum-empty
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.enum.item.after-enum-empty
+    scope: response
+  set:
+    type: risky
+
+# ============================================================
+# title keyword (annotation — symmetric, no scope override)
+# ============================================================
+- match:
+    classifyRuleId: json-schema.title
+  set:
+    type: annotation
+
+# ============================================================
+# description keyword (annotation — symmetric, no scope override)
+# ============================================================
+- match:
+    classifyRuleId: json-schema.description
+  set:
+    type: annotation
+
+# ============================================================
+# examples keyword and per-item examples (annotation — symmetric, no scope override)
+# ============================================================
+- match:
+    classifyRuleId: json-schema.examples
+  set:
+    type: annotation
+- match:
+    classifyRuleId: json-schema.examples.item
+  set:
+    type: annotation
+
+# ============================================================
+# items keyword — array (tuple) variant: allBreaking
+# Rule: [breaking, breaking, breaking]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.items.array-item.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.items.array-item.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.items.array-item.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.items.array-item.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.items.array-item.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.items.array-item.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
+# items keyword — schema (all-items) variant: allNonBreaking
+# Rule: [nonBreaking, nonBreaking, nonBreaking]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.items.schema.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.items.schema.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.items.schema.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.items.schema.remove
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.items.schema.replace
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.items.schema.replace
+    scope: response
+  set:
+    type: breaking
+
+# ============================================================
+# additionalItems keyword
+# Rule: [nonBreaking, breaking, unclassified]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.additional-items.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.additional-items.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.additional-items.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.additional-items.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.additional-items.replace
+  set:
+    type: unclassified
+
+# ============================================================
+# patternProperties sub-schemas
+# Rule: [breaking, nonBreaking, unclassified]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.pattern-properties.item.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.pattern-properties.item.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.pattern-properties.item.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.pattern-properties.item.remove
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.pattern-properties.item.replace
+  set:
+    type: unclassified
+
+# ============================================================
+# propertyNames keyword
+# Rule: onlyAddBreaking [breaking, nonBreaking, nonBreaking]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.property-names.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.property-names.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.property-names.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.property-names.remove
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.property-names.replace
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.property-names.replace
+    scope: response
+  set:
+    type: breaking
+
+# ============================================================
+# definitions/* sub-schemas
+# Rule: allNonBreaking [nonBreaking, nonBreaking, nonBreaking]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.definitions.item.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.definitions.item.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.definitions.item.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.definitions.item.remove
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.definitions.item.replace
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.definitions.item.replace
+    scope: response
+  set:
+    type: breaking
+
+# ============================================================
+# $defs/* sub-schemas
+# Rule: allNonBreaking [nonBreaking, nonBreaking, nonBreaking]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.defs.item.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.defs.item.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.defs.item.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.defs.item.remove
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.defs.item.replace
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.defs.item.replace
+    scope: response
+  set:
+    type: breaking
+
+# ============================================================
+# enum array (the /enum keyword node itself)
+# Rule: [breaking, nonBreaking, breaking, nonBreaking, risky, nonBreaking]
+# Response remove is risky (non-standard: reversal of nonBreaking would be breaking)
+# ============================================================
+# add: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.enum.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.enum.add
+    scope: response
+  set:
+    type: non-breaking
+# remove: non-breaking (request) / risky (response)
+- match:
+    classifyRuleId: json-schema.enum.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.enum.remove
+    scope: response
+  set:
+    type: risky
+# replace: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.enum.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.enum.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
+# oneOf combiner items
+# Rule: [nonBreaking, breaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.one-of.item.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.one-of.item.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.one-of.item.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.one-of.item.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.one-of.item.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.one-of.item.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
+# anyOf combiner items
+# Rule: [nonBreaking, breaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.any-of.item.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.any-of.item.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.any-of.item.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.any-of.item.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.any-of.item.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.any-of.item.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
+# allOf combiner items
+# Rule: allBreaking [breaking, breaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.all-of.item.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.all-of.item.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.all-of.item.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.all-of.item.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.all-of.item.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.all-of.item.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
+# not keyword ($: node)
+# Rule: allBreaking [breaking, breaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.not.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.not.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.not.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.not.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.not.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.not.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
+# pattern validator
+# ============================================================
+# add: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.pattern.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.pattern.add
+    scope: response
+  set:
+    type: non-breaking
+# remove: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.pattern.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.pattern.remove
+    scope: response
+  set:
+    type: breaking
+# replace: breaking (both — response does NOT flip to non-breaking here)
+- match:
+    classifyRuleId: json-schema.pattern.replace
+  set:
+    type: breaking
+
+# ============================================================
+# format keyword
+# ============================================================
+# add: breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.format.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.format.add
+    scope: response
+  set:
+    type: non-breaking
+# remove: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.format.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.format.remove
+    scope: response
+  set:
+    type: breaking
+# replace: breaking (both)
+- match:
+    classifyRuleId: json-schema.format.replace
+  set:
+    type: breaking
+
+# ============================================================
+# deprecated keyword  [allDeprecated]
+# ============================================================
+- match:
+    classifyRuleId: json-schema.deprecated
+  set:
+    type: deprecated
+
+# ============================================================
+# default value
+# Rule: [nonBreaking, breaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.default.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.default.add
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.default.remove
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.default.remove
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.default.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.default.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
+# const keyword
+# Rule: [breaking, nonBreaking, breaking] — standard reversal
+# ============================================================
+- match:
+    classifyRuleId: json-schema.const.add
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.const.add
+    scope: response
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.const.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.const.remove
+    scope: response
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.const.replace
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.const.replace
+    scope: response
+  set:
+    type: non-breaking
+
+# ============================================================
+# uniqueItems validator
+# ============================================================
+# after-true (add/replace where uniqueItems=true): breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.unique-items.after-true
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.unique-items.after-true
+    scope: response
+  set:
+    type: non-breaking
+# after-not-true (add/replace where uniqueItems!=true): non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.unique-items.after-not-true
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.unique-items.after-not-true
+    scope: response
+  set:
+    type: breaking
+# remove: non-breaking (request) / breaking (response)
+- match:
+    classifyRuleId: json-schema.unique-items.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.unique-items.remove
+    scope: response
+  set:
+    type: breaking
+
+# ============================================================
+# readOnly keyword
+# Rule: [...booleanClassifier, ...allNonBreaking]
+# Response slots are all non-breaking (explicit override).
+# ============================================================
+# after-true (add/replace where readOnly=true): breaking (request) / non-breaking (response)
+- match:
+    classifyRuleId: json-schema.read-only.after-true
+  set:
+    type: breaking
+- match:
+    classifyRuleId: json-schema.read-only.after-true
+    scope: response
+  set:
+    type: non-breaking
+# after-not-true (add/replace where readOnly!=true): non-breaking (both)
+- match:
+    classifyRuleId: json-schema.read-only.after-not-true
+  set:
+    type: non-breaking
+# remove: non-breaking (both — response slot is non-breaking, not reversed)
+- match:
+    classifyRuleId: json-schema.read-only.remove
+  set:
+    type: non-breaking
+
+# ============================================================
+# writeOnly keyword
+# Rule: [...allNonBreaking, ...allNonBreaking] — non-breaking everywhere
+# ============================================================
+- match:
+    classifyRuleId: json-schema.write-only.add
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.write-only.remove
+  set:
+    type: non-breaking
+- match:
+    classifyRuleId: json-schema.write-only.replace
+  set:
+    type: non-breaking
