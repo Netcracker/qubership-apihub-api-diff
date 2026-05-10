@@ -59,7 +59,7 @@ export const maximumClassifier: ClassifyRule = [
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value > after.value),
 ]
 
-export const exclusiveClassifier: ClassifyRule = [
+export const exclusiveBooleanClassifier: ClassifyRule = [
   ({ after }) => (after.value === true ? breaking : unclassified),
   ({ before }) => (before.value === true ? nonBreaking : unclassified),
   breakingIfAfterTrue,

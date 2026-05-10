@@ -24,7 +24,7 @@ import {
 } from '../core'
 import {
   enumClassifyRule,
-  exclusiveClassifier,
+  exclusiveBooleanClassifier,
   maxClassifier,
   maximumClassifier,
   minClassifier,
@@ -89,8 +89,8 @@ export const jsonSchemaRules = ({
     ...(version === SPEC_TYPE_JSON_SCHEMA_04 ? {
       '/maximum': simpleRule(maximumClassifier, resolveSchemaDescriptionTemplates('maximum validator')),
       '/minimum': simpleRule(minimumClassifier, resolveSchemaDescriptionTemplates('minimum validator')),
-      '/exclusiveMaximum': simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')),
-      '/exclusiveMinimum': simpleRule(exclusiveClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')),
+      '/exclusiveMaximum': simpleRule(exclusiveBooleanClassifier, resolveSchemaDescriptionTemplates('exclusiveMaximum validator')),
+      '/exclusiveMinimum': simpleRule(exclusiveBooleanClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')),
     } : {
       '/maximum': {
         $: createEffectiveUpperBoundClassifier('maximum'),
