@@ -139,7 +139,7 @@ const getEffectiveUpperBound = (schema: unknown): EffectiveBound | undefined => 
   }
 
   if (exclusiveMaximumValue < maximumValue) {
-      return {
+    return {
       propertyName: JSON_SCHEMA_PROPERTY_EXCLUSIVE_MAXIMUM,
       value: exclusiveMaximumValue,
       exclusive: true,

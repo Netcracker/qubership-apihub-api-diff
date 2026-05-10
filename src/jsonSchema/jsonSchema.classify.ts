@@ -88,7 +88,7 @@ export const requiredItemClassifyRule: ClassifyRule = [
 export const propertyClassifyRule: ClassifyRule = [
   ({ after }) => (
     !isExist(getKeyValue(after.value, 'default')) &&
-    getArrayValue((strictResolveValueFromContext(after, PARENT_JUMP, PARENT_JUMP, 'required')))?.includes(after.key) ? breaking : nonBreaking
+      getArrayValue((strictResolveValueFromContext(after, PARENT_JUMP, PARENT_JUMP, 'required')))?.includes(after.key) ? breaking : nonBreaking
   ),
   breaking,
   unclassified,
@@ -102,7 +102,7 @@ export const enumClassifyRule: ClassifyRule = [
   ({ after }) => (isNotEmptyArray(after.parent) ? breaking : nonBreaking),
   breaking,
   ({ before }) => (isNotEmptyArray(before.parent) ? risky : nonBreaking),
-  ({ after }) => (isNotEmptyArray(after.parent) ? nonBreaking: risky ),
+  ({ after }) => (isNotEmptyArray(after.parent) ? nonBreaking : risky),
   nonBreaking
 ]
 
