@@ -1,4 +1,4 @@
-import { apiDiff, breaking, CompareOptions, DiffAction, nonBreaking } from '../src'
+import { apiDiff, breaking, CompareOptions, DiffAction, nonBreaking, risky } from '../src'
 import { COMPARE_SCOPE_REQUEST, COMPARE_SCOPE_RESPONSE } from '../src/openapi/openapi3.const'
 import { diffsMatcher } from './helper/matchers'
 
@@ -510,7 +510,7 @@ describe('OpenAPI 3.1 exclusive numeric bounds on unified specifications', () =>
         ]))
       })
 
-      test('looser lower effective bounds as breaking, redundant property diff non-breaking', () => {
+      test('looser lower effective bounds as risky, redundant property diff non-breaking', () => {
         const before = openApi31Spec({
           responseSchema: {
             type: 'number',
@@ -538,13 +538,13 @@ describe('OpenAPI 3.1 exclusive numeric bounds on unified specifications', () =>
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'minimum']],
-            type: breaking,
+            type: risky,
             scope: COMPARE_SCOPE_RESPONSE
           }),
         ]))
       })
 
-      test('looser upper effective bounds as breaking, redundant property diff non-breaking', () => {
+      test('looser upper effective bounds as risky, redundant property diff non-breaking', () => {
         const before = openApi31Spec({
           responseSchema: {
             type: 'number',
@@ -572,7 +572,7 @@ describe('OpenAPI 3.1 exclusive numeric bounds on unified specifications', () =>
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'maximum']],
-            type: breaking,
+            type: risky,
             scope: COMPARE_SCOPE_RESPONSE
           }),
         ]))
@@ -782,7 +782,7 @@ describe('OpenAPI 3.1 exclusive numeric bounds on unified specifications', () =>
     })
 
     describe('response', () => {
-      test('looser lower effective bounds as breaking, redundant property diff non-breaking', () => {
+      test('looser lower effective bounds as risky, redundant property diff non-breaking', () => {
         const before = openApi31Spec({
           responseSchema: {
             type: 'number',
@@ -808,13 +808,13 @@ describe('OpenAPI 3.1 exclusive numeric bounds on unified specifications', () =>
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'minimum']],
-            type: breaking,
+            type: risky,
             scope: COMPARE_SCOPE_RESPONSE
           }),
         ]))
       })
 
-      test('looser upper effective bounds as breaking, redundant property diff non-breaking', () => {
+      test('looser upper effective bounds as risky, redundant property diff non-breaking', () => {
         const before = openApi31Spec({
           responseSchema: {
             type: 'number',
@@ -840,7 +840,7 @@ describe('OpenAPI 3.1 exclusive numeric bounds on unified specifications', () =>
           expect.objectContaining({
             action: DiffAction.add,
             afterDeclarationPaths: [[...RESPONSE_SCHEMA_PATH, 'maximum']],
-            type: breaking,
+            type: risky,
             scope: COMPARE_SCOPE_RESPONSE
           }),
         ]))

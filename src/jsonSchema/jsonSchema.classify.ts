@@ -5,6 +5,7 @@ import {
   nonBreaking,
   PARENT_JUMP,
   risky,
+  riskyIf,
   strictResolveValueFromContext,
   unclassified,
 } from '../core'
@@ -42,27 +43,30 @@ export const minClassifier: ClassifyRule = [
 ]
 
 export const minimumClassifier: ClassifyRule = [
-  ({ before, after }) => {
-    const beforeExclusiveMinimum = getKeyValue(before.parent, 'exclusiveMinimum')
-    return breakingIf(!isNumber(beforeExclusiveMinimum) || !isNumber(after.value) || beforeExclusiveMinimum < after.value)
-  },
+  breaking,
   nonBreaking,
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value < after.value),
+  nonBreaking,
+  risky,
+  ({ before, after }) => riskyIf(!isNumber(before.value) || !isNumber(after.value) || before.value > after.value),
 ]
 
 export const maximumClassifier: ClassifyRule = [
-  ({ before, after }) => {
-    const beforeExclusiveMaximum = getKeyValue(before.parent, 'exclusiveMaximum')
-    return breakingIf(!isNumber(beforeExclusiveMaximum) || !isNumber(after.value) || beforeExclusiveMaximum > after.value)
-  },
+  breaking,
   nonBreaking,
   ({ before, after }) => breakingIf(!isNumber(before.value) || !isNumber(after.value) || before.value > after.value),
+  nonBreaking,
+  risky,
+  ({ before, after }) => riskyIf(!isNumber(before.value) || !isNumber(after.value) || before.value < after.value),
 ]
 
 export const exclusiveBooleanClassifier: ClassifyRule = [
   ({ after }) => (after.value === true ? breaking : unclassified),
   ({ before }) => (before.value === true ? nonBreaking : unclassified),
   breakingIfAfterTrue,
+  ({ after }) => (after.value === true ? nonBreaking : unclassified),
+  ({ before }) => (before.value === true ? risky : unclassified),
+  ({ after }) => (after.value === false ? risky : nonBreaking),
 ]
 
 //todo think about replace multipleOf in inverse case

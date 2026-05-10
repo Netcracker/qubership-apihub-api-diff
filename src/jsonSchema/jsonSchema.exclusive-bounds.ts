@@ -10,7 +10,7 @@ import {
 import { isNumber, isObject } from '../utils'
 import { AdapterResolver, ClassifyRule } from '../types'
 import { CompareContext, DiffType } from '../types'
-import { breaking, nonBreaking } from '../core'
+import { breaking, nonBreaking, risky } from '../core'
 
 const hasBooleanExclusiveBounds = (value: Record<PropertyKey, unknown>): boolean =>
   typeof value[JSON_SCHEMA_PROPERTY_EXCLUSIVE_MINIMUM] === 'boolean' ||
@@ -205,13 +205,13 @@ const createPropertyBoundClassifier = (
 
 export const createEffectiveLowerBoundClassifier = (propertyName: JsonSchemaNumericValidationKeywordsType): ClassifyRule => {
   const requestClassifier = createPropertyBoundClassifier(propertyName, getEffectiveLowerBound, isAfterLowerStricter, breaking, nonBreaking)
-  const responseClassifier = createPropertyBoundClassifier(propertyName, getEffectiveLowerBound, isAfterLowerStricter, nonBreaking, breaking)
+  const responseClassifier = createPropertyBoundClassifier(propertyName, getEffectiveLowerBound, isAfterLowerStricter, nonBreaking, risky)
   return [requestClassifier, requestClassifier, requestClassifier, responseClassifier, responseClassifier, responseClassifier]
 }
 
 export const createEffectiveUpperBoundClassifier = (propertyName: JsonSchemaNumericValidationKeywordsType): ClassifyRule => {
   const requestClassifier = createPropertyBoundClassifier(propertyName, getEffectiveUpperBound, isAfterUpperStricter, breaking, nonBreaking)
-  const responseClassifier = createPropertyBoundClassifier(propertyName, getEffectiveUpperBound, isAfterUpperStricter, nonBreaking, breaking)
+  const responseClassifier = createPropertyBoundClassifier(propertyName, getEffectiveUpperBound, isAfterUpperStricter, nonBreaking, risky)
   return [requestClassifier, requestClassifier, requestClassifier, responseClassifier, responseClassifier, responseClassifier]
 }
 

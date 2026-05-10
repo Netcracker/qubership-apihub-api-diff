@@ -388,7 +388,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
             afterDeclarationPaths: [[...commonPath, 'minimum']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ], skipScopesRoot))
       })
@@ -399,7 +399,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'minimum']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ], skipScopesRoot))
       })
@@ -422,7 +422,7 @@ export function runGeneralSchemaTests(
             action: DiffAction.replace,
             beforeDeclarationPaths: [[...commonPath, 'maximum']],
             afterDeclarationPaths: [[...commonPath, 'maximum']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ], skipScopesRoot))
       })
@@ -445,7 +445,7 @@ export function runGeneralSchemaTests(
           expect.objectContaining({
             action: DiffAction.remove,
             beforeDeclarationPaths: [[...commonPath, 'maximum']],
-            type: expectedType(nonBreaking, breaking),
+            type: expectedType(nonBreaking, risky),
           }),
         ], skipScopesRoot))
       })
@@ -464,7 +464,7 @@ export function runGeneralSchemaTests(
             expect.objectContaining({
               action: DiffAction.add,
               afterDeclarationPaths: [[...commonPath, 'minimum']],
-              type: expectedType(nonBreaking, breaking),
+              type: expectedType(nonBreaking, risky),
             }),
           ], skipScopesRoot))
         },
@@ -514,7 +514,7 @@ export function runGeneralSchemaTests(
             expect.objectContaining({
               action: DiffAction.remove,
               beforeDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
-              type: expectedType(nonBreaking, breaking),
+              type: expectedType(nonBreaking, risky),
             }),
           ], skipScopesRoot))
         },
@@ -546,7 +546,7 @@ export function runGeneralSchemaTests(
               action: DiffAction.replace,
               beforeDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
               afterDeclarationPaths: [[...commonPath, 'exclusiveMinimum']],
-              type: expectedType(nonBreaking, breaking),
+              type: expectedType(nonBreaking, risky),
             }),
           ], skipScopesRoot))
         },
@@ -566,7 +566,7 @@ export function runGeneralSchemaTests(
             expect.objectContaining({
               action: DiffAction.add,
               afterDeclarationPaths: [[...commonPath, 'maximum']],
-              type: expectedType(nonBreaking, breaking),
+              type: expectedType(nonBreaking, risky),
             }),
           ], skipScopesRoot))
         },
@@ -616,7 +616,7 @@ export function runGeneralSchemaTests(
             expect.objectContaining({
               action: DiffAction.remove,
               beforeDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
-              type: expectedType(nonBreaking, breaking),
+              type: expectedType(nonBreaking, risky),
             }),
           ], skipScopesRoot))
         },
@@ -632,7 +632,7 @@ export function runGeneralSchemaTests(
               action: DiffAction.replace,
               beforeDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
               afterDeclarationPaths: [[...commonPath, 'exclusiveMaximum']],
-              type: expectedType(nonBreaking, breaking),
+              type: expectedType(nonBreaking, risky),
             }),
           ], skipScopesRoot))
         },
