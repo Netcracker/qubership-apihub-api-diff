@@ -169,9 +169,6 @@ const classifyByEffectiveBound = (
   const beforeBound = getEffectiveBound(ctx.before.parent)
   const afterBound = getEffectiveBound(ctx.after.parent)
 
-  if (!beforeBound && !afterBound) {
-    return nonBreaking
-  }
   if (!beforeBound) {
     return stricterType
   }
