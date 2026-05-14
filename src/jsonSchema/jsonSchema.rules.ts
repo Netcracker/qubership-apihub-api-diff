@@ -39,7 +39,14 @@ import { jsonSchemaMappingResolver } from './jsonSchema.mapping'
 import { combinersCompareResolver } from './jsonSchema.resolver'
 import { ClassifyRule, CompareRules, DescriptionTemplates } from '../types'
 import { JsonSchemaRulesOptions, NativeAnySchemaFactory } from './jsonSchema.types'
-import { normalize, SPEC_TYPE_JSON_SCHEMA_04 } from '@netcracker/qubership-apihub-api-unifier'
+import {
+  JSON_SCHEMA_PROPERTY_EXCLUSIVE_MAXIMUM,
+  JSON_SCHEMA_PROPERTY_EXCLUSIVE_MINIMUM,
+  JSON_SCHEMA_PROPERTY_MAXIMUM,
+  JSON_SCHEMA_PROPERTY_MINIMUM,
+  normalize,
+  SPEC_TYPE_JSON_SCHEMA_04
+} from '@netcracker/qubership-apihub-api-unifier'
 import { isBoolean, isNumber, isString } from '../utils'
 import { createEffectiveLowerBoundClassifier, createEffectiveUpperBoundClassifier } from './jsonSchema.numeric-bounds'
 
@@ -93,19 +100,19 @@ export const jsonSchemaRules = ({
       '/exclusiveMinimum': simpleRule(exclusiveBooleanClassifier, resolveSchemaDescriptionTemplates('exclusiveMinimum validator')),
     } : {
       '/maximum': {
-        $: createEffectiveUpperBoundClassifier('maximum'),
+        $: createEffectiveUpperBoundClassifier(JSON_SCHEMA_PROPERTY_MAXIMUM),
         description: diffDescription(resolveSchemaDescriptionTemplates('maximum validator')),
       },
       '/minimum': {
-        $: createEffectiveLowerBoundClassifier('minimum'),
+        $: createEffectiveLowerBoundClassifier(JSON_SCHEMA_PROPERTY_MINIMUM),
         description: diffDescription(resolveSchemaDescriptionTemplates('minimum validator')),
       },
       '/exclusiveMaximum': {
-        $: createEffectiveUpperBoundClassifier('exclusiveMaximum'),
+        $: createEffectiveUpperBoundClassifier(JSON_SCHEMA_PROPERTY_EXCLUSIVE_MAXIMUM),
         description: diffDescription(resolveSchemaDescriptionTemplates('exclusiveMaximum validator')),
       },
       '/exclusiveMinimum': {
-        $: createEffectiveLowerBoundClassifier('exclusiveMinimum'),
+        $: createEffectiveLowerBoundClassifier(JSON_SCHEMA_PROPERTY_EXCLUSIVE_MINIMUM),
         description: diffDescription(resolveSchemaDescriptionTemplates('exclusiveMinimum validator')),
       },
     }),
