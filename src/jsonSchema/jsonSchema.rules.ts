@@ -41,7 +41,7 @@ import { ClassifyRule, CompareRules, DescriptionTemplates } from '../types'
 import { JsonSchemaRulesOptions, NativeAnySchemaFactory } from './jsonSchema.types'
 import { normalize, SPEC_TYPE_JSON_SCHEMA_04 } from '@netcracker/qubership-apihub-api-unifier'
 import { isBoolean, isNumber, isString } from '../utils'
-import { createEffectiveLowerBoundClassifier, createEffectiveUpperBoundClassifier } from './jsonSchema.exclusive-bounds'
+import { createEffectiveLowerBoundClassifier, createEffectiveUpperBoundClassifier } from './jsonSchema.numeric-bounds'
 
 const simpleRule = (classify: ClassifyRule, descriptionTemplate: DescriptionTemplates) => ({
   $: classify,

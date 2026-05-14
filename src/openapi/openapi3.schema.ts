@@ -41,7 +41,7 @@ import {
 import { schemaParamsCalculator } from './openapi3.description.schema'
 import { openApiSpecificationExtensionRulesFunction } from './openapi3.compare.rules'
 import { isArray, isObject } from '../utils'
-import { booleanExclusiveBoundsOas30to31Adapter } from '../jsonSchema/jsonSchema.exclusive-bounds'
+import { booleanExclusiveBoundsOas30to31Adapter } from '../jsonSchema/jsonSchema.numeric-bounds'
 
 const NULL_TYPE_COMBINERS = [JSON_SCHEMA_PROPERTY_ANY_OF, JSON_SCHEMA_PROPERTY_ONE_OF] as const
 const SPEC_TYPE_TO_VERSION: Record<OpenApiSpecVersion, string> = {
