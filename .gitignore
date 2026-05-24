@@ -12,3 +12,7 @@ dist/
 
 # logs
 *.log*
+
+
+# APM dependencies
+apm_modules/
