@@ -516,7 +516,7 @@ describe('Openapi3 combiner matching by ref origin', () => {
     ], skipScopes))
   })
 
-  it('should not report breaking changes when oneOf branches with allOf inheritance are reordered', () => {
+  it('should not report changes when oneOf branches with allOf inheritance are reordered', () => {
     const makeSpec = (oneOf: object[]) => ({
       openapi: '3.0.0',
       info: { version: '0.0.1', title: 'Test' },
@@ -541,7 +541,6 @@ describe('Openapi3 combiner matching by ref origin', () => {
     const after = makeSpec([{ $ref: '#/components/schemas/ChildB' }, { $ref: '#/components/schemas/ChildA' }])
 
     const diffs = compareSpecs(before, after)
-    const breakingDiffs = diffs.filter(d => d.type === breaking)
-    expect(breakingDiffs).toHaveLength(0)
+    expect(diffs).toHaveLength(0)
   })
 })
