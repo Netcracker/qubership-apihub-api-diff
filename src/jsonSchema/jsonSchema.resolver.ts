@@ -16,7 +16,7 @@ import type { CompareResolver, Diff, DiffEntry } from '../types'
 import { isArray, isObject, onlyExistedArrayIndexes } from '../utils'
 import { copyDescriptors } from '@netcracker/qubership-apihub-api-unifier'
 
-const haveSameDirectRef = (a: string[], b: string[]): boolean => {
+const haveSameLastRef = (a: string[], b: string[]): boolean => {
   // Compare last refs — these are the direct $ref targets at the current level.
   // Earlier entries are transitive refs from nested allOf inheritance and would
   // cause false matches between unrelated schemas sharing a common base.
@@ -61,7 +61,7 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
         return guard
       })
 
-  // First pass: definitively match combiner options that share the same $ref origin.
+  // First pass: definitively match combiner options that have the same last $ref.
   // The assumption is that in real world cases if schema names are the same, then
   // this is what we want to compare.
   const { inlineRefsFlag } = options
@@ -80,7 +80,7 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
         const afterRefs = afterItem[inlineRefsFlag] as string[] | undefined
         if (!afterRefs?.length) { continue }
 
-        if (haveSameDirectRef(beforeRefs, afterRefs)) {
+        if (haveSameLastRef(beforeRefs, afterRefs)) {
           beforeUnmatchedIndexes.delete(i)
           afterUnmatchedIndexes.delete(j)
           const { diffs: localDiffs, merged } = compareCombinerItems(beforeItem, afterItem)
