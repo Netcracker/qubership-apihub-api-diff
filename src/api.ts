@@ -44,7 +44,10 @@ function selectEngineSpecType(beforeType: SpecType, afterType: SpecType): SpecTy
   return beforeType
 }
 
-export const COMPARE_ENGINES_MAP: Record<SpecType, CompareEngine> = {
+// Partial because api-unifier's `SpecType` now includes `ddlapi-1.0`, whose
+// compare engine is registered later (task T1.1). Until then the map is not
+// exhaustive over `SpecType`; `apiDiff` guards against a missing engine below.
+export const COMPARE_ENGINES_MAP: Partial<Record<SpecType, CompareEngine>> = {
   [SPEC_TYPE_JSON_SCHEMA_04]: compareJsonSchema(SPEC_TYPE_JSON_SCHEMA_04),
   [SPEC_TYPE_JSON_SCHEMA_06]: compareJsonSchema(SPEC_TYPE_JSON_SCHEMA_06),
   [SPEC_TYPE_JSON_SCHEMA_07]: compareJsonSchema(SPEC_TYPE_JSON_SCHEMA_07),
@@ -61,7 +64,11 @@ export function apiDiff(before: unknown, after: unknown, options: CompareOptions
   if (!areSpecTypesCompatible(beforeSpec.type, afterSpec.type)) {
     throw new Error(`Specification cannot be different. Got ${beforeSpec.type} and ${afterSpec.type}`)
   }
-  const engine = COMPARE_ENGINES_MAP[selectEngineSpecType(beforeSpec.type, afterSpec.type)]
+  const engineSpecType = selectEngineSpecType(beforeSpec.type, afterSpec.type)
+  const engine = COMPARE_ENGINES_MAP[engineSpecType]
+  if (!engine) {
+    throw new Error(`No compare engine registered for specification type ${engineSpecType}`)
+  }
   return engine(before, after, {
     mode: COMPARE_MODE_DEFAULT,
     normalizedResult: DEFAULT_NORMALIZED_RESULT,
