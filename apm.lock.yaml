@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-05-24T16:46:00.129862+00:00'
+generated_at: '2026-06-05T12:20:41.304629+00:00'
 apm_version: 0.14.2
 dependencies:
 - repo_url: _local/api-diff-authoring
@@ -7,10 +7,30 @@ dependencies:
   deployed_files:
   - .agents/skills/api-diff-authoring
   - .agents/skills/api-diff-testing
+  - .claude/skills/api-diff-authoring
+  - .claude/skills/api-diff-testing
   - .cursor/rules/api-diff-authoring.mdc
   - .cursor/rules/api-diff-testing.mdc
+  - .github/instructions/api-diff-authoring.instructions.md
+  - .github/instructions/api-diff-testing.instructions.md
   deployed_file_hashes:
-    .cursor/rules/api-diff-authoring.mdc: sha256:a80e42fafafbc746550c7337e54dcb7e9e8a7827c32bbacb6bf015d37e478795
-    .cursor/rules/api-diff-testing.mdc: sha256:c62eaefcc5df16bd43e0b79e1d79ebab2c2360b19127416b4112b0b471d5c38c
+    .cursor/rules/api-diff-authoring.mdc: sha256:63624f09ed593c909daeb7ef414196e4a261fd195490d441217f56123236ad50
+    .cursor/rules/api-diff-testing.mdc: sha256:ed59bd12649ac32e6638c1169994cdd15742d8d53ad634e19c569b21f180c713
+    .github/instructions/api-diff-authoring.instructions.md: sha256:47a4c54bac3733a19d83771a37b894b3670b43caaeff0e96a177fba080a1d96b
+    .github/instructions/api-diff-testing.instructions.md: sha256:561814696004b5acbbafe1ee2e1fe5377b89768577752d8554a30ae2b61fac78
   source: local
   local_path: ./agent-packages/api-diff-authoring
+- repo_url: _local/ddlapi-using
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/ddlapi-using
+  - .claude/rules/ddlapi-using.md
+  - .claude/skills/ddlapi-using
+  - .cursor/rules/ddlapi-using.mdc
+  - .github/instructions/ddlapi-using.instructions.md
+  deployed_file_hashes:
+    .claude/rules/ddlapi-using.md: sha256:339a7086fb5cfd6df1374345ff577321f96197deb217d482fd9f36f4f9021584
+    .cursor/rules/ddlapi-using.mdc: sha256:90554d14dcea6999074084c82cdabe92c9049452d6291ecc1570344c630a64f7
+    .github/instructions/ddlapi-using.instructions.md: sha256:a12f9f14d89ba48e3ef6631e1727f9f26c908d573c7ea836c3b44873672be558
+  source: local
+  local_path: ../ddlapi/agent-packages/ddlapi-using

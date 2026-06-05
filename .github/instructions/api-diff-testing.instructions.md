@@ -1,6 +1,6 @@
 ---
 description: Skill trigger for writing and reviewing AsyncAPI 3.0.0 diff test specifications in api-diff.
-globs: "test/**/*.test.ts"
+applyTo: "test/**/*.test.ts"
 ---
 
 # api-diff Testing
