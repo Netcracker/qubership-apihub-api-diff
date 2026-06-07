@@ -126,6 +126,40 @@ describe('phase-2 descriptions at schema/table/column levels (T4.3)', () => {
   })
 })
 
+describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
+  it('added index', async () => {
+    const { diffs } = await diffSql(
+      'create table t(id int, name text);',
+      'create table t(id int, name text); create index idx_name on t(name);',
+    )
+    expect(onlyDescription(diffs)).toBe('Added index idx_name on table t')
+  })
+
+  it('added primary key', async () => {
+    const { diffs } = await diffSql(
+      'create table t(id int not null);',
+      'create table t(id int not null, primary key (id));',
+    )
+    expect(onlyDescription(diffs)).toBe('Added primary key on table t')
+  })
+
+  it('added foreign key', async () => {
+    const { diffs } = await diffSql(
+      'create table t(id int, primary key (id)); create table u(uid int, ref int);',
+      'create table t(id int, primary key (id)); create table u(uid int, ref int, constraint fk_u foreign key (ref) references t(id));',
+    )
+    expect(onlyDescription(diffs)).toBe('Added foreign key fk_u on table u')
+  })
+
+  it('added check', async () => {
+    const { diffs } = await diffSql(
+      'create table t(id int);',
+      'create table t(id int, constraint c_pos check (id > 0));',
+    )
+    expect(onlyDescription(diffs)).toBe('Added check c_pos on table t')
+  })
+})
+
 describe('phase-1 descriptions — named (non-default) schema (T3.1)', () => {
   it('added column in a non-default schema includes the in-schema clause', async () => {
     const { diffs } = await diffSql(

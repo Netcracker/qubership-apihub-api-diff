@@ -1,77 +1,111 @@
-import { DiffAction } from '../src'
+import { annotation, breaking, Diff, DiffAction, nonBreaking } from '../src'
 import { diffSql } from './helper/ddl'
+import { diffsMatcher } from './helper/matchers'
 
 // Guards the identity-key mapping resolvers (plan §8). A reorder must not surface as
 // spurious add/remove; an add/remove of one element must surface as exactly one diff.
+// Field assertions only — description strings live in ddl.description.test.ts.
 
 describe('name-keyed resolvers (T2.1)', () => {
   it('reordering tables ⇒ no diffs', async () => {
-    const { diffs } = await diffSql(
-      'create table a(id int); create table b(id int);',
-      'create table b(id int); create table a(id int);',
-    )
-    expect(diffs).toEqual([])
+    const beforeSql = 'create table a(id int); create table b(id int);'
+    const afterSql = 'create table b(id int); create table a(id int);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toHaveLength(0)
   })
 
   it('reordering columns ⇒ no diffs', async () => {
-    const { diffs } = await diffSql(
-      'create table t(a int, b int);',
-      'create table t(b int, a int);',
-    )
-    expect(diffs).toEqual([])
+    const beforeSql = 'create table t(a int, b int);'
+    const afterSql = 'create table t(b int, a int);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toHaveLength(0)
   })
 
   it('adding one table ⇒ exactly one element-level diff', async () => {
-    const { diffs } = await diffSql(
-      'create table a(id int);',
-      'create table a(id int); create table b(id int);',
-    )
-    expect(diffs).toHaveLength(1)
-    expect(diffs[0].action).toBe(DiffAction.add)
+    const beforeSql = 'create table a(id int);'
+    const afterSql = 'create table a(id int); create table b(id int);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toHaveLength(1) // only the added table
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.add,
+        type: nonBreaking,
+        afterValue: expect.objectContaining({ kind: 'Table', name: 'b' }),
+        afterDeclarationPaths: [['schemas', 0, 'tables', 1]],
+      }),
+    ]))
   })
 
   it('removing one column ⇒ exactly one element-level diff', async () => {
-    const { diffs } = await diffSql(
-      'create table t(a int, b int);',
-      'create table t(a int);',
-    )
-    expect(diffs).toHaveLength(1)
-    expect(diffs[0].action).toBe(DiffAction.remove)
+    const beforeSql = 'create table t(a int, b int);'
+    const afterSql = 'create table t(a int);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toHaveLength(1) // only the removed column
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.remove,
+        type: breaking,
+        beforeValue: expect.objectContaining({ name: 'b' }),
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 1]],
+      }),
+    ]))
   })
 })
 
 describe('attrs composite-key + enum values set (T2.2)', () => {
   it('a Comment text change ⇒ exactly one diff (attr keyed by kind)', async () => {
-    const { diffs } = await diffSql(
-      "create table t(id int); comment on column t.id is 'before';",
-      "create table t(id int); comment on column t.id is 'after';",
-    )
-    expect(diffs).toHaveLength(1)
-    expect(diffs[0].action).toBe(DiffAction.replace)
+    const beforeSql = "create table t(id int); comment on column t.id is 'before';"
+    const afterSql = "create table t(id int); comment on column t.id is 'after';"
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toHaveLength(1) // the single Comment text replace
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.replace,
+        type: annotation,
+        beforeValue: 'before',
+        afterValue: 'after',
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'attrs', 0, 'text']],
+        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'attrs', 0, 'text']],
+      }),
+    ]))
   })
 
   it('two checks with different names map independently (change one ⇒ one diff)', async () => {
-    const { diffs } = await diffSql(
-      'create table t(id int, age int, constraint c_id check (id > 0), constraint c_age check (age > 0));',
-      'create table t(id int, age int, constraint c_id check (id > 0), constraint c_age check (age > 18));',
-    )
-    expect(diffs).toHaveLength(1)
+    const beforeSql = 'create table t(id int, age int, constraint c_id check (id > 0), constraint c_age check (age > 0));'
+    const afterSql = 'create table t(id int, age int, constraint c_id check (id > 0), constraint c_age check (age > 18));'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toHaveLength(1) // only c_age changed; c_id maps to itself
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.replace,
+        type: nonBreaking,
+        beforeValue: 'age > 0',
+        afterValue: 'age > 18',
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'attrs', 1, 'expr']],
+        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'attrs', 1, 'expr']],
+      }),
+    ]))
   })
 
   it('enum value reorder ⇒ 0 diffs (set semantics)', async () => {
-    const { diffs } = await diffSql(
-      "create type mood as enum ('happy','sad'); create table t(m mood);",
-      "create type mood as enum ('sad','happy'); create table t(m mood);",
-    )
-    expect(diffs).toEqual([])
+    const beforeSql = "create type mood as enum ('happy','sad'); create table t(m mood);"
+    const afterSql = "create type mood as enum ('sad','happy'); create table t(m mood);"
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toHaveLength(0)
   })
 
   it('enum value add fires at element granularity ⇒ one diff', async () => {
-    const { diffs } = await diffSql(
-      "create type mood as enum ('happy'); create table t(m mood);",
-      "create type mood as enum ('happy','sad'); create table t(m mood);",
-    )
-    expect(diffs).toHaveLength(1)
-    expect(diffs[0].action).toBe(DiffAction.add)
+    const beforeSql = "create type mood as enum ('happy'); create table t(m mood);"
+    const afterSql = "create type mood as enum ('happy','sad'); create table t(m mood);"
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toHaveLength(1) // the single added value element
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.add,
+        type: nonBreaking,
+        afterValue: 'sad',
+        afterDeclarationPaths: [['schemas', 0, 'objects', 0, 'values', 1]],
+      }),
+    ]))
   })
 })
