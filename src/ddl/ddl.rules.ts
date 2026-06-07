@@ -17,10 +17,9 @@ import {
 import { DdlDiffDialect } from './ddl.dialect'
 import {
   columnClassifier,
-  createColumnTypeClassifier,
+  createTypeNameClassifier,
   enumValueClassifier,
   nullabilityClassifier,
-  schemaTypeCompareResolver,
   tableClassifier,
 } from './ddl.classify'
 import {
@@ -77,7 +76,7 @@ const asElement = (rules: CompareRules): CompareRules => ({
  * dispatchers and the cyclic `fk.refTable` edge are resolved lazily at crawl time.
  */
 export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): CompareRules => {
-  const columnTypeClassifier = createColumnTypeClassifier(dialect)
+  const typeNameClassifier = createTypeNameClassifier(dialect)
   const descriptionParamCalculator = createDdlParamsCalculator(dialect)
 
   // --- union kind-dispatchers (lazy; default branch → dialect lookup → fall through) ---
@@ -149,20 +148,21 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   const objectsArrayRule: CompareRules = { mapping: attrsMappingResolver, '/*': objectRules }
 
   // --- SchemaType members ---
-  // The type-change comparison runs on the whole SchemaType node (one family-classified
-  // replace, via schemaTypeCompareResolver) rather than per inner field; `kind` is suppressed.
-  const scalarTypeRules: CompareRules = {
+  // The engine descends into the SchemaType and reports a diff per changed property. The
+  // cross-family breaking signal rides on the `/type` name (kind is suppressed; a cross-family
+  // change always changes the canonical name). Within-kind size/precision/scale changes are
+  // non-breaking (O1). `/unsigned` is a PG-irrelevant MySQL-ism (always false) → suppressed.
+  const typeFieldRules: CompareRules = {
     '/kind': SUPPRESS,
-    compare: schemaTypeCompareResolver,
-    $: columnTypeClassifier,
-    description: columnFacetDescription, // facet = type
+    '/unsigned': SUPPRESS,
+    '/type': { $: typeNameClassifier, description: columnFacetDescription }, // facet = type
+    '/size': { $: allNonBreaking, description: columnFacetDescription },
+    '/precision': { $: allNonBreaking, description: columnFacetDescription },
+    '/scale': { $: allNonBreaking, description: columnFacetDescription },
   }
+  const scalarTypeRules: CompareRules = typeFieldRules
   const enumTypeRules: CompareRules = {
-    '/kind': SUPPRESS,
-    // enum→scalar is one family-classified replace; enum→enum descends into values[] (E1/E2).
-    compare: schemaTypeCompareResolver,
-    $: columnTypeClassifier,
-    description: columnFacetDescription, // facet = type
+    ...typeFieldRules,
     '/values': {
       mapping: enumValuesMappingResolver,
       // set semantics — a reorder maps a value to a new index; ignoreKeyDifference (on the

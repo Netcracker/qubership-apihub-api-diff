@@ -38,22 +38,23 @@ describe('ddl diff — rule-tree skeleton (T1.2)', () => {
     expect(diffs).toHaveLength(0)
   })
 
-  it('kind + raw are suppressed inside a real type change ⇒ exactly one diff', async () => {
+  it('kind + raw are suppressed inside a real type change ⇒ only the /type-name diff', async () => {
     // int→text flips the SchemaType `kind` (IntegerType→StringType) and `raw`; without
-    // suppression that would surface as separate kind/raw diffs. The atomic type resolver
-    // plus `/kind` + `/raw` suppression collapse it to a single replace (§9b).
+    // suppression those would surface as separate kind/raw diffs. With `/kind` + `/raw`
+    // suppression, the only diff is the canonical type-name change (§9b) — text and int share
+    // no size/precision, so there is no extra structural diff here.
     const beforeSql = 'create table t(c int);'
     const afterSql = 'create table t(c text);'
     const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(diffs).toHaveLength(1) // one collapsed type replace
+    expect(diffs).toHaveLength(1) // only the /type-name replace
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
         type: breaking,
-        beforeValue: expect.objectContaining({ kind: 'IntegerType', type: 'integer' }),
-        afterValue: expect.objectContaining({ kind: 'StringType', type: 'text' }),
-        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type']],
-        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type']],
+        beforeValue: 'integer',
+        afterValue: 'text',
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
+        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
       }),
     ]))
   })
@@ -135,53 +136,111 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case 5a: same-family type change (int→bigint) ⇒ replace / non-breaking', async () => {
+  // The SchemaType change is reported per-property (no collapse): a same-kind change is a
+  // single diff at the exact field that moved; the family-aware verdict rides on the /type name.
+
+  it('case 5a: same-family type change (int→bigint) ⇒ /type-name replace / non-breaking', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id bigint);'
     const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(diffs).toHaveLength(1) // the type replace
+    expect(diffs).toHaveLength(1) // the /type-name replace
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
         type: nonBreaking,
-        beforeValue: expect.objectContaining({ kind: 'IntegerType', type: 'integer' }),
-        afterValue: expect.objectContaining({ kind: 'IntegerType', type: 'bigint' }),
-        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type']],
-        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type']],
+        beforeValue: 'integer',
+        afterValue: 'bigint',
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
+        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
       }),
     ]))
   })
 
-  it('case 5b: same-family widening (varchar(50)→varchar(200)) ⇒ replace / non-breaking', async () => {
+  it('case 5b: same-family widening (varchar(50)→varchar(200)) ⇒ /size replace / non-breaking', async () => {
     const beforeSql = 'create table t(name varchar(50));'
     const afterSql = 'create table t(name varchar(200));'
     const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(diffs).toHaveLength(1) // the type replace
+    expect(diffs).toHaveLength(1) // only the /size replace (the type name is unchanged)
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
         type: nonBreaking,
-        beforeValue: expect.objectContaining({ kind: 'StringType', type: 'varchar', size: 50 }),
-        afterValue: expect.objectContaining({ kind: 'StringType', type: 'varchar', size: 200 }),
-        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type']],
-        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type']],
+        beforeValue: 50,
+        afterValue: 200,
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'size']],
+        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'size']],
       }),
     ]))
   })
 
-  it('case 5c: cross-family type change (int→text) ⇒ replace / breaking', async () => {
+  it('case 5c: cross-family type change (int→text) ⇒ /type-name replace / breaking', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id text);'
     const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(diffs).toHaveLength(1) // the type replace
+    expect(diffs).toHaveLength(1) // the /type-name replace
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
         type: breaking,
-        beforeValue: expect.objectContaining({ kind: 'IntegerType', type: 'integer' }),
-        afterValue: expect.objectContaining({ kind: 'StringType', type: 'text' }),
-        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type']],
-        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type']],
+        beforeValue: 'integer',
+        afterValue: 'text',
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
+        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
+      }),
+    ]))
+  })
+
+  it('case 5d: within-family precision loss (numeric(10,2)→int) ⇒ per-property, all non-breaking', async () => {
+    const beforeSql = 'create table t(n numeric(10,2));'
+    const afterSql = 'create table t(n int);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    // numeric→integer keeps the numeric family (non-breaking), and the now-irrelevant
+    // precision/scale are reported as their own removals.
+    expect(diffs).toHaveLength(3) // /type-name replace + /precision remove + /scale remove
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.replace,
+        type: nonBreaking,
+        beforeValue: 'numeric',
+        afterValue: 'integer',
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
+        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
+      }),
+      expect.objectContaining({
+        action: DiffAction.remove,
+        type: nonBreaking,
+        beforeValue: 10,
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'precision']],
+      }),
+      expect.objectContaining({
+        action: DiffAction.remove,
+        type: nonBreaking,
+        beforeValue: 2,
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'scale']],
+      }),
+    ]))
+  })
+
+  it('case 5e: cross-family with shape delta (int→varchar(50)) ⇒ breaking /type + non-breaking /size', async () => {
+    const beforeSql = 'create table t(c int);'
+    const afterSql = 'create table t(c varchar(50));'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    // The breaking verdict lands on the /type-name change; the added size is its own diff.
+    expect(diffs).toHaveLength(2) // /type-name replace (breaking) + /size add
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.replace,
+        type: breaking,
+        beforeValue: 'integer',
+        afterValue: 'varchar',
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
+        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
+      }),
+      expect.objectContaining({
+        action: DiffAction.add,
+        type: nonBreaking,
+        afterValue: 50,
+        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'size']],
       }),
     ]))
   })

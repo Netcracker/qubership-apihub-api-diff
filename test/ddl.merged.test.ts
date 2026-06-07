@@ -47,16 +47,16 @@ describe('shared-instance / merged-document contract (T2.6)', () => {
     const afterSql = 'create table t(id bigint, primary key (id)); create table u(uid int, ref int, constraint fk_u foreign key (ref) references t(id));'
     const { diffs, merged } = await diffSql(beforeSql, afterSql)
 
-    // One type-change diff (same family int→bigint → non-breaking), shared across sites.
-    expect(diffs).toHaveLength(1) // the single shared column type replace
+    // One /type-name diff (same family int→bigint → non-breaking), shared across sites.
+    expect(diffs).toHaveLength(1) // the single shared column /type-name replace
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
         type: nonBreaking,
-        beforeValue: expect.objectContaining({ kind: 'IntegerType', type: 'integer' }),
-        afterValue: expect.objectContaining({ kind: 'IntegerType', type: 'bigint' }),
-        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type']],
-        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type']],
+        beforeValue: 'integer',
+        afterValue: 'bigint',
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
+        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0, 'type', 'type', 'type']],
       }),
     ]))
 

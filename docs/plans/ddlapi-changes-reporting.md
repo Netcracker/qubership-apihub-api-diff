@@ -926,18 +926,40 @@ T-SETUP intent — ddlapi resolvable & typed, ddlapi-enabled api-unifier — hol
 fixtures that predate this work and were not touched here. All files changed/added by
 T-SETUP + M0 lint clean.
 
-### 17.7 — Case-5 type change uses a custom `compare` resolver (M2/T2.4)
+### 17.7 — Case-5 type change is reported **per property** (M2/T2.4; revised)
 
-The plan sketched `columnTypeClassifier` as the `replace` slot of the `column.type.type`
-rule. In practice the engine *descends* into the `SchemaType` object, so a single logical
-type change can surface as several inner-field diffs (`varchar(50)→text` = a `/type` plus a
-`/size` diff). To emit exactly **one** family-classified diff, `column.type.type` carries a
-`compare` resolver (`schemaTypeCompareResolver` in `ddl.classify.ts`) that returns one
-`replace` for scalar changes, but returns `undefined` (falls through to normal descent) when
-**both sides are enums** (so `EnumType.values[]` produces the E1/E2 element diffs) or when the
-two types are structurally equal. It never clones the node (merged = the after instance), so
-the shared-instance contract holds. `columnTypeClassifier`'s `replace` slot then classifies by
-`sameConsumptionFamily`.
+**Superseded design (kept for history):** an earlier iteration collapsed a `SchemaType`
+change into exactly one family-classified `replace` via a custom `compare` resolver
+(`schemaTypeCompareResolver`) on `column.type.type`.
+
+**Current design (decision: do *not* collapse — report structured changes):** the engine
+descends into the `SchemaType` and emits a diff at the **specific property** that changed
+(`column.type.type.{type|size|precision|scale}`). Consequences and wiring:
+
+- **No `compare` resolver / no node-level `$`.** `scalarTypeRules`/`enumTypeRules` carry
+  per-field rules instead.
+- **The breaking signal rides on the `/type` name field** (`createTypeNameClassifier`), which
+  reads the **immediate parent** `SchemaType` on each side (`ctx.before/after.parentContext`)
+  and is `breaking` iff `!sameConsumptionFamily`. This works because `/kind` stays suppressed
+  (§9b) and a cross-family change *always* changes the canonical type name.
+- **`/size`, `/precision`, `/scale` → `allNonBreaking`** (within-family size/precision change
+  keeps every query executing, O1). **`/unsigned` → suppressed** (PG-irrelevant MySQL-ism,
+  always `false`).
+- **Same-kind changes are a single clean diff** at the moved field (`int→bigint` = one `/type`
+  diff; `varchar(50)→(200)` = one `/size` diff). **Cross-kind changes emit several diffs** —
+  the `/type` change plus genuine structural deltas (e.g. `numeric(10,2)→int` = `/type` +
+  `/precision` remove + `/scale` remove, all non-breaking since numeric→numeric;
+  `int→varchar(50)` = breaking `/type` + non-breaking `/size` add). This is the intended
+  "report structured changes to specific properties" behaviour, and the breaking verdict still
+  lands precisely on the `/type` diff.
+- **Descriptions are preserved (Approach B).** The description param-calculator detects a
+  SchemaType subfield (two consecutive `type` segments before the leaf) and renders the *whole*
+  type from `ctx.before/after.parentContext` on each side, so any subfield change still reads
+  "Changed type for column `c` … from `varchar(50)` to `varchar(200)`". (A cross-kind change
+  emits one such description per diff.)
+- **Shared-instance contract is unaffected** — pure native descent is deduped by the engine's
+  `mergedJsoCache`/`diffUniquenessCache` (a shared enum/column still yields one diff per changed
+  property). Removing the resolver actually simplifies this.
 
 ### 17.8 — Identity-keyed array elements need `ignoreKeyDifference` (M2/T2.1)
 

@@ -199,8 +199,12 @@ export const createDdlParamsCalculator = (dialect: DdlDiffDialect): DiffTemplate
       }
     }
 
-    // column type change — SchemaType node (column.type.type)
-    const typePath = pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Type && lastSegments(p)[1] === DdlapiProperties.Type)
+    // column type change — a property of the SchemaType (column.type.type.{type|size|…}).
+    // Detect the columnType.type → SchemaType boundary (two consecutive `type` segments before
+    // the changed property) and render the whole type from the immediate parent on each side,
+    // so any subfield change reads "from <type> to <type>" (the parent SchemaType is present on
+    // both sides even for an added/removed subfield).
+    const typePath = pathWhere(p => p.length >= 3 && p[p.length - 2] === DdlapiProperties.Type && p[p.length - 3] === DdlapiProperties.Type)
     if (typePath) {
       return {
         ...base,
@@ -208,8 +212,8 @@ export const createDdlParamsCalculator = (dialect: DdlDiffDialect): DiffTemplate
         [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(nodeAt(typePath, COLUMN_DEPTH)),
         [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(typePath, TABLE_DEPTH)),
         [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, typePath),
-        [TEMPLATE_PARAM_OLD_VALUE]: renderType(beforeValueOf(diff)),
-        [TEMPLATE_PARAM_NEW_VALUE]: renderType(afterValueOf(diff)),
+        [TEMPLATE_PARAM_OLD_VALUE]: renderType(ctx.before.parentContext?.value),
+        [TEMPLATE_PARAM_NEW_VALUE]: renderType(ctx.after.parentContext?.value),
       }
     }
 

@@ -1,13 +1,5 @@
-import { deepEqual } from 'fast-equals'
-import {
-  addNonBreaking,
-  allNonBreaking,
-  breaking,
-  breakingIf,
-  createDiffEntry,
-  diffFactory,
-} from '../core'
-import { ClassifyRule, CompareResolver, DiffTypeClassifier } from '../types'
+import { addNonBreaking, allNonBreaking, breaking, breakingIf, nonBreaking } from '../core'
+import { ClassifyRule, DiffTypeClassifier } from '../types'
 import { isObject } from '../utils'
 import { TypeKind } from './ddl.const'
 import { DdlDiffDialect, TypeConsumptionFamily } from './ddl.dialect'
@@ -74,39 +66,16 @@ export const sameConsumptionFamily = (before: unknown, after: unknown, dialect: 
 }
 
 /**
- * The `replace` slot compares the two `SchemaType`s by consumption family: same family →
- * non-breaking (every operation stays type-valid); cross-family → breaking (an operation
- * that was type-valid no longer is). add/remove of a whole type node (not normally reached
- * for a mapped column) is conservatively breaking.
+ * Classifier for the `SchemaType` **`/type` name** field (`column.type.type.type`). The engine
+ * descends into the SchemaType and reports a diff per changed property; the cross-family
+ * breaking signal rides on the canonical type-name change, because `/kind` is suppressed and
+ * a cross-family change always changes the name. The verdict is computed from the **immediate
+ * parent** SchemaType on each side (available on both sides for a name replace):
+ * same family → non-breaking; cross family (or opaque) → breaking. Within-kind size/precision/
+ * scale changes carry no family change and are non-breaking (classified `allNonBreaking`, O1).
  */
-export const createColumnTypeClassifier = (dialect: DdlDiffDialect): ClassifyRule => {
-  const replace: DiffTypeClassifier = ({ before, after }) =>
-    breakingIf(!sameConsumptionFamily(before.value, after.value, dialect))
-  return [breaking, breaking, replace]
-}
-
-/**
- * Collapses a `SchemaType` change into a single `replace` diff (classified by family via the
- * node's `$`), instead of letting the engine descend and emit one diff per inner field
- * (e.g. `varchar(50)→text` would otherwise be a `/type` + `/size` pair). Two cases fall
- * through to the default engine descent (return `undefined`):
- *  - both sides are enums → descend so EnumType.values[] yields E1/E2 element diffs;
- *  - structurally equal types → descend, find nothing, emit nothing.
- * Never clones the node (merged = the after instance), preserving the shared-instance
- * contract for a shared enum (plan §8A).
- */
-export const schemaTypeCompareResolver: CompareResolver = (ctx) => {
-  const beforeType = ctx.before.value
-  const afterType = ctx.after.value
-  if (!isObject(beforeType) || !isObject(afterType)) {
-    return undefined // add/remove of the whole type node is decided by the parent
-  }
-  if (readKind(beforeType) === TypeKind.EnumType && readKind(afterType) === TypeKind.EnumType) {
-    return undefined // descend → EnumType.values[] (E1/E2)
-  }
-  if (deepEqual(beforeType, afterType)) {
-    return undefined // identical → engine descends and finds nothing
-  }
-  const diffEntry = createDiffEntry(ctx, diffFactory.replaced(ctx))
-  return { diffs: [diffEntry.diff], ownerDiffEntry: diffEntry, merged: afterType }
+export const createTypeNameClassifier = (dialect: DdlDiffDialect): ClassifyRule => {
+  const replaceClassifier: DiffTypeClassifier = (ctx) =>
+    breakingIf(!sameConsumptionFamily(ctx.before.parentContext?.value, ctx.after.parentContext?.value, dialect))
+  return [nonBreaking, breaking, replaceClassifier]
 }
