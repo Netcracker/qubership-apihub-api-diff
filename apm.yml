@@ -10,4 +10,4 @@ targets:
 dependencies:
   apm:
     - ./agent-packages/api-diff-authoring
-    - ../ddlapi/agent-packages/ddlapi-using # TODO: replace with GitHub reference
+    - Netcracker/qubership-apihub-ddlapi/agent-packages/ddlapi-using
