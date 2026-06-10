@@ -41,66 +41,68 @@ import {
 import { TEMPLATE_PARAM_ACTION, TEMPLATE_PARAM_PREPOSITION } from '../core/description'
 
 // --- template families (plan §10). Article-less wording (§O5); the `in schema` variant
-// wins only when a non-default `schemaName` param is supplied. ---
+// wins only when a non-default `schemaName` param is supplied. The action is bracketed
+// (`[Added]`/`[Deleted]`/`[Changed]`) and entity names / values are wrapped in apostrophes;
+// `preposition` and `facet` are plain words and stay unquoted. ---
 
 export const TABLE_TEMPLATES = [
-  '{{action}} table {{tableName}}',
-  '{{action}} table {{tableName}} in schema {{schemaName}}',
+  "[{{action}}] table '{{tableName}}'",
+  "[{{action}}] table '{{tableName}}' in schema '{{schemaName}}'",
 ]
 
 export const COLUMN_TEMPLATES = [
-  '{{action}} column {{columnName}} {{preposition}} table {{tableName}}',
-  '{{action}} column {{columnName}} {{preposition}} table {{tableName}} in schema {{schemaName}}',
+  "[{{action}}] column '{{columnName}}' {{preposition}} table '{{tableName}}'",
+  "[{{action}}] column '{{columnName}}' {{preposition}} table '{{tableName}}' in schema '{{schemaName}}'",
 ]
 
 // type / nullability / default / description — facet, with optional from/to (used when both
 // old & new resolve) and optional in-schema clause. Suitability picks the richest variant.
 export const COLUMN_FACET_TEMPLATES = [
-  '{{action}} {{facet}} for column {{columnName}} of table {{tableName}}',
-  '{{action}} {{facet}} for column {{columnName}} of table {{tableName}} in schema {{schemaName}}',
-  '{{action}} {{facet}} for column {{columnName}} of table {{tableName}} from {{oldValue}} to {{newValue}}',
-  '{{action}} {{facet}} for column {{columnName}} of table {{tableName}} in schema {{schemaName}} from {{oldValue}} to {{newValue}}',
+  "[{{action}}] {{facet}} for column '{{columnName}}' of table '{{tableName}}'",
+  "[{{action}}] {{facet}} for column '{{columnName}}' of table '{{tableName}}' in schema '{{schemaName}}'",
+  "[{{action}}] {{facet}} for column '{{columnName}}' of table '{{tableName}}' from '{{oldValue}}' to '{{newValue}}'",
+  "[{{action}}] {{facet}} for column '{{columnName}}' of table '{{tableName}}' in schema '{{schemaName}}' from '{{oldValue}}' to '{{newValue}}'",
 ]
 
 export const ENUM_VALUE_TEMPLATES = [
-  '{{action}} value {{enumValue}} {{preposition}} enum {{enumTypeName}}',
-  '{{action}} value {{enumValue}} {{preposition}} enum {{enumTypeName}} in schema {{schemaName}}',
+  "[{{action}}] value '{{enumValue}}' {{preposition}} enum '{{enumTypeName}}'",
+  "[{{action}}] value '{{enumValue}}' {{preposition}} enum '{{enumTypeName}}' in schema '{{schemaName}}'",
 ]
 
 // Descriptions (Comment attr) at schema / table / column level. The entity word is fixed by
 // which level params the calculator supplies; suitability picks the richest (column > table >
 // schema). `from/to` variants are used for a text change.
 export const COMMENT_TEMPLATES = [
-  '{{action}} description for schema {{schemaName}}',
-  '{{action}} description for schema {{schemaName}} from {{oldValue}} to {{newValue}}',
-  '{{action}} description for table {{tableName}}',
-  '{{action}} description for table {{tableName}} in schema {{schemaName}}',
-  '{{action}} description for table {{tableName}} from {{oldValue}} to {{newValue}}',
-  '{{action}} description for table {{tableName}} in schema {{schemaName}} from {{oldValue}} to {{newValue}}',
-  '{{action}} description for column {{columnName}} of table {{tableName}}',
-  '{{action}} description for column {{columnName}} of table {{tableName}} in schema {{schemaName}}',
-  '{{action}} description for column {{columnName}} of table {{tableName}} from {{oldValue}} to {{newValue}}',
-  '{{action}} description for column {{columnName}} of table {{tableName}} in schema {{schemaName}} from {{oldValue}} to {{newValue}}',
+  "[{{action}}] description for schema '{{schemaName}}'",
+  "[{{action}}] description for schema '{{schemaName}}' from '{{oldValue}}' to '{{newValue}}'",
+  "[{{action}}] description for table '{{tableName}}'",
+  "[{{action}}] description for table '{{tableName}}' in schema '{{schemaName}}'",
+  "[{{action}}] description for table '{{tableName}}' from '{{oldValue}}' to '{{newValue}}'",
+  "[{{action}}] description for table '{{tableName}}' in schema '{{schemaName}}' from '{{oldValue}}' to '{{newValue}}'",
+  "[{{action}}] description for column '{{columnName}}' of table '{{tableName}}'",
+  "[{{action}}] description for column '{{columnName}}' of table '{{tableName}}' in schema '{{schemaName}}'",
+  "[{{action}}] description for column '{{columnName}}' of table '{{tableName}}' from '{{oldValue}}' to '{{newValue}}'",
+  "[{{action}}] description for column '{{columnName}}' of table '{{tableName}}' in schema '{{schemaName}}' from '{{oldValue}}' to '{{newValue}}'",
 ]
 
 // Phase-3 access structures (plan §10/§12). The richest matching variant wins, so a primary
 // key (no indexName) selects the "primary key" family and a named index selects the "index"
 // family.
 export const INDEX_TEMPLATES = [
-  '{{action}} primary key on table {{tableName}}',
-  '{{action}} primary key on table {{tableName}} in schema {{schemaName}}',
-  '{{action}} index {{indexName}} on table {{tableName}}',
-  '{{action}} index {{indexName}} on table {{tableName}} in schema {{schemaName}}',
+  "[{{action}}] primary key on table '{{tableName}}'",
+  "[{{action}}] primary key on table '{{tableName}}' in schema '{{schemaName}}'",
+  "[{{action}}] index '{{indexName}}' on table '{{tableName}}'",
+  "[{{action}}] index '{{indexName}}' on table '{{tableName}}' in schema '{{schemaName}}'",
 ]
 
 export const FOREIGN_KEY_TEMPLATES = [
-  '{{action}} foreign key {{fkName}} on table {{tableName}}',
-  '{{action}} foreign key {{fkName}} on table {{tableName}} in schema {{schemaName}}',
+  "[{{action}}] foreign key '{{fkName}}' on table '{{tableName}}'",
+  "[{{action}}] foreign key '{{fkName}}' on table '{{tableName}}' in schema '{{schemaName}}'",
 ]
 
 export const CHECK_TEMPLATES = [
-  '{{action}} check {{checkName}} on table {{tableName}}',
-  '{{action}} check {{checkName}} on table {{tableName}} in schema {{schemaName}}',
+  "[{{action}}] check '{{checkName}}' on table '{{tableName}}'",
+  "[{{action}}] check '{{checkName}}' on table '{{tableName}}' in schema '{{schemaName}}'",
 ]
 
 export const tableDescription: DiffDescriptionRule = diffDescription(TABLE_TEMPLATES)

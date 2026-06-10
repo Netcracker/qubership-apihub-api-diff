@@ -985,6 +985,14 @@ column as its "schema". Declaration paths are origin-intrinsic, so slicing is ro
 (`public`) drops the `in schema` clause by omitting `schemaName` — **except** for a
 schema-level description, where the schema is the subject and is kept.
 
+**Rendering convention (refinement of §10/§O5):** the action is bracketed
+(`[Added]`/`[Deleted]`/`[Changed]`, matching the core default-description style) and entity
+names and values are wrapped in apostrophes; `preposition` and `facet` stay unquoted. E.g.
+`[Changed] type for column 'id' of table 't' from 'integer' to 'bigint'`,
+`[Added] column 'name' to table 't' in schema 's'`. This lives entirely in the ddl templates
+(`ddl.description.ts`); the shared core `DIFF_ACTION_TO_ACTION_MAP` is untouched, so other spec
+types' descriptions are unaffected.
+
 ### 17.10 — Check vs Comment share one attrs/objects branch, keyed on node `kind` (M4/M5)
 
 `attrs[]`/`objects[]` carry both `Comment` (descriptions, T4.3) and `Check` (T5.3). The
