@@ -938,10 +938,15 @@ descends into the `SchemaType` and emits a diff at the **specific property** tha
 
 - **No `compare` resolver / no node-level `$`.** `scalarTypeRules`/`enumTypeRules` carry
   per-field rules instead.
-- **The breaking signal rides on the `/type` name field** (`createTypeNameClassifier`), which
-  reads the **immediate parent** `SchemaType` on each side (`ctx.before/after.parentContext`)
-  and is `breaking` iff `!sameConsumptionFamily`. This works because `/kind` stays suppressed
-  (§9b) and a cross-family change *always* changes the canonical type name.
+- **The breaking signal rides on the `/type` name field** (`createTypeNameClassifier`), whose
+  `replace` slot reads the **immediate parent** `SchemaType` on each side
+  (`ctx.before/after.parentContext`) and is `breaking` iff `!sameConsumptionFamily`. This works
+  because `/kind` stays suppressed (§9b) and a cross-family change *always* changes the
+  canonical type name. The tuple is `[nonBreaking, breaking, replace]`: `type` is a **required**
+  property, so an `add` can only be a previously-incomplete spec being corrected (non-breaking),
+  while a `remove` is a required property going missing (breaking). Both add/remove slots are
+  effectively unreachable (the name is always present when the SchemaType is) — only `replace`
+  fires in practice.
 - **`/size`, `/precision`, `/scale` → `allNonBreaking`** (within-family size/precision change
   keeps every query executing, O1). **`/unsigned` → suppressed** (PG-irrelevant MySQL-ism,
   always `false`).

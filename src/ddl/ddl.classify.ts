@@ -73,6 +73,11 @@ export const sameConsumptionFamily = (before: unknown, after: unknown, dialect: 
  * parent** SchemaType on each side (available on both sides for a name replace):
  * same family → non-breaking; cross family (or opaque) → breaking. Within-kind size/precision/
  * scale changes carry no family change and are non-breaking (classified `allNonBreaking`, O1).
+ *
+ * add → non-breaking: `type` is required on every SchemaType, so its appearance can only mean
+ * a previously-incomplete spec was corrected, never a query-breaking change. remove → breaking:
+ * a required property going missing. (Both slots are effectively unreachable — the name is
+ * always present when the SchemaType is — so only `replace` fires in practice.)
  */
 export const createTypeNameClassifier = (dialect: DdlDiffDialect): ClassifyRule => {
   const replaceClassifier: DiffTypeClassifier = (ctx) =>
