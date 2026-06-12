@@ -1,8 +1,8 @@
 import { addNonBreaking, allNonBreaking, breaking, breakingIf, nonBreaking } from '../core'
 import { ClassifyRule, DiffTypeClassifier } from '../types'
 import { isObject } from '../utils'
-import { TypeKind } from './ddl.const'
-import { DdlDiffDialect, TypeConsumptionFamily } from './ddl.dialect'
+import { TypeConsumptionFamily, TypeKind } from './ddl.const'
+import { DdlDiffDialect } from './ddl.dialect'
 
 const readKind = (value: unknown): string | undefined => {
   return isObject(value) && typeof value.kind === 'string' ? value.kind : undefined
@@ -32,26 +32,26 @@ export const enumValueClassifier: ClassifyRule = allNonBreaking
 export const consumptionFamily = (schemaType: unknown, dialect: DdlDiffDialect): TypeConsumptionFamily => {
   switch (readKind(schemaType)) {
     case TypeKind.BoolType:
-      return 'boolean'
+      return TypeConsumptionFamily.Boolean
     case TypeKind.IntegerType:
     case TypeKind.DecimalType:
     case TypeKind.FloatType:
-      return 'numeric'
+      return TypeConsumptionFamily.Numeric
     case TypeKind.StringType:
-      return 'textual'
+      return TypeConsumptionFamily.Textual
     case TypeKind.BinaryType:
-      return 'binary'
+      return TypeConsumptionFamily.Binary
     case TypeKind.TimeType:
-      return 'temporal'
+      return TypeConsumptionFamily.Temporal
     case TypeKind.JSONType:
-      return 'json'
+      return TypeConsumptionFamily.Json
     case TypeKind.UUIDType:
-      return 'uuid'
+      return TypeConsumptionFamily.Uuid
     case TypeKind.EnumType:
-      return 'enum'
+      return TypeConsumptionFamily.Enum
     default:
       // SpatialType / UnsupportedType / dialect escape-hatch / undecidable → opaque.
-      return dialect.typeFamilyFor?.(schemaType) ?? 'opaque'
+      return dialect.typeFamilyFor?.(schemaType) ?? TypeConsumptionFamily.Opaque
   }
 }
 
@@ -62,7 +62,7 @@ export const consumptionFamily = (schemaType: unknown, dialect: DdlDiffDialect):
 export const sameConsumptionFamily = (before: unknown, after: unknown, dialect: DdlDiffDialect): boolean => {
   const beforeFamily = consumptionFamily(before, dialect)
   const afterFamily = consumptionFamily(after, dialect)
-  return beforeFamily === afterFamily && beforeFamily !== 'opaque'
+  return beforeFamily === afterFamily && beforeFamily !== TypeConsumptionFamily.Opaque
 }
 
 /**

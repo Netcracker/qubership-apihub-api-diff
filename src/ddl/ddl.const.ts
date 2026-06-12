@@ -37,3 +37,24 @@ export const FACET_TYPE = 'type'
 export const FACET_NULLABILITY = 'nullability'
 export const FACET_DEFAULT = 'default'
 export const FACET_DESCRIPTION = 'description'
+
+/**
+ * How a dashboard/`SELECT` consumes a column's values. Type-change classification is expressed
+ * in terms of these families rather than raw SQL type names (plan §7): a same-family change
+ * keeps every previously-valid operation type-valid (non-breaking); a cross-family change
+ * invalidates an operation (breaking). `Opaque` is the conservative catch-all (dialect
+ * escape-hatch / undecidable) and is never "same family" as anything. This is a core-SQL
+ * concept; a dialect only references it to map its escape-hatch types (`typeFamilyFor`).
+ */
+export const TypeConsumptionFamily = {
+  Numeric: 'numeric',
+  Textual: 'textual',
+  Temporal: 'temporal',
+  Boolean: 'boolean',
+  Binary: 'binary',
+  Uuid: 'uuid',
+  Json: 'json',
+  Enum: 'enum',
+  Opaque: 'opaque',
+} as const
+export type TypeConsumptionFamily = typeof TypeConsumptionFamily[keyof typeof TypeConsumptionFamily]

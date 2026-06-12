@@ -1,6 +1,6 @@
 import { TypeKind } from '@netcracker/qubership-apihub-ddlapi'
 import { consumptionFamily, sameConsumptionFamily } from '../src/ddl/ddl.classify'
-import { DIALECT_DIFF_POSTGRES } from '../src/ddl'
+import { DIALECT_DIFF_POSTGRES, TypeConsumptionFamily } from '../src/ddl'
 
 // Pure-function tests for the SQL type-compatibility model (plan §7, test area 2). No engine.
 
@@ -11,22 +11,22 @@ const same = (a: string, b: string) =>
 
 describe('consumptionFamily (core kinds)', () => {
   it('maps each core kind to its family', () => {
-    expect(family(TypeKind.BoolType)).toBe('boolean')
-    expect(family(TypeKind.IntegerType)).toBe('numeric')
-    expect(family(TypeKind.DecimalType)).toBe('numeric')
-    expect(family(TypeKind.FloatType)).toBe('numeric')
-    expect(family(TypeKind.StringType)).toBe('textual')
-    expect(family(TypeKind.BinaryType)).toBe('binary')
-    expect(family(TypeKind.TimeType)).toBe('temporal')
-    expect(family(TypeKind.JSONType)).toBe('json')
-    expect(family(TypeKind.UUIDType)).toBe('uuid')
-    expect(family(TypeKind.EnumType)).toBe('enum')
+    expect(family(TypeKind.BoolType)).toBe(TypeConsumptionFamily.Boolean)
+    expect(family(TypeKind.IntegerType)).toBe(TypeConsumptionFamily.Numeric)
+    expect(family(TypeKind.DecimalType)).toBe(TypeConsumptionFamily.Numeric)
+    expect(family(TypeKind.FloatType)).toBe(TypeConsumptionFamily.Numeric)
+    expect(family(TypeKind.StringType)).toBe(TypeConsumptionFamily.Textual)
+    expect(family(TypeKind.BinaryType)).toBe(TypeConsumptionFamily.Binary)
+    expect(family(TypeKind.TimeType)).toBe(TypeConsumptionFamily.Temporal)
+    expect(family(TypeKind.JSONType)).toBe(TypeConsumptionFamily.Json)
+    expect(family(TypeKind.UUIDType)).toBe(TypeConsumptionFamily.Uuid)
+    expect(family(TypeKind.EnumType)).toBe(TypeConsumptionFamily.Enum)
   })
 
   it('maps Spatial / Unsupported / unknown kinds to opaque', () => {
-    expect(family(TypeKind.SpatialType)).toBe('opaque')
-    expect(family(TypeKind.UnsupportedType)).toBe('opaque')
-    expect(family('SomePgEscapeHatchType')).toBe('opaque')
+    expect(family(TypeKind.SpatialType)).toBe(TypeConsumptionFamily.Opaque)
+    expect(family(TypeKind.UnsupportedType)).toBe(TypeConsumptionFamily.Opaque)
+    expect(family('SomePgEscapeHatchType')).toBe(TypeConsumptionFamily.Opaque)
   })
 })
 

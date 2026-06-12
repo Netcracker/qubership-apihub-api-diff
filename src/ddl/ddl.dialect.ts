@@ -1,4 +1,5 @@
 import { CompareRules } from '../types'
+import { TypeConsumptionFamily } from './ddl.const'
 
 // Diff-side dialect-separation seam — the analogue of api-unifier's `DdlApiDialect`.
 // `ddlRules` owns all core, driver-neutral SQL rules; everything dialect-specific
@@ -10,23 +11,6 @@ import { CompareRules } from '../types'
 export const DIALECT_ID_POSTGRES = 'postgres'
 
 export type DialectId = typeof DIALECT_ID_POSTGRES
-
-/**
- * How a dashboard/`SELECT` consumes a column's values. Type-change classification is
- * expressed in terms of these families rather than raw SQL type names (plan §7): a
- * same-family change keeps every previously-valid operation type-valid (non-breaking);
- * a cross-family change invalidates an operation (breaking).
- */
-export type TypeConsumptionFamily =
-  | 'numeric'
-  | 'textual'
-  | 'temporal'
-  | 'boolean'
-  | 'binary'
-  | 'uuid'
-  | 'json'
-  | 'enum'
-  | 'opaque'
 
 /**
  * Registry contract a dialect implements. The `*RulesFor(kind)` lookups are consulted by
