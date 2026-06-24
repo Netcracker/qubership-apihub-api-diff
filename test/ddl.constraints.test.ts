@@ -7,8 +7,13 @@ import { diffsMatcher } from './helper/matchers'
 
 describe('indexes / primary key / unique (T5.1)', () => {
   it('add index ⇒ one non-breaking diff', async () => {
-    const beforeSql = 'create table t(id int, name text);'
-    const afterSql = 'create table t(id int, name text); create index idx_name on t(name);'
+    const beforeSql = `
+      create table t(id int, name text);
+    `
+    const afterSql = `
+      create table t(id int, name text);
+      create index idx_name on t(name);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the added index
     expect(diffs).toEqual(diffsMatcher([
@@ -22,8 +27,13 @@ describe('indexes / primary key / unique (T5.1)', () => {
   })
 
   it('remove index ⇒ one non-breaking diff', async () => {
-    const beforeSql = 'create table t(id int, name text); create index idx_name on t(name);'
-    const afterSql = 'create table t(id int, name text);'
+    const beforeSql = `
+      create table t(id int, name text);
+      create index idx_name on t(name);
+    `
+    const afterSql = `
+      create table t(id int, name text);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the removed index
     expect(diffs).toEqual(diffsMatcher([
@@ -52,8 +62,14 @@ describe('indexes / primary key / unique (T5.1)', () => {
   })
 
   it('unique flip true→false ⇒ one non-breaking diff', async () => {
-    const beforeSql = 'create table t(name text); create unique index u on t(name);'
-    const afterSql = 'create table t(name text); create index u on t(name);'
+    const beforeSql = `
+      create table t(name text);
+      create unique index u on t(name);
+    `
+    const afterSql = `
+      create table t(name text);
+      create index u on t(name);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the unique flag flip
     expect(diffs).toEqual(diffsMatcher([
@@ -69,8 +85,14 @@ describe('indexes / primary key / unique (T5.1)', () => {
   })
 
   it('reorder index columns ⇒ two non-breaking seqNo replace diffs (not add/remove)', async () => {
-    const beforeSql = 'create table t(a int, b int); create index idx on t(a, b);'
-    const afterSql = 'create table t(a int, b int); create index idx on t(b, a);'
+    const beforeSql = `
+      create table t(a int, b int);
+      create index idx on t(a, b);
+    `
+    const afterSql = `
+      create table t(a int, b int);
+      create index idx on t(b, a);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(2) // the two moved parts' seqNo
     expect(diffs).toEqual(diffsMatcher([
@@ -94,8 +116,14 @@ describe('indexes / primary key / unique (T5.1)', () => {
   })
 
   it('add a column to a composite index ⇒ one non-breaking part add', async () => {
-    const beforeSql = 'create table t(a int, b int); create index idx on t(a);'
-    const afterSql = 'create table t(a int, b int); create index idx on t(a, b);'
+    const beforeSql = `
+      create table t(a int, b int);
+      create index idx on t(a);
+    `
+    const afterSql = `
+      create table t(a int, b int);
+      create index idx on t(a, b);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the added index part
     expect(diffs).toEqual(diffsMatcher([
@@ -110,17 +138,20 @@ describe('indexes / primary key / unique (T5.1)', () => {
 })
 
 describe('foreign keys (T5.2)', () => {
-  const BEFORE_NO_FK = `
+  // Shared fixtures: the add/remove tests use them with swapped before/after roles.
+  const NO_FK = `
     create table t(id int, primary key (id));
     create table u(uid int, ref int);
   `
-  const AFTER_FK = `
+  const WITH_FK = `
     create table t(id int, primary key (id));
     create table u(uid int, ref int, constraint fk_u foreign key (ref) references t(id));
   `
 
   it('add foreign key ⇒ one non-breaking diff', async () => {
-    const { diffs } = await diffSql(BEFORE_NO_FK, AFTER_FK)
+    const beforeSql = NO_FK
+    const afterSql = WITH_FK
+    const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the added foreign key
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -133,7 +164,9 @@ describe('foreign keys (T5.2)', () => {
   })
 
   it('remove foreign key ⇒ one non-breaking diff', async () => {
-    const { diffs } = await diffSql(AFTER_FK, BEFORE_NO_FK)
+    const beforeSql = WITH_FK
+    const afterSql = NO_FK
+    const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the removed foreign key
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({

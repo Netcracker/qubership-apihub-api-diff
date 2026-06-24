@@ -14,8 +14,14 @@ const objectsOf = (merged: unknown): Any[] => (merged as Any).schemas[0].objects
 
 describe('shared-instance / merged-document contract (T2.6)', () => {
   it('an enum used by several columns: value change ⇒ one shared diff at every column', async () => {
-    const beforeSql = "create type mood as enum ('a'); create table t(m1 mood, m2 mood);"
-    const afterSql = "create type mood as enum ('a','b'); create table t(m1 mood, m2 mood);"
+    const beforeSql = `
+      create type mood as enum ('a');
+      create table t(m1 mood, m2 mood);
+    `
+    const afterSql = `
+      create type mood as enum ('a', 'b');
+      create table t(m1 mood, m2 mood);
+    `
     const { diffs, merged } = await diffSql(beforeSql, afterSql)
 
     // Exactly one value-add diff, non-breaking (E1).
@@ -43,8 +49,14 @@ describe('shared-instance / merged-document contract (T2.6)', () => {
   })
 
   it('a column in a primary key and a foreign key: type change ⇒ one shared diff at every site', async () => {
-    const beforeSql = 'create table t(id int, primary key (id)); create table u(uid int, ref int, constraint fk_u foreign key (ref) references t(id));'
-    const afterSql = 'create table t(id bigint, primary key (id)); create table u(uid int, ref int, constraint fk_u foreign key (ref) references t(id));'
+    const beforeSql = `
+      create table t(id int, primary key (id));
+      create table u(uid int, ref int, constraint fk_u foreign key (ref) references t(id));
+    `
+    const afterSql = `
+      create table t(id bigint, primary key (id));
+      create table u(uid int, ref int, constraint fk_u foreign key (ref) references t(id));
+    `
     const { diffs, merged } = await diffSql(beforeSql, afterSql)
 
     // One /type-name diff (same family int→bigint → non-breaking), shared across sites.

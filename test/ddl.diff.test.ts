@@ -14,7 +14,8 @@ describe('ddl diff — engine registration (T1.1)', () => {
   })
 
   it('throws a spec-mismatch error when comparing ddlapi against another spec type', async () => {
-    const realm = await buildRealm('create table t(id int);')
+    const sql = 'create table t(id int);'
+    const realm = await buildRealm(sql)
     const openapi = { openapi: '3.0.0', info: { title: 't', version: '1' }, paths: {} }
     expect(() => apiDiff(realm, openapi)).toThrow(/Specification cannot be different/)
   })
@@ -28,8 +29,9 @@ describe('ddl diff — rule-tree skeleton (T1.2)', () => {
   })
 
   it('a raw-only change (same canonical type) ⇒ 0 diffs', async () => {
-    const before = await buildRealm('create table t(id integer);')
-    const after = await buildRealm('create table t(id integer);')
+    const sql = 'create table t(id integer);'
+    const before = await buildRealm(sql)
+    const after = await buildRealm(sql)
     // raw is redundant with type.type and its replace is suppressed (§9b). raw is present
     // on both sides in real parses; set both here so the change is a replace, not an add.
     ;(before as any).schemas[0].tables[0].columns[0].type.raw = 'integer'
@@ -60,8 +62,9 @@ describe('ddl diff — rule-tree skeleton (T1.2)', () => {
   })
 
   it('an unknown object kind change ⇒ unclassified (dialect/core miss falls back)', async () => {
-    const before = await buildRealm('create table t(id int);')
-    const after = await buildRealm('create table t(id int);')
+    const sql = 'create table t(id int);'
+    const before = await buildRealm(sql)
+    const after = await buildRealm(sql)
     ;(after as any).schemas[0].objects = [{ kind: 'MysteryThing', name: 'm' }]
     const { diffs } = apiDiff(before, after)
     expect(diffs).toHaveLength(1) // the single unknown object add
@@ -77,8 +80,13 @@ describe('ddl diff — rule-tree skeleton (T1.2)', () => {
 
 describe('ddl diff — phase-1 classification (M2)', () => {
   it('case 1: added table ⇒ add / non-breaking', async () => {
-    const beforeSql = 'create table a(id int);'
-    const afterSql = 'create table a(id int); create table b(id int);'
+    const beforeSql = `
+      create table a(id int);
+    `
+    const afterSql = `
+      create table a(id int);
+      create table b(id int);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the added table
     expect(diffs).toEqual(diffsMatcher([
@@ -92,8 +100,13 @@ describe('ddl diff — phase-1 classification (M2)', () => {
   })
 
   it('case 2: deleted table ⇒ remove / breaking', async () => {
-    const beforeSql = 'create table a(id int); create table b(id int);'
-    const afterSql = 'create table a(id int);'
+    const beforeSql = `
+      create table a(id int);
+      create table b(id int);
+    `
+    const afterSql = `
+      create table a(id int);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the deleted table
     expect(diffs).toEqual(diffsMatcher([
@@ -280,8 +293,14 @@ describe('ddl diff — phase-1 classification (M2)', () => {
   })
 
   it('case E1: added enum value ⇒ add / non-breaking', async () => {
-    const beforeSql = "create type mood as enum ('happy','sad'); create table t(m mood);"
-    const afterSql = "create type mood as enum ('happy','sad','neutral'); create table t(m mood);"
+    const beforeSql = `
+      create type mood as enum ('happy', 'sad');
+      create table t(m mood);
+    `
+    const afterSql = `
+      create type mood as enum ('happy', 'sad', 'neutral');
+      create table t(m mood);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the added enum value
     expect(diffs).toEqual(diffsMatcher([
@@ -295,8 +314,14 @@ describe('ddl diff — phase-1 classification (M2)', () => {
   })
 
   it('case E2: removed enum value ⇒ remove / non-breaking', async () => {
-    const beforeSql = "create type mood as enum ('happy','sad','neutral'); create table t(m mood);"
-    const afterSql = "create type mood as enum ('happy','sad'); create table t(m mood);"
+    const beforeSql = `
+      create type mood as enum ('happy', 'sad', 'neutral');
+      create table t(m mood);
+    `
+    const afterSql = `
+      create type mood as enum ('happy', 'sad');
+      create table t(m mood);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the removed enum value
     expect(diffs).toEqual(diffsMatcher([

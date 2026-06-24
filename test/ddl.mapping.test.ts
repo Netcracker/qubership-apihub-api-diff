@@ -8,8 +8,14 @@ import { diffsMatcher } from './helper/matchers'
 
 describe('name-keyed resolvers (T2.1)', () => {
   it('reordering tables ⇒ no diffs', async () => {
-    const beforeSql = 'create table a(id int); create table b(id int);'
-    const afterSql = 'create table b(id int); create table a(id int);'
+    const beforeSql = `
+      create table a(id int);
+      create table b(id int);
+    `
+    const afterSql = `
+      create table b(id int);
+      create table a(id int);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(0)
   })
@@ -22,8 +28,13 @@ describe('name-keyed resolvers (T2.1)', () => {
   })
 
   it('adding one table ⇒ exactly one element-level diff', async () => {
-    const beforeSql = 'create table a(id int);'
-    const afterSql = 'create table a(id int); create table b(id int);'
+    const beforeSql = `
+      create table a(id int);
+    `
+    const afterSql = `
+      create table a(id int);
+      create table b(id int);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // only the added table
     expect(diffs).toEqual(diffsMatcher([
@@ -54,8 +65,14 @@ describe('name-keyed resolvers (T2.1)', () => {
 
 describe('attrs composite-key + enum values set (T2.2)', () => {
   it('a Comment text change ⇒ exactly one diff (attr keyed by kind)', async () => {
-    const beforeSql = "create table t(id int); comment on column t.id is 'before';"
-    const afterSql = "create table t(id int); comment on column t.id is 'after';"
+    const beforeSql = `
+      create table t(id int);
+      comment on column t.id is 'before';
+    `
+    const afterSql = `
+      create table t(id int);
+      comment on column t.id is 'after';
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the single Comment text replace
     expect(diffs).toEqual(diffsMatcher([
@@ -88,15 +105,27 @@ describe('attrs composite-key + enum values set (T2.2)', () => {
   })
 
   it('enum value reorder ⇒ 0 diffs (set semantics)', async () => {
-    const beforeSql = "create type mood as enum ('happy','sad'); create table t(m mood);"
-    const afterSql = "create type mood as enum ('sad','happy'); create table t(m mood);"
+    const beforeSql = `
+      create type mood as enum ('happy', 'sad');
+      create table t(m mood);
+    `
+    const afterSql = `
+      create type mood as enum ('sad', 'happy');
+      create table t(m mood);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(0)
   })
 
   it('enum value add fires at element granularity ⇒ one diff', async () => {
-    const beforeSql = "create type mood as enum ('happy'); create table t(m mood);"
-    const afterSql = "create type mood as enum ('happy','sad'); create table t(m mood);"
+    const beforeSql = `
+      create type mood as enum ('happy');
+      create table t(m mood);
+    `
+    const afterSql = `
+      create type mood as enum ('happy', 'sad');
+      create table t(m mood);
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // the single added value element
     expect(diffs).toEqual(diffsMatcher([
