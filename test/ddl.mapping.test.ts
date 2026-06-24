@@ -17,14 +17,14 @@ describe('name-keyed resolvers (T2.1)', () => {
       create table a(id int);
     `
     const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(diffs).toHaveLength(0)
+    expect(diffs).toBeEmpty()
   })
 
   it('reordering columns ⇒ no diffs', async () => {
     const beforeSql = 'create table t(a int, b int);'
     const afterSql = 'create table t(b int, a int);'
     const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(diffs).toHaveLength(0)
+    expect(diffs).toBeEmpty()
   })
 
   it('adding one table ⇒ exactly one element-level diff', async () => {
@@ -49,15 +49,15 @@ describe('name-keyed resolvers (T2.1)', () => {
 
   it('removing one column ⇒ exactly one element-level diff', async () => {
     const beforeSql = 'create table t(a int, b int);'
-    const afterSql = 'create table t(a int);'
+    const afterSql = 'create table t(b int);'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(diffs).toHaveLength(1) // only the removed column
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
         type: breaking,
-        beforeValue: expect.objectContaining({ name: 'b' }),
-        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 1]],
+        beforeValue: expect.objectContaining({ name: 'a' }),
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 0]],
       }),
     ]))
   })
@@ -114,7 +114,7 @@ describe('attrs composite-key + enum values set (T2.2)', () => {
       create table t(m mood);
     `
     const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(diffs).toHaveLength(0)
+    expect(diffs).toBeEmpty()
   })
 
   it('enum value add fires at element granularity ⇒ one diff', async () => {
@@ -123,17 +123,23 @@ describe('attrs composite-key + enum values set (T2.2)', () => {
       create table t(m mood);
     `
     const afterSql = `
-      create type mood as enum ('happy', 'sad');
+      create type mood as enum ('happy', 'sad', 'neutral');
       create table t(m mood);
     `
     const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(diffs).toHaveLength(1) // the single added value element
+    expect(diffs).toHaveLength(2) // the two added value elements
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
         type: nonBreaking,
         afterValue: 'sad',
         afterDeclarationPaths: [['schemas', 0, 'objects', 0, 'values', 1]],
+      }),
+      expect.objectContaining({
+        action: DiffAction.add,
+        type: nonBreaking,
+        afterValue: 'neutral',
+        afterDeclarationPaths: [['schemas', 0, 'objects', 0, 'values', 2]],
       }),
     ]))
   })

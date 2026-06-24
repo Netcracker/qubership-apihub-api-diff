@@ -10,7 +10,7 @@ describe('ddl diff — engine registration (T1.1)', () => {
   it('identical realms produce no diffs', async () => {
     const sql = 'create table t(id int);'
     const { diffs } = await diffSql(sql, sql)
-    expect(diffs).toHaveLength(0)
+    expect(diffs).toBeEmpty()
   })
 
   it('throws a spec-mismatch error when comparing ddlapi against another spec type', async () => {
@@ -25,19 +25,14 @@ describe('ddl diff — rule-tree skeleton (T1.2)', () => {
   it('identical realms ⇒ 0 diffs', async () => {
     const sql = 'create table orders(id int, name varchar(50));'
     const { diffs } = await diffSql(sql, sql)
-    expect(diffs).toHaveLength(0)
+    expect(diffs).toBeEmpty()
   })
 
   it('a raw-only change (same canonical type) ⇒ 0 diffs', async () => {
-    const sql = 'create table t(id integer);'
-    const before = await buildRealm(sql)
-    const after = await buildRealm(sql)
-    // raw is redundant with type.type and its replace is suppressed (§9b). raw is present
-    // on both sides in real parses; set both here so the change is a replace, not an add.
-    ;(before as any).schemas[0].tables[0].columns[0].type.raw = 'integer'
-    ;(after as any).schemas[0].tables[0].columns[0].type.raw = 'int4'
-    const { diffs } = apiDiff(before, after)
-    expect(diffs).toHaveLength(0)
+    const beforeSql = 'create table t(id integer);'
+    const afterSql = 'create table t(id int4);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toBeEmpty()
   })
 
   it('kind + raw are suppressed inside a real type change ⇒ only the /type-name diff', async () => {
