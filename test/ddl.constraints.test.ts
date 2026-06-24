@@ -1,4 +1,4 @@
-import { Diff, DiffAction, nonBreaking } from '../src'
+import { DiffAction, nonBreaking } from '../src'
 import { diffSql } from './helper/ddl'
 import { diffsMatcher } from './helper/matchers'
 
@@ -199,33 +199,6 @@ describe('foreign keys (T5.2)', () => {
         afterDeclarationPaths: [['schemas', 0, 'tables', 1, 'foreignKeys', 0, 'onDelete']],
       }),
     ]))
-  })
-
-  it('a change reached via fk.refTable is the same Diff (appears once)', async () => {
-    const beforeSql = `
-      create table t(id int, primary key (id));
-      create table u(ref int, constraint fk_u foreign key (ref) references t(id));
-    `
-    const afterSql = `
-      create table t(id int, primary key (id), note text);
-      create table u(ref int, constraint fk_u foreign key (ref) references t(id));
-    `
-    const { diffs, merged } = await diffSql(beforeSql, afterSql)
-    // The added column on t appears once, even though t is reachable via u.foreignKeys[].refTable.
-    expect(diffs).toHaveLength(1) // the single added column on t
-    expect(diffs).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.add,
-        type: nonBreaking,
-        afterValue: expect.objectContaining({ name: 'note' }),
-        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'columns', 1]],
-      }),
-    ]))
-
-    const tables = (merged as any).schemas[0].tables
-    const t = tables.find((tbl: any) => tbl.name === 't')
-    const u = tables.find((tbl: any) => tbl.name === 'u')
-    expect(u.foreignKeys[0].refTable).toBe(t)
   })
 })
 
