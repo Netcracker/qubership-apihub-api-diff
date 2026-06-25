@@ -1020,3 +1020,28 @@ T-SETUP + M0–M5 (T1.1 … T5.3) implemented and verified. Module `src/ddl/`:
 `ddl.constraints`, plus core `core.mapping`/`core.ignoreDifference`. Final run: 69 suites /
 6400 tests green, `tsc --noEmit` clean, all changed/added files lint-clean (the 13 pre-existing
 fixture `eol-last` errors in §17.6 remain, untouched).
+
+### 17.13 — Exhaustive description coverage + follow-on fixes
+
+`ddl.description.test.ts` was made exhaustive — every non-`unclassified` rule that emits a
+described diff has a description-string test (Added/Deleted/Changed per rule). Two changes fell
+out of that audit:
+
+- **Description fix (default-backed replace).** A replace whose *after* value is a normalized
+  default resolves its after declaration path to the synthetic `#defaults` origin (e.g. an index
+  `unique:true→false` flip), which made the param calculator emit the junk fallback
+  `[Changed] '#defaults' in root`. Following the OpenAPI/JSON Schema calculators,
+  `createDdlParamsCalculator` now takes its candidate paths from `resolveAllDeclarationPath`
+  (before+after merged) and slices them against the change side's root (after for add/replace,
+  before for remove); the merged set still contains the real path and the structural predicates
+  never match `#defaults`, so the real path wins — the unique flip reads
+  `[Changed] index 'u' on table 't'`. Normal replaces are unaffected (their ancestors are
+  identical on both sides, so a before-origin path slices correctly against the after realm).
+- **Collation / GeneratedExpr promoted from `unclassified`.** These core column `Attr` kinds
+  were previously rule-less (→ `unclassified`, default description). They are now classified
+  `nonBreaking` (sort/computed-value changes are result-drift, never an execution break) and
+  rendered as column facets (`collation` / `generated expression`) via the shared column-facet
+  templates. Both are produced by PG DDL (`COLLATE`, `GENERATED ALWAYS AS … STORED`). `Charset`
+  is a **MySQL-ism, out of scope** — not emitted by the PG parser — so it is intentionally not
+  handled (no rule, no dispatcher case, no facet); a `Charset` attr would fall through to the
+  `unclassified` catch-all. `collation`/`generated expression` facet constants live in `ddl.const`.
