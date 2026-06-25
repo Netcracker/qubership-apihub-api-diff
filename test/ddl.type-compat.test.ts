@@ -2,7 +2,7 @@ import { TypeKind } from '@netcracker/qubership-apihub-ddlapi'
 import { consumptionFamily, sameConsumptionFamily } from '../src/ddl/ddl.classify'
 import { DIALECT_DIFF_POSTGRES, TypeConsumptionFamily } from '../src/ddl'
 
-// Pure-function tests for the SQL type-compatibility model (plan §7, test area 2). No engine.
+// Pure-function tests for the SQL type-compatibility model. No engine.
 
 const type = (kind: string, sqlType = 'x') => ({ kind, type: sqlType })
 const family = (kind: string) => consumptionFamily(type(kind), DIALECT_DIFF_POSTGRES)

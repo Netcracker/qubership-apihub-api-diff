@@ -19,7 +19,7 @@ import { SPEC_TYPE_DDL_API_1 } from '@netcracker/qubership-apihub-api-unifier'
 
 export type DdlApiSpecVersion = typeof SPEC_TYPE_DDL_API_1
 
-// --- description template-param keys (see plan §10) ---
+// --- description template-param keys ---
 export const TEMPLATE_PARAM_FACET = 'facet'
 export const TEMPLATE_PARAM_TABLE_NAME = 'tableName'
 export const TEMPLATE_PARAM_COLUMN_NAME = 'columnName'
@@ -64,7 +64,7 @@ export const DESCRIPTION_VALUE_MAX_LENGTH = 40
 
 /**
  * How a dashboard/`SELECT` consumes a column's values. Type-change classification is expressed
- * in terms of these families rather than raw SQL type names (plan §7): a same-family change
+ * in terms of these families rather than raw SQL type names: a same-family change
  * keeps every previously-valid operation type-valid (non-breaking); a cross-family change
  * invalidates an operation (breaking). `Opaque` is the conservative catch-all (dialect
  * escape-hatch / undecidable) and is never "same family" as anything. This is a core-SQL

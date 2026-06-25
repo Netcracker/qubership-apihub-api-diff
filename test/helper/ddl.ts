@@ -12,7 +12,7 @@ export const buildRealm = (ddl: string): Promise<unknown> => buildFromDdl(ddl)
 /**
  * Diff two DDL snapshots end-to-end: parse each through `buildFromDdl`, then `apiDiff`
  * (which normalizes internally). Fixtures are authored as raw SQL — the real
- * parser→model→diff path — rather than hand-built Realm graphs (plan §11/D13).
+ * parser→model→diff path — rather than hand-built Realm graphs.
  */
 export const diffSql = async (
   beforeSql: string,

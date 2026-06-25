@@ -4,7 +4,7 @@ import { ObjectKind } from '@netcracker/qubership-apihub-ddlapi'
 import { diffSql } from './helper/ddl'
 import { diffsMatcher } from './helper/matchers'
 
-// Shared diff-instance & merged-document contract (plan §8A, test area 9). When one logical
+// Shared diff-instance & merged-document contract. When one logical
 // entity is referenced from several places, the change to it must be the SAME Diff instance
 // at every reference site in `merged`, and appear once in `diffs`.
 //
@@ -22,7 +22,7 @@ const findEnumObject = (merged: unknown): EnumType | undefined =>
 const diffAt = (node: object, key: PropertyKey): Diff | undefined =>
   (node as { [DIFF_META_KEY]?: Record<PropertyKey, Diff> })[DIFF_META_KEY]?.[key]
 
-describe('shared-instance / merged-document contract (T2.6)', () => {
+describe('shared-instance / merged-document contract', () => {
   it('an enum used by several columns: value change ⇒ one shared diff at every column', async () => {
     const beforeSql = `
       create type mood as enum ('a');

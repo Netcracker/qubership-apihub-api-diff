@@ -8,25 +8,25 @@ const readKind = (value: unknown): string | undefined => {
   return isObject(value) && typeof value.kind === 'string' ? value.kind : undefined
 }
 
-// --- structural add/remove classifiers (cases 1–4) ---
+// --- structural add/remove classifiers ---
 // Adding a table/column never breaks an existing query; deleting one makes a previously
-// valid SELECT fail to resolve (plan §6). add→nonBreaking, remove/replace→breaking.
+// valid SELECT fail to resolve. add→nonBreaking, remove/replace→breaking.
 export const tableClassifier: ClassifyRule = addNonBreaking
 export const columnClassifier: ClassifyRule = addNonBreaking
 
-// --- nullability (cases 6, 7) ---
-// A nullability change never makes a SELECT fail to execute, in either direction (§1/D15).
+// --- nullability ---
+// A nullability change never makes a SELECT fail to execute, in either direction.
 export const nullabilityClassifier: ClassifyRule = allNonBreaking
 
-// --- enum values (E1, E2) ---
+// --- enum values ---
 // The allowed-value set is a write constraint; no SELECT fails when a value is added or
-// removed (a removed category simply stops appearing) — both non-breaking (§6/D6).
+// removed (a removed category simply stops appearing) — both non-breaking.
 export const enumValueClassifier: ClassifyRule = allNonBreaking
 
-// --- column type change (case 5) ---
+// --- column type change ---
 
 /**
- * Maps a `SchemaType` to how a dashboard consumes its values (plan §7). Core, closed kinds
+ * Maps a `SchemaType` to how a dashboard consumes its values. Core, closed kinds
  * are classified here; escape-hatch kinds defer to the dialect, falling back to `opaque`.
  */
 export const consumptionFamily = (schemaType: unknown, dialect: DdlDiffDialect): TypeConsumptionFamily => {
@@ -57,7 +57,7 @@ export const consumptionFamily = (schemaType: unknown, dialect: DdlDiffDialect):
 
 /**
  * `true` iff old→new keeps every type-valid operation valid: same family and not `opaque`.
- * `opaque` on either side (or family undecidable) ⇒ `false` (conservative breaking, §7).
+ * `opaque` on either side (or family undecidable) ⇒ `false` (conservative breaking).
  */
 export const sameConsumptionFamily = (before: unknown, after: unknown, dialect: DdlDiffDialect): boolean => {
   const beforeFamily = consumptionFamily(before, dialect)

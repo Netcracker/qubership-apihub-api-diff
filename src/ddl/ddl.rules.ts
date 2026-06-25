@@ -53,11 +53,11 @@ const readKind = (value: unknown): string | undefined => {
 }
 
 // `kind` is a technical discriminant with no domain meaning, and `column.type.raw` is
-// redundant with `column.type.type` (plan §7/§9b) — both are suppressed in place
+// redundant with `column.type.type` — both are suppressed in place
 // (whole node, all actions) so an end user never sees "changed kind/raw from X to Y".
 const SUPPRESS: CompareRule = { [IGNORE_DIFFERENCE_RULE]: true }
 
-// ddlapi arrays are identity-keyed (plan §8), so an element matched to a different index is a
+// ddlapi arrays are identity-keyed, so an element matched to a different index is a
 // reorder, not a rename. `ignoreKeyDifference` on the element stops that index change being
 // reported as a `[Renamed]` diff. Applied to every mapped-array element.
 const asElement = (rules: CompareRules): CompareRules => ({
@@ -70,7 +70,7 @@ const asElement = (rules: CompareRules): CompareRules => ({
  * (Realm → schemas → tables → columns/indexes/foreignKeys/attrs/objects) so the two
  * libraries stay aligned. Union `kind`s the core does not recognise are delegated to
  * `dialect.*RulesFor(kind)`; a dialect miss falls back to the single root-level
- * `unclassified` catch-all (`/**` → `$: allUnclassified`, plan §5/O3).
+ * `unclassified` catch-all (`/**` → `$: allUnclassified`).
  *
  * All node rules are declared inside this closure so they capture `dialect`; the union
  * dispatchers and the cyclic `fk.refTable` edge are resolved lazily at crawl time.
@@ -142,7 +142,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
     }
   }
 
-  // --- collection rules (identity-keyed; plan §8) ---
+  // --- collection rules (identity-keyed) ---
   const attrsArrayRule: CompareRules = { mapping: attrsMappingResolver, '/*': attrRules }
   const objectsArrayRule: CompareRules = { mapping: attrsMappingResolver, '/*': objectRules }
 
@@ -185,7 +185,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
     '/text': { $: allAnnotation, description: commentDescription },
   }
   // Collation is a column-level value attr. Changing the collation shifts sort/comparison
-  // order (a result change) but never makes a SELECT fail to execute → non-breaking (§1). The
+  // order (a result change) but never makes a SELECT fail to execute → non-breaking. The
   // param calculator renders it as the `collation` column facet. (Charset is a MySQL-ism not
   // emitted by the PostgreSQL parser and is intentionally not handled — out of scope.)
   const collationRules: CompareRules = {
@@ -196,7 +196,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   }
   // Check is dual-role (Attr + SchemaObject, one `kind`); this single rule serves both. A
   // check is a write-time constraint invisible to SELECT → add/remove and expr change are
-  // non-breaking (T5.3).
+  // non-breaking.
   const checkRules: CompareRules = {
     $: allNonBreaking,
     description: checkDescription,
@@ -241,7 +241,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   // --- Column / ColumnType ---
   const columnTypeRules: CompareRules = {
     '/type': schemaTypeRules,
-    '/raw': SUPPRESS, // redundant with /type (plan §7/§9b)
+    '/raw': SUPPRESS, // redundant with /type
     '/null': { $: nullabilityClassifier, description: columnFacetDescription }, // facet = nullability
   }
   const columnRules: CompareRules = {
@@ -254,7 +254,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
 
   // --- Index / IndexPart ---
   // Indexes are performance-only and primary key/unique alter grain, not query validity →
-  // all non-breaking (T5.1/§6/D10). Parts are keyed by referenced column name so a
+  // all non-breaking. Parts are keyed by referenced column name so a
   // column-order swap surfaces as `seqNo` replace diffs (non-breaking), not add/remove churn.
   const indexPartRules: CompareRules = {
     $: allNonBreaking,
@@ -275,8 +275,8 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
 
   // --- ForeignKey ---
   // FK add/remove and onUpdate/onDelete/refColumns changes are write-time constraints
-  // invisible to a reader → non-breaking (T5.2/§6). refTable reuses the table rule via a lazy
-  // cyclic edge — never cloned (shared-instance contract §8A).
+  // invisible to a reader → non-breaking. refTable reuses the table rule via a lazy
+  // cyclic edge — never cloned (the shared-instance contract).
   const foreignKeyRules: CompareRules = {
     $: allNonBreaking,
     description: foreignKeyDescription,
@@ -314,7 +314,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
     // Nearest descriptionParamCalculator for every node (resolved up the rule tree).
     descriptionParamCalculator,
     // Single root-level catch-all: any node without a more specific rule classifies as
-    // `unclassified` (plan §5/O3). `/**` is propagated to descendants by json-crawl.
+    // `unclassified`. `/**` is propagated to descendants by json-crawl.
     '/**': { $: allUnclassified },
     '/schemas': { mapping: nameMappingResolver, '/*': asElement(schemaRules) },
     '/attrs': attrsArrayRule,

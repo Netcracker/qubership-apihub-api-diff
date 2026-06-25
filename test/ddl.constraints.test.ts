@@ -2,10 +2,11 @@ import { DiffAction, nonBreaking } from '../src'
 import { diffSql } from './helper/ddl'
 import { diffsMatcher } from './helper/matchers'
 
-// Phase-3 — constraints & access structures. All non-breaking for a reader (plan §6/§12).
+// Constraints & access structures. All non-breaking for a reader: a constraint or access
+// structure never makes a previously-valid SELECT fail to execute.
 // Field assertions only — description strings live in ddl.description.test.ts.
 
-describe('indexes / primary key / unique (T5.1)', () => {
+describe('indexes / primary key / unique', () => {
   it('add index ⇒ one non-breaking diff', async () => {
     const beforeSql = `
       create table t(id int, name text);
@@ -137,7 +138,7 @@ describe('indexes / primary key / unique (T5.1)', () => {
   })
 })
 
-describe('foreign keys (T5.2)', () => {
+describe('foreign keys', () => {
   // Shared fixtures: the add/remove tests use them with swapped before/after roles.
   const NO_FK = `
     create table t(id int, primary key (id));
@@ -202,7 +203,7 @@ describe('foreign keys (T5.2)', () => {
   })
 })
 
-describe('check constraints (T5.3)', () => {
+describe('check constraints', () => {
   it('add check ⇒ one non-breaking diff', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id int, constraint c_pos check (id > 0));'

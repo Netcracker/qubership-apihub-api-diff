@@ -2,11 +2,11 @@ import { annotation, breaking, Diff, DiffAction, nonBreaking } from '../src'
 import { diffSql } from './helper/ddl'
 import { diffsMatcher } from './helper/matchers'
 
-// Guards the identity-key mapping resolvers (plan §8). A reorder must not surface as
+// Guards the identity-key mapping resolvers. A reorder must not surface as
 // spurious add/remove; an add/remove of one element must surface as exactly one diff.
 // Field assertions only — description strings live in ddl.description.test.ts.
 
-describe('name-keyed resolvers (T2.1)', () => {
+describe('name-keyed resolvers', () => {
   it('reordering tables ⇒ no diffs', async () => {
     const beforeSql = `
       create table a(id int);
@@ -63,7 +63,7 @@ describe('name-keyed resolvers (T2.1)', () => {
   })
 })
 
-describe('attrs composite-key + enum values set (T2.2)', () => {
+describe('attrs composite-key + enum values set', () => {
   it('a Comment text change ⇒ exactly one diff (attr keyed by kind)', async () => {
     const beforeSql = `
       create table t(id int);

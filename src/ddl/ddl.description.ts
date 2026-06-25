@@ -52,7 +52,7 @@ import {
 } from './ddl.const'
 import { TEMPLATE_PARAM_ACTION, TEMPLATE_PARAM_PREPOSITION } from '../core/description'
 
-// --- template families (plan §10). Article-less wording (§O5); the `in schema` variant
+// --- template families. Article-less wording; the `in schema` variant
 // wins only when a non-default `schemaName` param is supplied. The action is bracketed
 // (`[Added]`/`[Deleted]`/`[Changed]`) and entity names / values are wrapped in apostrophes;
 // `preposition` and `facet` are plain words and stay unquoted. ---
@@ -106,7 +106,7 @@ export const COMMENT_TEMPLATES = [
   "[{{action}}] description for column '{{columnName}}' of table '{{tableName}}' in schema '{{schemaName}}' from '{{oldValue}}' to '{{newValue}}'",
 ]
 
-// Phase-3 access structures (plan §10/§12). The richest matching variant wins, so a primary
+// Access structures (indexes, primary keys). The richest matching variant wins, so a primary
 // key (no indexName) selects the "primary key" family and a named index selects an "index"
 // variant. The same family serves the whole index/PK *and* its sub-changes (a key column
 // added/removed, a part reordered, the unique flag flipped) — the calculator supplies the
@@ -251,7 +251,7 @@ const columnNames = (node: unknown, property: PropertyKey): PrimitiveType[] => {
 
 // A Table node has no back-reference to its schema; locate the owning schema by identity. After a
 // build/normalization `foreignKey.refTable` is the exact `Table` instance held in `schema.tables`
-// (shared-instance contract §8A), so an `===` scan resolves the referenced table's schema name.
+// (the shared-instance contract), so an `===` scan resolves the referenced table's schema name.
 const schemaNameOfTableNode = (root: unknown, tableNode: unknown): PrimitiveType | undefined => {
   if (!isObject(tableNode)) { return undefined }
   const schemas = getKeyValue(root, DdlapiProperties.Schemas)
@@ -297,7 +297,7 @@ const COLUMN_ATTR_FACETS: Record<string, string> = {
  * path against the diff side's realm root (robust for shared nodes — a shared enum/column is
  * resolved from its own origin, not the crawl route that reached it). Old/new values come
  * from the diff. The `in schema` clause is dropped for the dialect default schema by omitting
- * `schemaName` (§O7) so the shorter template wins.
+ * `schemaName` so the shorter template wins.
  */
 export const createDdlParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => {
   const schemaParam = (root: unknown, path: JsonPath): PrimitiveType | undefined => {
@@ -525,7 +525,7 @@ export const createDdlParamsCalculator = (dialect: DdlDiffDialect): DiffTemplate
         return leafChange ? {} : { [TEMPLATE_PARAM_VALUE]: truncate(nameOf(member, property)) }
       }
 
-      // Check — same classify/describe whether it lives in attrs[] or objects[] (T5.3). The
+      // Check — same classify/describe whether it lives in attrs[] or objects[]. The
       // expression is carried inline on add/remove and as from/to on a change.
       if (kind === AttrKind.Check) {
         return {
@@ -553,7 +553,7 @@ export const createDdlParamsCalculator = (dialect: DdlDiffDialect): DiffTemplate
         }
       }
 
-      // Comment — description at schema / table / column level (T4.3). The (truncated) text is
+      // Comment — description at schema / table / column level. The (truncated) text is
       // carried inline on add/remove and as from/to on a change.
       if (kind === AttrKind.Comment) {
         const text = valueParam(DdlapiProperties.Text)

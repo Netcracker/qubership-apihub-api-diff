@@ -6,7 +6,7 @@ import { diffsMatcher } from './helper/matchers'
 // before|afterDeclarationPaths only. Human-readable description strings are asserted
 // exclusively in ddl.description.test.ts (to keep the impact surface of wording changes small).
 
-describe('ddl diff — engine registration (T1.1)', () => {
+describe('engine registration', () => {
   it('identical realms produce no diffs', async () => {
     const sql = 'create table t(id int);'
     const { diffs } = await diffSql(sql, sql)
@@ -21,7 +21,7 @@ describe('ddl diff — engine registration (T1.1)', () => {
   })
 })
 
-describe('ddl diff — rule-tree skeleton (T1.2)', () => {
+describe('rule tree — type canonicalization & node suppression', () => {
   it('identical realms ⇒ 0 diffs', async () => {
     const sql = 'create table orders(id int, name varchar(50));'
     const { diffs } = await diffSql(sql, sql)
@@ -38,7 +38,7 @@ describe('ddl diff — rule-tree skeleton (T1.2)', () => {
   it('kind + raw are suppressed inside a real type change ⇒ only the /type-name diff', async () => {
     // int→text flips the SchemaType `kind` (IntegerType→StringType) and `raw`; without
     // suppression those would surface as separate kind/raw diffs. With `/kind` + `/raw`
-    // suppression, the only diff is the canonical type-name change (§9b) — text and int share
+    // suppression, the only diff is the canonical type-name change — text and int share
     // no size/precision, so there is no extra structural diff here.
     const beforeSql = 'create table t(c int);'
     const afterSql = 'create table t(c text);'
@@ -73,8 +73,8 @@ describe('ddl diff — rule-tree skeleton (T1.2)', () => {
   })
 })
 
-describe('ddl diff — phase-1 classification (M2)', () => {
-  it('case 1: added table ⇒ add / non-breaking', async () => {
+describe('table and column classification', () => {
+  it('added table ⇒ add / non-breaking', async () => {
     const beforeSql = `
       create table a(id int);
     `
@@ -94,7 +94,7 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case 2: deleted table ⇒ remove / breaking', async () => {
+  it('deleted table ⇒ remove / breaking', async () => {
     const beforeSql = `
       create table a(id int);
       create table b(id int);
@@ -114,7 +114,7 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case 3: added column ⇒ add / non-breaking', async () => {
+  it('added column ⇒ add / non-breaking', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id int, name varchar(50));'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -129,7 +129,7 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case 4: deleted column ⇒ remove / breaking', async () => {
+  it('deleted column ⇒ remove / breaking', async () => {
     const beforeSql = 'create table t(id int, name varchar(50));'
     const afterSql = 'create table t(id int);'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -143,11 +143,12 @@ describe('ddl diff — phase-1 classification (M2)', () => {
       }),
     ]))
   })
+})
 
-  // The SchemaType change is reported per-property (no collapse): a same-kind change is a
-  // single diff at the exact field that moved; the family-aware verdict rides on the /type name.
-
-  it('case 5a: same-family type change (int→bigint) ⇒ /type-name replace / non-breaking', async () => {
+// The SchemaType change is reported per-property (no collapse): a same-kind change is a
+// single diff at the exact field that moved; the family-aware verdict rides on the /type name.
+describe('type-change classification', () => {
+  it('same-family type change (int→bigint) ⇒ /type-name replace / non-breaking', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id bigint);'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -164,7 +165,7 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case 5b: same-family widening (varchar(50)→varchar(200)) ⇒ /size replace / non-breaking', async () => {
+  it('same-family widening (varchar(50)→varchar(200)) ⇒ /size replace / non-breaking', async () => {
     const beforeSql = 'create table t(name varchar(50));'
     const afterSql = 'create table t(name varchar(200));'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -181,7 +182,7 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case 5c: cross-family type change (int→text) ⇒ /type-name replace / breaking', async () => {
+  it('cross-family type change (int→text) ⇒ /type-name replace / breaking', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id text);'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -198,7 +199,7 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case 5d: within-family precision loss (numeric(10,2)→int) ⇒ per-property, all non-breaking', async () => {
+  it('within-family precision loss (numeric(10,2)→int) ⇒ per-property, all non-breaking', async () => {
     const beforeSql = 'create table t(n numeric(10,2));'
     const afterSql = 'create table t(n int);'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -229,7 +230,7 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case 5e: cross-family with shape delta (int→varchar(50)) ⇒ breaking /type + non-breaking /size', async () => {
+  it('cross-family with shape delta (int→varchar(50)) ⇒ breaking /type + non-breaking /size', async () => {
     const beforeSql = 'create table t(c int);'
     const afterSql = 'create table t(c varchar(50));'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -253,7 +254,10 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case 6: nullability not-null→nullable ⇒ replace / non-breaking', async () => {
+})
+
+describe('nullability classification', () => {
+  it('not-null → nullable ⇒ replace / non-breaking', async () => {
     const beforeSql = 'create table t(id int not null);'
     const afterSql = 'create table t(id int null);'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -270,7 +274,7 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case 7: nullability nullable→not-null ⇒ replace / non-breaking', async () => {
+  it('nullable → not-null ⇒ replace / non-breaking', async () => {
     const beforeSql = 'create table t(id int null);'
     const afterSql = 'create table t(id int not null);'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -287,7 +291,10 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case E1: added enum value ⇒ add / non-breaking', async () => {
+})
+
+describe('enum value classification', () => {
+  it('added enum value ⇒ add / non-breaking', async () => {
     const beforeSql = `
       create type mood as enum ('happy', 'sad');
       create table t(m mood);
@@ -308,7 +315,7 @@ describe('ddl diff — phase-1 classification (M2)', () => {
     ]))
   })
 
-  it('case E2: removed enum value ⇒ remove / non-breaking', async () => {
+  it('removed enum value ⇒ remove / non-breaking', async () => {
     const beforeSql = `
       create type mood as enum ('happy', 'sad', 'neutral');
       create table t(m mood);
@@ -330,8 +337,8 @@ describe('ddl diff — phase-1 classification (M2)', () => {
   })
 })
 
-describe('ddl diff — phase-2 default classification (M4)', () => {
-  it('case 8: added default ⇒ add / non-breaking', async () => {
+describe('default classification', () => {
+  it('added default ⇒ add / non-breaking', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id int default 5);'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -346,7 +353,7 @@ describe('ddl diff — phase-2 default classification (M4)', () => {
     ]))
   })
 
-  it('case 9: deleted default ⇒ remove / non-breaking', async () => {
+  it('deleted default ⇒ remove / non-breaking', async () => {
     const beforeSql = 'create table t(id int default 5);'
     const afterSql = 'create table t(id int);'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -361,7 +368,7 @@ describe('ddl diff — phase-2 default classification (M4)', () => {
     ]))
   })
 
-  it('case 10: changed default ⇒ replace / non-breaking', async () => {
+  it('changed default ⇒ replace / non-breaking', async () => {
     const beforeSql = 'create table t(id int default 5);'
     const afterSql = 'create table t(id int default 7);'
     const { diffs } = await diffSql(beforeSql, afterSql)

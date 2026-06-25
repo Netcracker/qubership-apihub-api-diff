@@ -7,11 +7,14 @@ const onlyDescription = (diffs: Diff[]): string | undefined => {
   return diffs[0].description
 }
 
-// Phase-1 description strings (plan §10, T3.1). Article-less wording; the `in schema`
-// clause is omitted for the default schema (public). The action is bracketed and entity
-// names / values are wrapped in apostrophes.
-describe('phase-1 descriptions — default schema (T3.1)', () => {
-  it('case 1: added table', async () => {
+// Human-readable description strings for ddlapi diffs. Article-less wording; the `in schema`
+// clause is omitted for the default schema (public). The action is bracketed
+// (`[Added]`/`[Deleted]`/`[Changed]`) and entity names / values are wrapped in apostrophes.
+// Potentially long free-text values are truncated at DESCRIPTION_VALUE_MAX_LENGTH. Tests are
+// grouped by the schema element they describe.
+
+describe('tables', () => {
+  it('added table', async () => {
     const beforeSql = `
       create table a(id int);
     `
@@ -23,7 +26,7 @@ describe('phase-1 descriptions — default schema (T3.1)', () => {
     expect(onlyDescription(diffs)).toBe("[Added] table 'b'")
   })
 
-  it('case 2: deleted table', async () => {
+  it('deleted table', async () => {
     const beforeSql = `
       create table a(id int);
       create table b(id int);
@@ -34,120 +37,107 @@ describe('phase-1 descriptions — default schema (T3.1)', () => {
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Deleted] table 'b'")
   })
+})
 
-  it('case 3: added column', async () => {
+describe('columns', () => {
+  it('added column', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id int, name varchar(50));'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Added] column 'name' to table 't'")
   })
 
-  it('case 4: deleted column', async () => {
+  it('deleted column', async () => {
     const beforeSql = 'create table t(id int, name varchar(50));'
     const afterSql = 'create table t(id int);'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Deleted] column 'name' from table 't'")
   })
 
-  it('case 5a: type change int→bigint', async () => {
+  it('added column in a non-default schema includes the in-schema clause', async () => {
+    const beforeSql = 'create table s.t(id int);'
+    const afterSql = 'create table s.t(id int, name varchar(50));'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Added] column 'name' to table 't' in schema 's'")
+  })
+})
+
+describe('column type', () => {
+  it('int → bigint', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id bigint);'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Changed] type for column 'id' of table 't' from 'integer' to 'bigint'")
   })
 
-  it('case 5b: type change varchar(50)→varchar(200)', async () => {
+  it('varchar(50) → varchar(200)', async () => {
     const beforeSql = 'create table t(name varchar(50));'
     const afterSql = 'create table t(name varchar(200));'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Changed] type for column 'name' of table 't' from 'varchar(50)' to 'varchar(200)'")
   })
 
-  it('case 5c: type change int→text', async () => {
+  it('int → text', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id text);'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Changed] type for column 'id' of table 't' from 'integer' to 'text'")
   })
 
-  it('case 5d: numeric precision/scale change renders the whole type', async () => {
+  it('numeric precision/scale change renders the whole type', async () => {
     const beforeSql = 'create table t(n numeric(10,2));'
     const afterSql = 'create table t(n numeric(10,0));'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Changed] type for column 'n' of table 't' from 'numeric(10,2)' to 'numeric(10,0)'")
   })
+})
 
-  it('case 6: nullability not-null→nullable', async () => {
+describe('column nullability', () => {
+  it('not null → null', async () => {
     const beforeSql = 'create table t(id int not null);'
     const afterSql = 'create table t(id int null);'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Changed] constraint for column 'id' of table 't' from 'NOT NULL' to 'NULL'")
   })
 
-  it('case 7: nullability nullable→not-null', async () => {
+  it('null → not null', async () => {
     const beforeSql = 'create table t(id int null);'
     const afterSql = 'create table t(id int not null);'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Changed] constraint for column 'id' of table 't' from 'NULL' to 'NOT NULL'")
   })
-
-  it('case E1: added enum value', async () => {
-    const beforeSql = `
-      create type mood as enum ('happy', 'sad');
-      create table t(m mood);
-    `
-    const afterSql = `
-      create type mood as enum ('happy', 'sad', 'neutral');
-      create table t(m mood);
-    `
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Added] value 'neutral' to enum 'mood'")
-  })
-
-  it('case E2: removed enum value', async () => {
-    const beforeSql = `
-      create type mood as enum ('happy', 'sad', 'neutral');
-      create table t(m mood);
-    `
-    const afterSql = `
-      create type mood as enum ('happy', 'sad');
-      create table t(m mood);
-    `
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Deleted] value 'neutral' from enum 'mood'")
-  })
 })
 
-describe('phase-2 default descriptions (T4.2)', () => {
-  it('case 8: added default', async () => {
+describe('column default', () => {
+  it('added default (literal)', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id int default 5);'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Added] default '5' for column 'id' of table 't'")
   })
 
-  it('case 9: deleted default', async () => {
+  it('deleted default (literal)', async () => {
     const beforeSql = 'create table t(id int default 5);'
     const afterSql = 'create table t(id int);'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Deleted] default '5' for column 'id' of table 't'")
   })
 
-  it('case 8 (raw expression default): added default expression', async () => {
+  it('added default (raw expression)', async () => {
     const beforeSql = 'create table t(ts timestamp);'
     const afterSql = 'create table t(ts timestamp default now());'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Added] default 'now()' for column 'ts' of table 't'")
   })
 
-  it('case 10: changed default (from … to …)', async () => {
+  it('changed default (literal)', async () => {
     const beforeSql = 'create table t(id int default 5);'
     const afterSql = 'create table t(id int default 7);'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Changed] default for column 'id' of table 't' from '5' to '7'")
   })
 
-  it('case 10 (raw expression default): changed default expression', async () => {
+  it('changed default (raw expression)', async () => {
     const beforeSql = 'create table t(ts timestamp default now());'
     const afterSql = 'create table t(ts timestamp default current_timestamp);'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -155,8 +145,56 @@ describe('phase-2 default descriptions (T4.2)', () => {
   })
 })
 
-describe('phase-2 descriptions at schema/table/column levels (T4.3)', () => {
-  it('case 11: added column description ⇒ annotation', async () => {
+describe('column collation', () => {
+  it('added collation', async () => {
+    const beforeSql = 'create table t(c text);'
+    const afterSql = 'create table t(c text collate "C");'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Added] collation 'C' for column 'c' of table 't'")
+  })
+
+  it('deleted collation', async () => {
+    const beforeSql = 'create table t(c text collate "C");'
+    const afterSql = 'create table t(c text);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Deleted] collation 'C' for column 'c' of table 't'")
+  })
+
+  it('changed collation', async () => {
+    const beforeSql = 'create table t(c text collate "C");'
+    const afterSql = 'create table t(c text collate "POSIX");'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] collation for column 'c' of table 't' from 'C' to 'POSIX'")
+  })
+})
+
+describe('column generated expression', () => {
+  it('added generated expression', async () => {
+    const beforeSql = 'create table t(a int, b int);'
+    const afterSql = 'create table t(a int, b int generated always as (a * 2) stored);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Added] generated expression 'a * 2' for column 'b' of table 't'")
+  })
+
+  it('deleted generated expression', async () => {
+    const beforeSql = 'create table t(a int, b int generated always as (a * 2) stored);'
+    const afterSql = 'create table t(a int, b int);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Deleted] generated expression 'a * 2' for column 'b' of table 't'")
+  })
+
+  it('changed generated expression', async () => {
+    const beforeSql = 'create table t(a int, b int generated always as (a * 2) stored);'
+    const afterSql = 'create table t(a int, b int generated always as (a * 3) stored);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] generated expression for column 'b' of table 't' from 'a * 2' to 'a * 3'")
+  })
+})
+
+// COMMENT ON column / table produces an annotation-typed diff. (COMMENT ON SCHEMA is parsed
+// but never attaches a node, so a schema-level comment description is not producible here.)
+describe('comments (descriptions)', () => {
+  it('added column description', async () => {
     const beforeSql = `
       create table t(id int);
     `
@@ -169,7 +207,7 @@ describe('phase-2 descriptions at schema/table/column levels (T4.3)', () => {
     expect(onlyDescription(diffs)).toBe("[Added] description 'hello' for column 'id' of table 't'")
   })
 
-  it('case 12: deleted column description ⇒ annotation', async () => {
+  it('deleted column description', async () => {
     const beforeSql = `
       create table t(id int);
       comment on column t.id is 'hello';
@@ -182,7 +220,7 @@ describe('phase-2 descriptions at schema/table/column levels (T4.3)', () => {
     expect(onlyDescription(diffs)).toBe("[Deleted] description 'hello' for column 'id' of table 't'")
   })
 
-  it('case 13: changed column description ⇒ annotation (from … to …)', async () => {
+  it('changed column description', async () => {
     const beforeSql = `
       create table t(id int);
       comment on column t.id is 'a';
@@ -196,7 +234,7 @@ describe('phase-2 descriptions at schema/table/column levels (T4.3)', () => {
     expect(onlyDescription(diffs)).toBe("[Changed] description for column 'id' of table 't' from 'a' to 'b'")
   })
 
-  it('case 11s: added table description ⇒ annotation', async () => {
+  it('added table description', async () => {
     const beforeSql = `
       create table t(id int);
     `
@@ -209,7 +247,7 @@ describe('phase-2 descriptions at schema/table/column levels (T4.3)', () => {
     expect(onlyDescription(diffs)).toBe("[Added] description 'the table' for table 't'")
   })
 
-  it('case 12s: deleted table description ⇒ annotation', async () => {
+  it('deleted table description', async () => {
     const beforeSql = `
       create table t(id int);
       comment on table t is 'the table';
@@ -222,7 +260,7 @@ describe('phase-2 descriptions at schema/table/column levels (T4.3)', () => {
     expect(onlyDescription(diffs)).toBe("[Deleted] description 'the table' for table 't'")
   })
 
-  it('case 13s: changed table description ⇒ annotation (from … to …)', async () => {
+  it('changed table description', async () => {
     const beforeSql = `
       create table t(id int);
       comment on table t is 'a';
@@ -237,8 +275,36 @@ describe('phase-2 descriptions at schema/table/column levels (T4.3)', () => {
   })
 })
 
-describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
-  it('added index', async () => {
+describe('enum values', () => {
+  it('added enum value', async () => {
+    const beforeSql = `
+      create type mood as enum ('happy', 'sad');
+      create table t(m mood);
+    `
+    const afterSql = `
+      create type mood as enum ('happy', 'sad', 'neutral');
+      create table t(m mood);
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Added] value 'neutral' to enum 'mood'")
+  })
+
+  it('removed enum value', async () => {
+    const beforeSql = `
+      create type mood as enum ('happy', 'sad', 'neutral');
+      create table t(m mood);
+    `
+    const afterSql = `
+      create type mood as enum ('happy', 'sad');
+      create table t(m mood);
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Deleted] value 'neutral' from enum 'mood'")
+  })
+})
+
+describe('indexes and primary keys', () => {
+  it('added index lists its key column', async () => {
     const beforeSql = `
       create table t(id int, name text);
     `
@@ -288,45 +354,6 @@ describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
     expect(onlyDescription(diffs)).toBe("[Added] primary key on columns 'a', 'b' of table 't'")
   })
 
-  it('added foreign key', async () => {
-    const beforeSql = `
-      create table t(id int, primary key (id));
-      create table u(uid int, ref int);
-    `
-    const afterSql = `
-      create table t(id int, primary key (id));
-      create table u(uid int, ref int, constraint fk_u foreign key (ref) references t(id));
-    `
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Added] foreign key 'fk_u' on column 'ref' of table 'u' referencing column 'id' of table 't'")
-  })
-
-  it('added composite foreign key lists local and referenced columns', async () => {
-    const beforeSql = `
-      create table t(x int, y int, primary key (x, y));
-      create table u(a int, b int);
-    `
-    const afterSql = `
-      create table t(x int, y int, primary key (x, y));
-      create table u(a int, b int, constraint fk foreign key (a, b) references t(x, y));
-    `
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Added] foreign key 'fk' on columns 'a', 'b' of table 'u' referencing columns 'x', 'y' of table 't'")
-  })
-
-  it('added foreign key referencing a table in another schema names that schema', async () => {
-    const beforeSql = `
-      create table s.t(id int, primary key (id));
-      create table u(ref int);
-    `
-    const afterSql = `
-      create table s.t(id int, primary key (id));
-      create table u(ref int, constraint fk_u foreign key (ref) references s.t(id));
-    `
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Added] foreign key 'fk_u' on column 'ref' of table 'u' referencing column 'id' of table 't' in schema 's'")
-  })
-
   it('removed index', async () => {
     const beforeSql = `
       create table t(id int, name text);
@@ -339,7 +366,14 @@ describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
     expect(onlyDescription(diffs)).toBe("[Deleted] index 'idx_name' on column 'name' of table 't'")
   })
 
-  it('changed index (unique flip)', async () => {
+  it('removed primary key', async () => {
+    const beforeSql = 'create table t(id int not null, primary key (id));'
+    const afterSql = 'create table t(id int not null);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Deleted] primary key on column 'id' of table 't'")
+  })
+
+  it('unique flip renders from/to', async () => {
     const beforeSql = `
       create table t(name text);
       create unique index u on t(name);
@@ -352,7 +386,7 @@ describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
     expect(onlyDescription(diffs)).toBe("[Changed] index 'u' on table 't' from 'UNIQUE' to 'NON-UNIQUE'")
   })
 
-  it('added column to a composite index (index part add)', async () => {
+  it('added column key part to an index', async () => {
     const beforeSql = `
       create table t(a int, b int);
       create index idx on t(a);
@@ -363,6 +397,19 @@ describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
     `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Added] column 'b' to index 'idx' of table 't'")
+  })
+
+  it('removed column key part from an index', async () => {
+    const beforeSql = `
+      create table t(a int, b int);
+      create index idx on t(a, b);
+    `
+    const afterSql = `
+      create table t(a int, b int);
+      create index idx on t(a);
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Deleted] column 'b' from index 'idx' of table 't'")
   })
 
   it('added expression key part to an index', async () => {
@@ -391,20 +438,7 @@ describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
     expect(onlyDescription(diffs)).toBe("[Deleted] expression 'lower(b::text)' from index 'idx' of table 't'")
   })
 
-  it('removed column from a composite index (index part remove)', async () => {
-    const beforeSql = `
-      create table t(a int, b int);
-      create index idx on t(a, b);
-    `
-    const afterSql = `
-      create table t(a int, b int);
-      create index idx on t(a);
-    `
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Deleted] column 'b' from index 'idx' of table 't'")
-  })
-
-  it('changed index (column reorder) ⇒ one position description per moved part', async () => {
+  it('column reorder ⇒ one position description per moved part', async () => {
     const beforeSql = `
       create table t(a int, b int);
       create index idx on t(a, b);
@@ -421,12 +455,46 @@ describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
       "[Changed] position of column 'b' in index 'idx' of table 't' from '2' to '1'",
     ])
   })
+})
 
-  it('removed primary key', async () => {
-    const beforeSql = 'create table t(id int not null, primary key (id));'
-    const afterSql = 'create table t(id int not null);'
+describe('foreign keys', () => {
+  it('added foreign key names local and referenced columns', async () => {
+    const beforeSql = `
+      create table t(id int, primary key (id));
+      create table u(uid int, ref int);
+    `
+    const afterSql = `
+      create table t(id int, primary key (id));
+      create table u(uid int, ref int, constraint fk_u foreign key (ref) references t(id));
+    `
     const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Deleted] primary key on column 'id' of table 't'")
+    expect(onlyDescription(diffs)).toBe("[Added] foreign key 'fk_u' on column 'ref' of table 'u' referencing column 'id' of table 't'")
+  })
+
+  it('added composite foreign key lists local and referenced columns', async () => {
+    const beforeSql = `
+      create table t(x int, y int, primary key (x, y));
+      create table u(a int, b int);
+    `
+    const afterSql = `
+      create table t(x int, y int, primary key (x, y));
+      create table u(a int, b int, constraint fk foreign key (a, b) references t(x, y));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Added] foreign key 'fk' on columns 'a', 'b' of table 'u' referencing columns 'x', 'y' of table 't'")
+  })
+
+  it('referenced table in another schema names that schema', async () => {
+    const beforeSql = `
+      create table s.t(id int, primary key (id));
+      create table u(ref int);
+    `
+    const afterSql = `
+      create table s.t(id int, primary key (id));
+      create table u(ref int, constraint fk_u foreign key (ref) references s.t(id));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Added] foreign key 'fk_u' on column 'ref' of table 'u' referencing column 'id' of table 't' in schema 's'")
   })
 
   it('removed foreign key', async () => {
@@ -442,7 +510,7 @@ describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
     expect(onlyDescription(diffs)).toBe("[Deleted] foreign key 'fk_u' on column 'ref' of table 'u' referencing column 'id' of table 't'")
   })
 
-  it('changed foreign key (onDelete)', async () => {
+  it('changed on-delete action', async () => {
     const beforeSql = `
       create table t(id int, primary key (id));
       create table u(ref int, constraint fk_u foreign key (ref) references t(id) on delete no action);
@@ -455,7 +523,7 @@ describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
     expect(onlyDescription(diffs)).toBe("[Changed] on-delete action of foreign key 'fk_u' on table 'u' from 'NO ACTION' to 'CASCADE'")
   })
 
-  it('changed foreign key (onUpdate)', async () => {
+  it('changed on-update action', async () => {
     const beforeSql = `
       create table t(id int, primary key (id));
       create table u(ref int, constraint fk_u foreign key (ref) references t(id) on update no action);
@@ -467,22 +535,24 @@ describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Changed] on-update action of foreign key 'fk_u' on table 'u' from 'NO ACTION' to 'CASCADE'")
   })
+})
 
-  it('added check', async () => {
+describe('check constraints', () => {
+  it('added check includes its expression', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id int, constraint c_pos check (id > 0));'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Added] check 'c_pos' on table 't' with expression 'id > 0'")
   })
 
-  it('removed check', async () => {
+  it('removed check includes its expression', async () => {
     const beforeSql = 'create table t(id int, constraint c_pos check (id > 0));'
     const afterSql = 'create table t(id int);'
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Deleted] check 'c_pos' on table 't' with expression 'id > 0'")
   })
 
-  it('changed check (expr)', async () => {
+  it('changed check expression renders from/to', async () => {
     const beforeSql = 'create table t(id int, constraint c_pos check (id > 0));'
     const afterSql = 'create table t(id int, constraint c_pos check (id > 5));'
     const { diffs } = await diffSql(beforeSql, afterSql)
@@ -490,51 +560,7 @@ describe('phase-3 constraint descriptions (T5.1–T5.3)', () => {
   })
 })
 
-describe('column value attrs — collation / generated expression', () => {
-  it('added collation', async () => {
-    const beforeSql = 'create table t(c text);'
-    const afterSql = 'create table t(c text collate "C");'
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Added] collation 'C' for column 'c' of table 't'")
-  })
-
-  it('deleted collation', async () => {
-    const beforeSql = 'create table t(c text collate "C");'
-    const afterSql = 'create table t(c text);'
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Deleted] collation 'C' for column 'c' of table 't'")
-  })
-
-  it('changed collation (from … to …)', async () => {
-    const beforeSql = 'create table t(c text collate "C");'
-    const afterSql = 'create table t(c text collate "POSIX");'
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Changed] collation for column 'c' of table 't' from 'C' to 'POSIX'")
-  })
-
-  it('added generated expression', async () => {
-    const beforeSql = 'create table t(a int, b int);'
-    const afterSql = 'create table t(a int, b int generated always as (a * 2) stored);'
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Added] generated expression 'a * 2' for column 'b' of table 't'")
-  })
-
-  it('deleted generated expression', async () => {
-    const beforeSql = 'create table t(a int, b int generated always as (a * 2) stored);'
-    const afterSql = 'create table t(a int, b int);'
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Deleted] generated expression 'a * 2' for column 'b' of table 't'")
-  })
-
-  it('changed generated expression (from … to …)', async () => {
-    const beforeSql = 'create table t(a int, b int generated always as (a * 2) stored);'
-    const afterSql = 'create table t(a int, b int generated always as (a * 3) stored);'
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Changed] generated expression for column 'b' of table 't' from 'a * 2' to 'a * 3'")
-  })
-})
-
-describe(`value truncation at DESCRIPTION_VALUE_MAX_LENGTH (${DESCRIPTION_VALUE_MAX_LENGTH})`, () => {
+describe(`long value truncation at DESCRIPTION_VALUE_MAX_LENGTH (${DESCRIPTION_VALUE_MAX_LENGTH})`, () => {
   const max = DESCRIPTION_VALUE_MAX_LENGTH
   // The renderer keeps the first `max` chars and appends an ellipsis when (and only when) the
   // value is longer than `max`.
@@ -581,14 +607,5 @@ describe(`value truncation at DESCRIPTION_VALUE_MAX_LENGTH (${DESCRIPTION_VALUE_
     const afterSql = `create table t(a int, b int generated always as (${expr}) stored);`
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe(`[Added] generated expression '${truncated(expr)}' for column 'b' of table 't'`)
-  })
-})
-
-describe('phase-1 descriptions — named (non-default) schema (T3.1)', () => {
-  it('added column in a non-default schema includes the in-schema clause', async () => {
-    const beforeSql = 'create table s.t(id int);'
-    const afterSql = 'create table s.t(id int, name varchar(50));'
-    const { diffs } = await diffSql(beforeSql, afterSql)
-    expect(onlyDescription(diffs)).toBe("[Added] column 'name' to table 't' in schema 's'")
   })
 })
