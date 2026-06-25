@@ -15,7 +15,7 @@ export const symbolMappingResolver: MappingArrayResolver = createPropertyMapping
 
 /**
  * Builds a composite identity key for an attr/object element: `kind` for singletons
- * (one Comment/Charset/… per owner) and `kind:<id>` for named members, where `<id>` is the
+ * (one Comment/Collation/… per owner) and `kind:<id>` for named members, where `<id>` is the
  * first present of `name` (Check, NamedDefault), `symbol` (ForeignKey) or `type` (EnumType).
  * Returns `undefined` for non-object / kind-less elements so they are treated as unmatched.
  */

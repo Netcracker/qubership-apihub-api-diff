@@ -108,7 +108,6 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
     const kind = readKind(value)
     switch (kind) {
       case AttrKind.Comment: return commentRules
-      case AttrKind.Charset: return charsetRules
       case AttrKind.Collation: return collationRules
       case AttrKind.Check: return checkRules
       case AttrKind.GeneratedExpr: return generatedExprRules
@@ -185,8 +184,16 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
     '/kind': SUPPRESS,
     '/text': { $: allAnnotation, description: commentDescription },
   }
-  const charsetRules: CompareRules = { '/kind': SUPPRESS }
-  const collationRules: CompareRules = { '/kind': SUPPRESS }
+  // Collation is a column-level value attr. Changing the collation shifts sort/comparison
+  // order (a result change) but never makes a SELECT fail to execute → non-breaking (§1). The
+  // param calculator renders it as the `collation` column facet. (Charset is a MySQL-ism not
+  // emitted by the PostgreSQL parser and is intentionally not handled — out of scope.)
+  const collationRules: CompareRules = {
+    $: allNonBreaking,
+    description: columnFacetDescription,
+    '/kind': SUPPRESS,
+    '/value': { $: allNonBreaking, description: columnFacetDescription },
+  }
   // Check is dual-role (Attr + SchemaObject, one `kind`); this single rule serves both. A
   // check is a write-time constraint invisible to SELECT → add/remove and expr change are
   // non-breaking (T5.3).
@@ -197,7 +204,15 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
     '/expr': { $: allNonBreaking, description: checkDescription },
     '/attrs': attrsArrayRule,
   }
-  const generatedExprRules: CompareRules = { '/kind': SUPPRESS }
+  // A generated-column expression (GENERATED ALWAYS AS (expr) STORED). Adding/removing/changing
+  // it shifts the column's computed values (a result change) but the column stays selectable →
+  // non-breaking. Rendered as the `generated expression` column facet.
+  const generatedExprRules: CompareRules = {
+    $: allNonBreaking,
+    description: columnFacetDescription,
+    '/kind': SUPPRESS,
+    '/expr': { $: allNonBreaking, description: columnFacetDescription },
+  }
 
   // --- Expr members ---
   // Used for column.default (cases 8-10), index-part expressions, and NamedDefault. A default

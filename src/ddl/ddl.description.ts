@@ -17,13 +17,16 @@ import {
   isDiffAdd,
   isDiffRemove,
   isObject,
+  resolveAllDeclarationPath,
 } from '../utils'
 import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 import { DdlDiffDialect } from './ddl.dialect'
 import {
   AttrKind,
   DdlapiProperties,
+  FACET_COLLATION,
   FACET_DEFAULT,
+  FACET_GENERATED,
   FACET_NULLABILITY,
   FACET_TYPE,
   TEMPLATE_PARAM_CHECK_NAME,
@@ -151,6 +154,12 @@ const TABLE_DEPTH = 4 // ['schemas', si, 'tables', ti]
 const COLUMN_DEPTH = 6 // ['schemas', si, 'tables', ti, 'columns', ci]
 const ENUM_DEPTH = 4 // ['schemas', si, 'objects', oi]
 
+// Column-level value attrs that render as a column facet (the attr `kind` → facet word).
+const COLUMN_ATTR_FACETS: Record<string, string> = {
+  [AttrKind.Collation]: FACET_COLLATION,
+  [AttrKind.GeneratedExpr]: FACET_GENERATED,
+}
+
 /**
  * Single descriptionParamCalculator for the ddlapi rules. Classifies the change by the tail
  * of its declaration path, then resolves entity names by slicing that canonical declaration
@@ -171,11 +180,17 @@ export const createDdlParamsCalculator = (dialect: DdlDiffDialect): DiffTemplate
       [TEMPLATE_PARAM_ACTION]: DIFF_ACTION_TO_ACTION_MAP[diff.action],
       [TEMPLATE_PARAM_PREPOSITION]: DIFF_ACTION_TO_PREPOSITION_MAP[diff.action],
     }
-    // Resolve against the side that carries the change (remove → before, else after).
-    const remove = isDiffRemove(diff)
-    const root = (remove ? ctx.before : ctx.after).root
-    const sidePaths = remove ? diff.beforeDeclarationPaths : (diff as { afterDeclarationPaths: JsonPath[] }).afterDeclarationPaths
-    if (!sidePaths || sidePaths.length === 0) { return FAILED_PARAMS_CALCULATION }
+    // Take the candidate declaration paths from `resolveAllDeclarationPath` (before+after, as
+    // the OpenAPI/JSON Schema calculators do) and slice them against the realm on the side that
+    // carries the change — after for add/replace, before for remove. A replace whose after
+    // value is a normalized default (e.g. an index `unique:false`) yields a synthetic
+    // `#defaults` path, but the merged set still contains the real path and the structural
+    // predicates below never match `#defaults`, so the real path is the one selected. (For a
+    // value/leaf replace the ancestors are identical on both sides, so slicing a before-origin
+    // path against the after realm resolves the same entity.)
+    const root = (isDiffRemove(diff) ? ctx.before : ctx.after).root
+    const sidePaths = resolveAllDeclarationPath(diff)
+    if (sidePaths.length === 0) { return FAILED_PARAMS_CALCULATION }
 
     const pathWhere = (predicate: (p: JsonPath) => boolean): JsonPath | undefined => sidePaths.find(predicate)
     const nodeAt = (path: JsonPath, depth: number): unknown => getKeyValue(root, ...path.slice(0, depth))
@@ -306,8 +321,13 @@ export const createDdlParamsCalculator = (dialect: DdlDiffDialect): DiffTemplate
       const member = nodeAt(memberPath, containerIdx + 2)
       const kind = isObject(member) ? member[DdlapiProperties.Kind] : undefined
       const level = memberPath[containerIdx - 2]
-      const textChange = memberPath[memberPath.length - 1] === DdlapiProperties.Text
-      const oldNew = textChange
+      // A scalar leaf change inside the attr (Comment.text, Collation.value,
+      // GeneratedExpr.expr) carries before/after directly on the diff.
+      const lastSegment = memberPath[memberPath.length - 1]
+      const leafChange = lastSegment === DdlapiProperties.Text ||
+        lastSegment === DdlapiProperties.Value ||
+        lastSegment === DdlapiProperties.Expr
+      const oldNew = leafChange
         ? {
           [TEMPLATE_PARAM_OLD_VALUE]: checkPrimitiveType(beforeValueOf(diff)),
           [TEMPLATE_PARAM_NEW_VALUE]: checkPrimitiveType(afterValueOf(diff)),
@@ -319,6 +339,19 @@ export const createDdlParamsCalculator = (dialect: DdlDiffDialect): DiffTemplate
         return {
           ...base,
           [TEMPLATE_PARAM_CHECK_NAME]: nameOf(member),
+          [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(memberPath, TABLE_DEPTH)),
+          [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, memberPath),
+        }
+      }
+
+      // Collation / generated expression — column-level value attrs (column facet).
+      const columnAttrFacet = typeof kind === 'string' ? COLUMN_ATTR_FACETS[kind] : undefined
+      if (columnAttrFacet) {
+        return {
+          ...base,
+          ...oldNew,
+          [TEMPLATE_PARAM_FACET]: columnAttrFacet,
+          [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(nodeAt(memberPath, COLUMN_DEPTH)),
           [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(memberPath, TABLE_DEPTH)),
           [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, memberPath),
         }

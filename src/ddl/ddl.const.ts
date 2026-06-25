@@ -37,6 +37,8 @@ export const FACET_TYPE = 'type'
 export const FACET_NULLABILITY = 'nullability'
 export const FACET_DEFAULT = 'default'
 export const FACET_DESCRIPTION = 'description'
+export const FACET_COLLATION = 'collation'
+export const FACET_GENERATED = 'generated expression'
 
 /**
  * How a dashboard/`SELECT` consumes a column's values. Type-change classification is expressed
