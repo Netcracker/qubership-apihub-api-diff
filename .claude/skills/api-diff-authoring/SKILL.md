@@ -81,10 +81,33 @@ A `compare: CompareResolver` on a node replaces the engine's default handling. R
 
 A node's `description: diffDescription([...templates])` renders a diff; the nearest `descriptionParamCalculator` **up the rule tree** supplies the params (so one root-level calculator can serve every node). Template selection is by *suitability* — the template whose `{{params}}` are all present wins, so an ordered list degrades gracefully (omit a param to drop its clause).
 
+- **Compose descriptions by two consistent principles so every family reads alike.** *Identity
+  enrichment*: an add/delete of a whole entity carries its defining detail inline — a column
+  facet's value, an index/PK's key columns, an FK's local + referenced columns, a check's
+  expression. *Attribute change*: a single field flipping names the attribute, identifies the
+  entity by name only, and appends `from '<old>' to '<new>'` — nullability, an index `unique`
+  flip, an FK on-delete action. Truncate potentially long free-text values (comments,
+  expressions) to a shared constant. `src/ddl/ddl.description.ts` follows this throughout.
 - **Resolve entity names by slicing the diff's declaration path against the diff side's root**, not by walking `ctx` parent contexts — parent-walks follow the *crawl route*, which is wrong for a **shared** node reached via an unexpected parent.
 - **A replace whose after-value is a normalized default** has its after declaration path resolved to the synthetic `#defaults` origin. A path-slicing calculator must prefer a real (root-rooted) path and fall back to the before side, or it emits a junk default description.
 - `beforeValue` / `afterValue` exist only on specific `Diff` union members — guard before reading.
 - **Rendering convention is spec-type-local.** If you bracket actions (`[Added]`) or quote names, do it in that spec type's templates. Do **not** change the shared core `DIFF_ACTION_TO_ACTION_MAP` — it affects every spec type.
+
+## Type guards
+
+Narrow `unknown` with the shared guards in `src/utils.ts` — `isObject`, `isString`, `isArray`,
+`isNumber`, `isBoolean` (and `checkPrimitiveType` for "any scalar") — never hand-rolled
+`typeof x === 'object' && x !== null` or `typeof x === 'string'` checks. Beyond reading
+consistently, `isObject` narrows to `Record<string | symbol, unknown>`, so it also removes the
+`as Record<…>` cast a manual check would otherwise need:
+
+```ts
+const readKind = (value: unknown): string | undefined =>
+  (isObject(value) && isString(value.kind) ? value.kind : undefined)
+```
+
+Import them from the library `utils` (`../utils`), not from a dependency — json-crawl ships its
+own `isObject`, but the api-diff guards are the canonical choice and keep one source of truth.
 
 ## Registering a new spec type
 

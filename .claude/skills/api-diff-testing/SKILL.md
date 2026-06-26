@@ -101,6 +101,17 @@ Pass `schemaFormat` to create a Multi Format Schema; omit it for a plain schema.
   calculators (see the `api-diff-authoring` skill). Where a rule/action isn't
   producible by the parser (e.g. PG per-column charset, schema-level comments), note it
   rather than forcing a fixture.
+- **Group tests by durable subject, not by plan phase or task.** A `describe` named for the
+  schema element or kind of change (`column default`, `foreign keys`, `indexes and primary
+  keys`) survives refactors; `phase-2 (T4.2)` does not. Name each test for the scenario it
+  exercises (`int → bigint`, `added composite primary key`), never a plan case number
+  (`case 5a`), and keep comments on the same axis — no `§`/`T#`/`phase` citations pointing at a
+  planning doc the reader won't have.
+- **Drive a threshold-governed value from its constant, not a magic number.** When a rendered
+  value is capped (e.g. a description truncation limit), import that constant into the test,
+  size the fixture from it, and derive the expected string with a small local helper that
+  mirrors the renderer's contract — the test then follows the constant if it changes. Cover the
+  boundary explicitly: a value *at* the limit renders unchanged, one *over* it is truncated.
 
 ## Parser-built fixtures (e.g. ddlapi SQL)
 
