@@ -451,7 +451,7 @@ schema by omitting the `schemaName` param).
 
 Proposed template families (suitability picks the variant; the `in schema` variant wins only
 when a non-default `schemaName` param is supplied):
-```
+```text
 "{{action}} table {{tableName}}"
 "{{action}} table {{tableName}} in schema {{schemaName}}"
 "{{action}} column {{columnName}} {{preposition}} table {{tableName}}"
@@ -852,7 +852,7 @@ Refinements captured during the design interview (each already folded into the s
 | D4 | Consumer output | **Expose all three**: `diffs`, `merged`, and the existing `aggregateDiffsWithRollup`. | §8B |
 | D5 | False positives | Type-name canonicalization is **already done by the ddlapi parser** (`typeMapper.ts`); guard via a regression test area, compare on `type` not `raw`. | §7, §11 |
 | D6 | Enum value remove | **Non-breaking** — no `SELECT` fails to execute (a removed category just stops appearing). Both enum add and remove are non-breaking; a renamed value (= remove+add) is therefore non-breaking on both halves (resolves the earlier E2-vs-O2 contradiction). | §6, §13 |
-| D15 | **Classification contract** | Single axis = **"query still runs"** (executional): `breaking` ⇔ a previously-valid query now fails to execute; result-correctness is explicitly *out of scope*. Under it, **nullability changes are non-breaking in both directions** and within-family precision/size loss is non-breaking; result-drift gets an optional future signal, never a `breaking` reclassification. | §1, §6, §7, §13 |
+| D15 | **Classification contract** | Single axis = **"query still runs"** (executional): `breaking` ⇔ a previously-valid query now fails to execute; result-correctness is *out of scope*. Under it, **nullability changes are non-breaking in both directions** and within-family precision/size loss too; result-drift gets an optional future signal, never a `breaking` verdict. | §1, §6, §7, §13 |
 | D7 | Schema moves | A table moved between schemas surfaces as **remove + add** (same as rename, O6); no relocation detection. | §6, §13 |
 | D8 | Multi-facet column change | **Independent per-facet diffs**; the consumer aggregates (no combined column diff). | §8B |
 | D9 | Verdict helper | **None** — api-diff stays a pure classifier; severity/verdict policy is the consumer's. `unclassified` ranking is therefore moot in-library. | §8B |

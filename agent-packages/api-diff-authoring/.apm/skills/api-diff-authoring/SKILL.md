@@ -64,11 +64,13 @@ Element add/remove is decided by the *parent* mapping and classified by the elem
 
 ## Suppressing a node: `ignoreDifference`
 
-`ignoreDifference: true` on a rule node suppresses add/remove/replace diffs for that node **and its whole subtree** (implemented at hook entry in `useMergeFactory`), while still merging the after-value. Use it for technical discriminants a user must never see (e.g. ddlapi `/kind`, redundant `/raw`). Scope boundary: it suppresses *mapped/replace* changes only — add/remove of a **whole** node is decided by the parent mapping and is **not** intercepted, so only use it for keys always present on both sides. Contrast `ignoreKeyDifference`, which silences only key-rename diffs.
+`ignoreDifference: true` on a rule node suppresses add/remove/replace diffs for that node **and its whole subtree** (implemented at hook entry in `useMergeFactory`), while still merging the after-value. Use it for technical discriminants a user must never see (e.g. ddlapi `/kind`, redundant `/raw`).
+Scope boundary: it suppresses *mapped/replace* changes only — add/remove of a **whole** node is decided by the parent mapping and is **not** intercepted, so only use it for keys always present on both sides. Contrast `ignoreKeyDifference`, which silences only key-rename diffs.
 
 ## Custom node comparison: the `compare` resolver
 
-A `compare: CompareResolver` on a node replaces the engine's default handling. Returning a falsy value (`undefined`) falls through to normal descent; returning `{ diffs, ownerDiffEntry, merged }` short-circuits — the node is compared atomically and the engine does **not** descend. Use the falsy return to *selectively* let the engine descend (e.g. collapse some cases into one diff while descending for others). Never return a cloned node for a shared instance — return the after-instance — or you break the shared-diff contract.
+A `compare: CompareResolver` on a node replaces the engine's default handling. Returning a falsy value (`undefined`) falls through to normal descent; returning `{ diffs, ownerDiffEntry, merged }` short-circuits — the node is compared atomically and the engine does **not** descend.
+Use the falsy return to *selectively* let the engine descend (e.g. collapse some cases into one diff while descending for others). Never return a cloned node for a shared instance — return the after-instance — or you break the shared-diff contract.
 
 **Prefer granular per-property diffs over collapsing.** Report the change at the specific property that moved; only use a collapsing `compare` resolver with an explicit reason. When a verdict must ride on one field (e.g. a cross-family type signal where the discriminant `kind` is suppressed), put the classifier on that field and let siblings classify independently.
 
@@ -111,6 +113,7 @@ own `isObject`, but the api-diff guards are the canonical choice and keep one so
 
 ## Registering a new spec type
 
-Wire it in `src/api.ts`: a `compare<Spec>(version)` engine that calls `compare(before, after, { ...<NORMALIZE_OPTIONS>, ...options, rules, fresh caches })`, an entry in `COMPARE_ENGINES_MAP`, and the `areSpecTypesCompatible` / `selectEngineSpecType` branches. Heads-up: `COMPARE_ENGINES_MAP` is typed over api-unifier's `SpecType`; when api-unifier adds a member, an exhaustive `Record<SpecType, …>` stops compiling — use `Partial<Record<…>>` + a runtime "no engine" guard.
+Wire it in `src/api.ts`: a `compare<Spec>(version)` engine that calls `compare(before, after, { ...<NORMALIZE_OPTIONS>, ...options, rules, fresh caches })`, an entry in `COMPARE_ENGINES_MAP`, and the `areSpecTypesCompatible` / `selectEngineSpecType` branches.
+Heads-up: `COMPARE_ENGINES_MAP` is typed over api-unifier's `SpecType`; when api-unifier adds a member, an exhaustive `Record<SpecType, …>` stops compiling — use `Partial<Record<…>>` + a runtime "no engine" guard.
 
 Keep enum-like domain constants (e.g. type consumption families) with the spec type's other domain constants, using the `const {…} as const` + `type X = typeof X[keyof typeof X]` pattern — not inside a dialect-interface file that merely references the type.
