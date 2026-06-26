@@ -1,12 +1,8 @@
 import { addNonBreaking, allNonBreaking, breaking, breakingIf, nonBreaking } from '../core'
 import { ClassifyRule, DiffTypeClassifier } from '../types'
-import { isObject } from '../utils'
 import { TypeConsumptionFamily, TypeKind } from './ddl.const'
 import { DdlDiffDialect } from './ddl.dialect'
-
-const readKind = (value: unknown): string | undefined => {
-  return isObject(value) && typeof value.kind === 'string' ? value.kind : undefined
-}
+import { readKind } from './ddl.utils'
 
 // --- structural add/remove classifiers ---
 // Adding a table/column never breaks an existing query; deleting one makes a previously

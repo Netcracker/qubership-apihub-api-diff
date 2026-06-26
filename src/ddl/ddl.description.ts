@@ -20,6 +20,7 @@ import {
   isDiffAdd,
   isDiffRemove,
   isObject,
+  isString,
 } from '../utils'
 import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 import { DdlDiffDialect } from './ddl.dialect'
@@ -172,7 +173,7 @@ const lastSegments = (path: ReadonlyArray<PropertyKey>): [PropertyKey | undefine
 const renderType = (schemaType: unknown): string | undefined => {
   if (!isObject(schemaType)) { return undefined }
   const name = schemaType[DdlapiProperties.Type]
-  if (typeof name !== 'string') { return undefined }
+  if (!isString(name)) { return undefined }
   const size = schemaType[DdlapiProperties.Size]
   if (typeof size === 'number') { return `${name}(${size})` }
   const precision = schemaType[DdlapiProperties.Precision]
@@ -197,7 +198,7 @@ const nameOf = (node: unknown, property: PropertyKey = DdlapiProperties.Name): P
 // Free-text values (comment text, check/generated/default expressions) are cut to a fixed length
 // with an ellipsis so a long value cannot bloat a description. Non-strings pass through.
 const truncate = (value: PrimitiveType | undefined): PrimitiveType | undefined => {
-  if (typeof value !== 'string' || value.length <= DESCRIPTION_VALUE_MAX_LENGTH) { return value }
+  if (!isString(value) || value.length <= DESCRIPTION_VALUE_MAX_LENGTH) { return value }
   return `${value.slice(0, DESCRIPTION_VALUE_MAX_LENGTH)}…`
 }
 
@@ -568,7 +569,7 @@ const attrMemberParams: DdlParamHandler = (pc, diff) => {
   }
 
   // Collation / generated expression — column-level value attrs (column facet).
-  const columnAttrFacet = typeof kind === 'string' ? COLUMN_ATTR_FACETS[kind] : undefined
+  const columnAttrFacet = isString(kind) ? COLUMN_ATTR_FACETS[kind] : undefined
   if (columnAttrFacet) {
     return {
       ...pc.base,

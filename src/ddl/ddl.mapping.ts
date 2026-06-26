@@ -1,6 +1,6 @@
 import { createPropertyMappingResolver, deepEqualsUniqueItemsArrayMappingResolver } from '../core'
 import { MapKeysResult, MappingArrayResolver } from '../types'
-import { isObject, onlyExistedArrayIndexes } from '../utils'
+import { isObject, isString, onlyExistedArrayIndexes } from '../utils'
 import { DdlapiProperties } from './ddl.const'
 
 // ddlapi collections are arrays whose elements have stable identity keys, so the default
@@ -22,9 +22,9 @@ export const symbolMappingResolver: MappingArrayResolver = createPropertyMapping
 const attrIdentityKey = (item: unknown): string | undefined => {
   if (!isObject(item)) { return undefined }
   const kind = item[DdlapiProperties.Kind]
-  if (typeof kind !== 'string') { return undefined }
+  if (!isString(kind)) { return undefined }
   const id = item[DdlapiProperties.Name] ?? item[DdlapiProperties.Symbol] ?? item[DdlapiProperties.Type]
-  return typeof id === 'string' ? `${kind}:${id}` : kind
+  return isString(id) ? `${kind}:${id}` : kind
 }
 
 /**
@@ -82,7 +82,7 @@ export const indexPartMappingResolver: MappingArrayResolver = (before, after) =>
     const column = part[DdlapiProperties.Column]
     if (!isObject(column)) { return undefined }
     const name = column[DdlapiProperties.Name]
-    return typeof name === 'string' ? name : undefined
+    return isString(name) ? name : undefined
   }
 
   const result: MapKeysResult<number> = { added: [], removed: [], mapped: {} }

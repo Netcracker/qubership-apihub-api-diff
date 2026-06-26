@@ -1,4 +1,4 @@
-import { CrawlRulesContext, isObject } from '@netcracker/qubership-apihub-json-crawl'
+import { CrawlRulesContext } from '@netcracker/qubership-apihub-json-crawl'
 import { allAnnotation, allNonBreaking, allUnclassified } from '../core'
 import {
   CompareMode,
@@ -15,6 +15,7 @@ import {
   TypeKind,
 } from './ddl.const'
 import { DdlDiffDialect } from './ddl.dialect'
+import { readKind } from './ddl.utils'
 import {
   columnClassifier,
   createTypeNameClassifier,
@@ -49,12 +50,6 @@ import {
 export interface DdlRulesOptions {
   mode: CompareMode
   version: DdlApiSpecVersion
-}
-
-const readKind = (value: unknown): string | undefined => {
-  return isObject(value) && 'kind' in value && typeof value.kind === 'string'
-    ? value.kind
-    : undefined
 }
 
 // `kind` is a technical discriminant with no domain meaning, and `column.type.raw` is
