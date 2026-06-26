@@ -5,6 +5,7 @@ import {
   diffDescription,
 } from '../core'
 import {
+  CompareContext,
   Diff,
   DiffDescriptionRule,
   DiffTemplateParamsCalculator,
@@ -291,310 +292,343 @@ const COLUMN_ATTR_FACETS: Record<string, string> = {
   [AttrKind.GeneratedExpr]: FACET_GENERATED,
 }
 
-/**
- * Single descriptionParamCalculator for the ddlapi rules. Classifies the change by the tail
- * of its declaration path, then resolves entity names by slicing that canonical declaration
- * path against the diff side's realm root (robust for shared nodes — a shared enum/column is
- * resolved from its own origin, not the crawl route that reached it). Old/new values come
- * from the diff. The `in schema` clause is dropped for the dialect default schema by omitting
- * `schemaName` so the shorter template wins.
- */
-export const createDdlParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => {
-  const schemaParam = (root: unknown, path: JsonPath): PrimitiveType | undefined => {
-    const schemaName = nameOf(getKeyValue(root, ...path.slice(0, SCHEMA_DEPTH)))
-    // Drop the schema clause for the default schema so the shorter template is selected.
-    return schemaName === dialect.defaultSchemaName ? undefined : schemaName
-  }
+// --- per-family description param calculators -----------------------------------------------
+// The ddlapi rule tree resolves the nearest `descriptionParamCalculator` up from each rendered
+// node, so a calculator attached at a subtree root serves every description in that subtree.
+// Each calculator below owns one family; `ddlRules` wires it onto the matching node. They share
+// the context built by `buildParamContext` and resolve entity names by slicing the diff's
+// canonical declaration path against the diff side's realm root — robust for shared nodes, where
+// a shared enum/column resolves from its own origin, not the crawl route that reached it.
 
-  return (diff, ctx) => {
-    const base: DynamicParams = {
+interface DdlParamContext {
+  /** Action + preposition params present on every description. */
+  readonly base: DynamicParams
+  /** First candidate declaration path matching `predicate`. */
+  pathWhere(predicate: (p: JsonPath) => boolean): JsonPath | undefined
+  /** Node `depth` segments down the realm root along `path`. */
+  nodeAt(path: JsonPath, depth: number): unknown
+  /** Owning schema name for a declaration path, dropped when it is the default schema. */
+  schemaOf(path: JsonPath): PrimitiveType | undefined
+  /** Owning schema name for a Table node (located by identity), dropped when default. */
+  schemaOfTable(tableNode: unknown): PrimitiveType | undefined
+}
+
+const buildParamContext = (dialect: DdlDiffDialect, diff: Diff, ctx: CompareContext): DdlParamContext | undefined => {
+  // Slice against the realm on the side that carries the change — after for add/replace, before
+  // for remove. The root-matching side is tried first so a positional reorder (an index part's
+  // `seqNo` replace, whose part index differs between the two sides) resolves the part on the same
+  // side as `root`. A replace whose after value is a normalized default (e.g. an index
+  // `unique:false`) yields a synthetic `#defaults` after-path; it never matches the structural
+  // predicates below, so the real (before) path is selected instead — and for a value/leaf
+  // replace the ancestors are identical on both sides, so a before-origin path still resolves.
+  const root = (isDiffRemove(diff) ? ctx.before : ctx.after).root
+  const sidePaths = orderedDeclarationPaths(diff)
+  if (sidePaths.length === 0) { return undefined }
+  const dropDefaultSchema = (name: PrimitiveType | undefined): PrimitiveType | undefined =>
+    (name === dialect.defaultSchemaName ? undefined : name)
+  return {
+    base: {
       [TEMPLATE_PARAM_ACTION]: DIFF_ACTION_TO_ACTION_MAP[diff.action],
       [TEMPLATE_PARAM_PREPOSITION]: DIFF_ACTION_TO_PREPOSITION_MAP[diff.action],
-    }
-    // Candidate declaration paths, sliced against the realm on the side that carries the change —
-    // after for add/replace, before for remove. The root-matching side is tried first: this makes
-    // a positional reorder (an index part's `seqNo` replace, whose part index differs between the
-    // before and after sides) resolve the part on the same side as `root`. A replace whose after
-    // value is a normalized default (e.g. an index `unique:false`) yields a synthetic `#defaults`
-    // after-path; it never matches the structural predicates below, so the real (before) path is
-    // selected instead — and for a value/leaf replace the ancestors are identical on both sides,
-    // so slicing a before-origin path against the after realm resolves the same entity.
-    const root = (isDiffRemove(diff) ? ctx.before : ctx.after).root
-    const sidePaths = orderedDeclarationPaths(diff)
-    if (sidePaths.length === 0) { return FAILED_PARAMS_CALCULATION }
-
-    const pathWhere = (predicate: (p: JsonPath) => boolean): JsonPath | undefined => sidePaths.find(predicate)
-    const nodeAt = (path: JsonPath, depth: number): unknown => getKeyValue(root, ...path.slice(0, depth))
-
-    // table add/remove
-    const tablePath = pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Tables && typeof lastSegments(p)[1] === 'number')
-    if (tablePath) {
-      return {
-        ...base,
-        [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(tablePath, TABLE_DEPTH)),
-        [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, tablePath),
-      }
-    }
-
-    // column add/remove
-    const columnPath = pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Columns && typeof lastSegments(p)[1] === 'number')
-    if (columnPath) {
-      return {
-        ...base,
-        [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(nodeAt(columnPath, COLUMN_DEPTH)),
-        [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(columnPath, TABLE_DEPTH)),
-        [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, columnPath),
-      }
-    }
-
-    // column type change — a property of the SchemaType (column.type.type.{type|size|…}).
-    // Detect the columnType.type → SchemaType boundary (two consecutive `type` segments before
-    // the changed property) and render the whole type from the immediate parent on each side,
-    // so any subfield change reads "from <type> to <type>" (the parent SchemaType is present on
-    // both sides even for an added/removed subfield).
-    const typePath = pathWhere(p => p.length >= 3 && p[p.length - 2] === DdlapiProperties.Type && p[p.length - 3] === DdlapiProperties.Type)
-    if (typePath) {
-      return {
-        ...base,
-        [TEMPLATE_PARAM_FACET]: FACET_TYPE,
-        [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(nodeAt(typePath, COLUMN_DEPTH)),
-        [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(typePath, TABLE_DEPTH)),
-        [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, typePath),
-        [TEMPLATE_PARAM_OLD_VALUE]: renderType(ctx.before.parentContext?.value),
-        [TEMPLATE_PARAM_NEW_VALUE]: renderType(ctx.after.parentContext?.value),
-      }
-    }
-
-    // nullability change — column.type.null
-    const nullPath = pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Type && lastSegments(p)[1] === DdlapiProperties.Null)
-    if (nullPath) {
-      return {
-        ...base,
-        [TEMPLATE_PARAM_FACET]: FACET_NULLABILITY,
-        [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(nodeAt(nullPath, COLUMN_DEPTH)),
-        [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(nullPath, TABLE_DEPTH)),
-        [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, nullPath),
-        [TEMPLATE_PARAM_OLD_VALUE]: renderNullability(beforeValueOf(diff)),
-        [TEMPLATE_PARAM_NEW_VALUE]: renderNullability(afterValueOf(diff)),
-      }
-    }
-
-    // column default change — leaf inside the Expr (default.value | default.expr)
-    const defaultLeafPath = pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Default &&
-      (lastSegments(p)[1] === DdlapiProperties.Value || lastSegments(p)[1] === DdlapiProperties.Expr))
-    if (defaultLeafPath) {
-      return {
-        ...base,
-        [TEMPLATE_PARAM_FACET]: FACET_DEFAULT,
-        [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(nodeAt(defaultLeafPath, COLUMN_DEPTH)),
-        [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(defaultLeafPath, TABLE_DEPTH)),
-        [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, defaultLeafPath),
-        [TEMPLATE_PARAM_OLD_VALUE]: truncate(checkPrimitiveType(beforeValueOf(diff))),
-        [TEMPLATE_PARAM_NEW_VALUE]: truncate(checkPrimitiveType(afterValueOf(diff))),
-      }
-    }
-
-    // column default add/remove — the whole Expr node; render its text inline as the value.
-    const defaultPath = pathWhere(p => p[p.length - 1] === DdlapiProperties.Default)
-    if (defaultPath) {
-      return {
-        ...base,
-        [TEMPLATE_PARAM_FACET]: FACET_DEFAULT,
-        [TEMPLATE_PARAM_VALUE]: renderExprText(nodeAt(defaultPath, defaultPath.length)),
-        [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(nodeAt(defaultPath, COLUMN_DEPTH)),
-        [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(defaultPath, TABLE_DEPTH)),
-        [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, defaultPath),
-      }
-    }
-
-    // primary key — whole add/remove lists its key columns; a sub-change (part reorder) falls
-    // back to the name-only variant (no columnsClause supplied).
-    const pkPath = pathWhere(p => p.includes(DdlapiProperties.PrimaryKey))
-    if (pkPath) {
-      const pkIdx = pkPath.indexOf(DdlapiProperties.PrimaryKey)
-      const wholePk = pkPath[pkPath.length - 1] === DdlapiProperties.PrimaryKey
-      return {
-        ...base,
-        ...(wholePk ? { [TEMPLATE_PARAM_COLUMNS_CLAUSE]: renderColumnsClause(nodeAt(pkPath, pkIdx + 1)) } : {}),
-        [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(pkPath, TABLE_DEPTH)),
-        [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, pkPath),
-      }
-    }
-
-    // index — whole add/remove (kind word + key columns), a key part add/remove, a part reorder
-    // (1-based position), or a unique-flag flip. The classifier picks one by the path tail.
-    const indexPath = pathWhere(p => p.includes(DdlapiProperties.Indexes))
-    if (indexPath) {
-      const indexIdx = indexPath.indexOf(DdlapiProperties.Indexes)
-      const indexNode = nodeAt(indexPath, indexIdx + 2)
-      const partsIdx = indexPath.indexOf(DdlapiProperties.Parts)
-      const last = indexPath[indexPath.length - 1]
-      const common = {
-        ...base,
-        [TEMPLATE_PARAM_INDEX_NAME]: nameOf(indexNode),
-        [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(indexPath, TABLE_DEPTH)),
-        [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, indexPath),
-      }
-      if (partsIdx >= 0 && last === DdlapiProperties.SeqNo) {
-        // part reorder — `seqNo` is 0-based in the model, rendered 1-based.
-        return {
-          ...common,
-          [TEMPLATE_PARAM_PART_CLAUSE]: renderPartClause(nodeAt(indexPath, partsIdx + 2)),
-          [TEMPLATE_PARAM_OLD_VALUE]: oneBased(beforeValueOf(diff)),
-          [TEMPLATE_PARAM_NEW_VALUE]: oneBased(afterValueOf(diff)),
-        }
-      }
-      if (last === DdlapiProperties.Unique) {
-        return {
-          ...common,
-          [TEMPLATE_PARAM_OLD_VALUE]: renderUnique(beforeValueOf(diff)),
-          [TEMPLATE_PARAM_NEW_VALUE]: renderUnique(afterValueOf(diff)),
-        }
-      }
-      if (lastSegments(indexPath)[0] === DdlapiProperties.Parts && typeof last === 'number') {
-        // a key part (column / expression) added to or removed from an existing index
-        return { ...common, [TEMPLATE_PARAM_PART_CLAUSE]: renderPartClause(nodeAt(indexPath, partsIdx + 2)) }
-      }
-      // whole index add/remove (and any unrecognised index change → name-only fallback)
-      return {
-        ...common,
-        [TEMPLATE_PARAM_INDEX_KIND]: isObject(indexNode) && indexNode[DdlapiProperties.Unique] === true ? 'unique index' : 'index',
-        [TEMPLATE_PARAM_COLUMNS_CLAUSE]: renderColumnsClause(indexNode),
-      }
-    }
-
-    // foreign key — add/remove (and any non referential-action change) renders the full identity
-    // via local/ref clauses; an onDelete/onUpdate change is name-only with from/to.
-    const fkPath = pathWhere(p => p.includes(DdlapiProperties.ForeignKeys))
-    if (fkPath) {
-      const fkIdx = fkPath.indexOf(DdlapiProperties.ForeignKeys)
-      const fkNode = nodeAt(fkPath, fkIdx + 2)
-      const fkName = nameOf(fkNode, DdlapiProperties.Symbol) ?? nameOf(fkNode)
-      const last = fkPath[fkPath.length - 1]
-      if (last === DdlapiProperties.OnDelete || last === DdlapiProperties.OnUpdate) {
-        return {
-          ...base,
-          [TEMPLATE_PARAM_FK_NAME]: fkName,
-          [TEMPLATE_PARAM_FK_ACTION]: last === DdlapiProperties.OnDelete ? 'on-delete action' : 'on-update action',
-          [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(fkPath, TABLE_DEPTH)),
-          [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, fkPath),
-          [TEMPLATE_PARAM_OLD_VALUE]: checkPrimitiveType(beforeValueOf(diff)),
-          [TEMPLATE_PARAM_NEW_VALUE]: checkPrimitiveType(afterValueOf(diff)),
-        }
-      }
-      const localColumns = columnNames(fkNode, DdlapiProperties.Columns)
-      const localTable = nameOf(nodeAt(fkPath, TABLE_DEPTH))
-      const localSchema = schemaParam(root, fkPath)
-      const refTable = isObject(fkNode) ? fkNode[DdlapiProperties.RefTable] : undefined
-      const refColumns = columnNames(fkNode, DdlapiProperties.RefColumns)
-      const refSchemaName = schemaNameOfTableNode(root, refTable)
-      const refSchema = refSchemaName === dialect.defaultSchemaName ? undefined : refSchemaName
-      return {
-        ...base,
-        [TEMPLATE_PARAM_FK_NAME]: fkName,
-        [TEMPLATE_PARAM_LOCAL_CLAUSE]: `on ${columnNoun(localColumns.length)} ${quoteJoin(localColumns)} of table '${localTable}'${localSchema ? ` in schema '${localSchema}'` : ''}`,
-        [TEMPLATE_PARAM_REF_CLAUSE]: `referencing ${columnNoun(refColumns.length)} ${quoteJoin(refColumns)} of table '${nameOf(refTable)}'${refSchema ? ` in schema '${refSchema}'` : ''}`,
-      }
-    }
-
-    // attrs[*] / objects[*] — a Check (dual-role) or a Comment (description) member
-    const containerKey = pathWhere(p => p.includes(DdlapiProperties.Attrs))
-      ? DdlapiProperties.Attrs
-      : (pathWhere(p => p.includes(DdlapiProperties.Objects)) ? DdlapiProperties.Objects : undefined)
-    const memberPath = containerKey ? pathWhere(p => p.includes(containerKey)) : undefined
-    if (memberPath && containerKey) {
-      const containerIdx = memberPath.indexOf(containerKey)
-      const member = nodeAt(memberPath, containerIdx + 2)
-      const kind = isObject(member) ? member[DdlapiProperties.Kind] : undefined
-      const level = memberPath[containerIdx - 2]
-      // A scalar leaf change inside the attr (Comment.text, Collation.value,
-      // GeneratedExpr.expr) carries before/after directly on the diff.
-      const lastSegment = memberPath[memberPath.length - 1]
-      const leafChange = lastSegment === DdlapiProperties.Text ||
-        lastSegment === DdlapiProperties.Value ||
-        lastSegment === DdlapiProperties.Expr
-      // A leaf change carries truncated from/to; an add/remove carries the (truncated) value
-      // inline. Exactly one of the two sets is supplied so suitability picks the right variant.
-      const oldNew = leafChange
-        ? {
-          [TEMPLATE_PARAM_OLD_VALUE]: truncate(checkPrimitiveType(beforeValueOf(diff))),
-          [TEMPLATE_PARAM_NEW_VALUE]: truncate(checkPrimitiveType(afterValueOf(diff))),
-        }
-        : {}
-      const valueParam = (property: PropertyKey): DynamicParams => {
-        return leafChange ? {} : { [TEMPLATE_PARAM_VALUE]: truncate(nameOf(member, property)) }
-      }
-
-      // Check — same classify/describe whether it lives in attrs[] or objects[]. The
-      // expression is carried inline on add/remove and as from/to on a change.
-      if (kind === AttrKind.Check) {
-        return {
-          ...base,
-          ...oldNew,
-          ...valueParam(DdlapiProperties.Expr),
-          [TEMPLATE_PARAM_CHECK_NAME]: nameOf(member),
-          [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(memberPath, TABLE_DEPTH)),
-          [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, memberPath),
-        }
-      }
-
-      // Collation / generated expression — column-level value attrs (column facet). The attr's
-      // value (Collation.value / GeneratedExpr.expr) is carried inline on add/remove.
-      const columnAttrFacet = typeof kind === 'string' ? COLUMN_ATTR_FACETS[kind] : undefined
-      if (columnAttrFacet) {
-        return {
-          ...base,
-          ...oldNew,
-          ...valueParam(kind === AttrKind.GeneratedExpr ? DdlapiProperties.Expr : DdlapiProperties.Value),
-          [TEMPLATE_PARAM_FACET]: columnAttrFacet,
-          [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(nodeAt(memberPath, COLUMN_DEPTH)),
-          [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(memberPath, TABLE_DEPTH)),
-          [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, memberPath),
-        }
-      }
-
-      // Comment — description at schema / table / column level. The (truncated) text is
-      // carried inline on add/remove and as from/to on a change.
-      if (kind === AttrKind.Comment) {
-        const text = valueParam(DdlapiProperties.Text)
-        if (level === DdlapiProperties.Schemas) {
-          // schema is the subject here — keep its name even when it is the default schema.
-          return { ...base, ...oldNew, ...text, [TEMPLATE_PARAM_SCHEMA_NAME]: nameOf(nodeAt(memberPath, SCHEMA_DEPTH)) }
-        }
-        if (level === DdlapiProperties.Tables) {
-          return {
-            ...base,
-            ...oldNew,
-            ...text,
-            [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(memberPath, TABLE_DEPTH)),
-            [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, memberPath),
-          }
-        }
-        if (level === DdlapiProperties.Columns) {
-          return {
-            ...base,
-            ...oldNew,
-            ...text,
-            [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(nodeAt(memberPath, COLUMN_DEPTH)),
-            [TEMPLATE_PARAM_TABLE_NAME]: nameOf(nodeAt(memberPath, TABLE_DEPTH)),
-            [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, memberPath),
-          }
-        }
-      }
-    }
-
-    // enum value add/remove — EnumType.values[*]
-    const enumValuePath = pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Values && typeof lastSegments(p)[1] === 'number')
-    if (enumValuePath) {
-      const enumValue = checkPrimitiveType(afterValueOf(diff)) ?? checkPrimitiveType(beforeValueOf(diff))
-      return {
-        ...base,
-        [TEMPLATE_PARAM_ENUM_VALUE]: enumValue,
-        [TEMPLATE_PARAM_ENUM_TYPE_NAME]: nameOf(nodeAt(enumValuePath, ENUM_DEPTH), DdlapiProperties.Type),
-        [TEMPLATE_PARAM_SCHEMA_NAME]: schemaParam(root, enumValuePath),
-      }
-    }
-
-    return base
+    },
+    pathWhere: predicate => sidePaths.find(predicate),
+    nodeAt: (path, depth) => getKeyValue(root, ...path.slice(0, depth)),
+    schemaOf: path => dropDefaultSchema(nameOf(getKeyValue(root, ...path.slice(0, SCHEMA_DEPTH)))),
+    schemaOfTable: tableNode => dropDefaultSchema(schemaNameOfTableNode(root, tableNode)),
   }
 }
+
+// A family handler produces the params for its templates, or `undefined` for a path it does not
+// recognise → the base params (action only), matching the previous calculator's fall-through.
+type DdlParamHandler = (pc: DdlParamContext, diff: Diff, ctx: CompareContext) => DynamicParams | undefined
+
+const paramsCalculator = (dialect: DdlDiffDialect, handler: DdlParamHandler): DiffTemplateParamsCalculator =>
+  (diff, ctx) => {
+    const pc = buildParamContext(dialect, diff, ctx)
+    if (!pc) { return FAILED_PARAMS_CALCULATION }
+    return handler(pc, diff, ctx) ?? pc.base
+  }
+
+// Table add / remove.
+const tableParams: DdlParamHandler = pc => {
+  const tablePath = pc.pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Tables && typeof lastSegments(p)[1] === 'number')
+  if (!tablePath) { return undefined }
+  return {
+    ...pc.base,
+    [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(tablePath, TABLE_DEPTH)),
+    [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(tablePath),
+  }
+}
+
+// A column and its scalar facets: structural add/remove, type, nullability, default.
+const columnParams: DdlParamHandler = (pc, diff, ctx) => {
+  // column add/remove
+  const columnPath = pc.pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Columns && typeof lastSegments(p)[1] === 'number')
+  if (columnPath) {
+    return {
+      ...pc.base,
+      [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(pc.nodeAt(columnPath, COLUMN_DEPTH)),
+      [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(columnPath, TABLE_DEPTH)),
+      [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(columnPath),
+    }
+  }
+
+  // column type change — a property of the SchemaType (column.type.type.{type|size|…}). Detect
+  // the columnType.type → SchemaType boundary (two consecutive `type` segments before the changed
+  // property) and render the whole type from the immediate parent on each side, so any subfield
+  // change reads "from <type> to <type>" (the parent SchemaType is present on both sides).
+  const typePath = pc.pathWhere(p => p.length >= 3 && p[p.length - 2] === DdlapiProperties.Type && p[p.length - 3] === DdlapiProperties.Type)
+  if (typePath) {
+    return {
+      ...pc.base,
+      [TEMPLATE_PARAM_FACET]: FACET_TYPE,
+      [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(pc.nodeAt(typePath, COLUMN_DEPTH)),
+      [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(typePath, TABLE_DEPTH)),
+      [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(typePath),
+      [TEMPLATE_PARAM_OLD_VALUE]: renderType(ctx.before.parentContext?.value),
+      [TEMPLATE_PARAM_NEW_VALUE]: renderType(ctx.after.parentContext?.value),
+    }
+  }
+
+  // nullability change — column.type.null
+  const nullPath = pc.pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Type && lastSegments(p)[1] === DdlapiProperties.Null)
+  if (nullPath) {
+    return {
+      ...pc.base,
+      [TEMPLATE_PARAM_FACET]: FACET_NULLABILITY,
+      [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(pc.nodeAt(nullPath, COLUMN_DEPTH)),
+      [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(nullPath, TABLE_DEPTH)),
+      [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(nullPath),
+      [TEMPLATE_PARAM_OLD_VALUE]: renderNullability(beforeValueOf(diff)),
+      [TEMPLATE_PARAM_NEW_VALUE]: renderNullability(afterValueOf(diff)),
+    }
+  }
+
+  // column default change — leaf inside the Expr (default.value | default.expr)
+  const defaultLeafPath = pc.pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Default &&
+    (lastSegments(p)[1] === DdlapiProperties.Value || lastSegments(p)[1] === DdlapiProperties.Expr))
+  if (defaultLeafPath) {
+    return {
+      ...pc.base,
+      [TEMPLATE_PARAM_FACET]: FACET_DEFAULT,
+      [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(pc.nodeAt(defaultLeafPath, COLUMN_DEPTH)),
+      [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(defaultLeafPath, TABLE_DEPTH)),
+      [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(defaultLeafPath),
+      [TEMPLATE_PARAM_OLD_VALUE]: truncate(checkPrimitiveType(beforeValueOf(diff))),
+      [TEMPLATE_PARAM_NEW_VALUE]: truncate(checkPrimitiveType(afterValueOf(diff))),
+    }
+  }
+
+  // column default add/remove — the whole Expr node; render its text inline as the value.
+  const defaultPath = pc.pathWhere(p => p[p.length - 1] === DdlapiProperties.Default)
+  if (defaultPath) {
+    return {
+      ...pc.base,
+      [TEMPLATE_PARAM_FACET]: FACET_DEFAULT,
+      [TEMPLATE_PARAM_VALUE]: renderExprText(pc.nodeAt(defaultPath, defaultPath.length)),
+      [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(pc.nodeAt(defaultPath, COLUMN_DEPTH)),
+      [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(defaultPath, TABLE_DEPTH)),
+      [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(defaultPath),
+    }
+  }
+
+  return undefined
+}
+
+// Index / primary key: whole add/remove (kind word + key columns), a key part add/remove, a part
+// reorder (1-based position), or a unique-flag flip. The primary key reuses the index rule, so a
+// pk diff lands here too; the branch is picked by the path tail.
+const indexParams: DdlParamHandler = (pc, diff) => {
+  // primary key — whole add/remove lists its key columns; a sub-change (part reorder) falls back
+  // to the name-only variant (no columnsClause supplied).
+  const pkPath = pc.pathWhere(p => p.includes(DdlapiProperties.PrimaryKey))
+  if (pkPath) {
+    const pkIdx = pkPath.indexOf(DdlapiProperties.PrimaryKey)
+    const wholePk = pkPath[pkPath.length - 1] === DdlapiProperties.PrimaryKey
+    return {
+      ...pc.base,
+      ...(wholePk ? { [TEMPLATE_PARAM_COLUMNS_CLAUSE]: renderColumnsClause(pc.nodeAt(pkPath, pkIdx + 1)) } : {}),
+      [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(pkPath, TABLE_DEPTH)),
+      [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(pkPath),
+    }
+  }
+
+  const indexPath = pc.pathWhere(p => p.includes(DdlapiProperties.Indexes))
+  if (!indexPath) { return undefined }
+  const indexIdx = indexPath.indexOf(DdlapiProperties.Indexes)
+  const indexNode = pc.nodeAt(indexPath, indexIdx + 2)
+  const partsIdx = indexPath.indexOf(DdlapiProperties.Parts)
+  const last = indexPath[indexPath.length - 1]
+  const common = {
+    ...pc.base,
+    [TEMPLATE_PARAM_INDEX_NAME]: nameOf(indexNode),
+    [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(indexPath, TABLE_DEPTH)),
+    [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(indexPath),
+  }
+  if (partsIdx >= 0 && last === DdlapiProperties.SeqNo) {
+    // part reorder — `seqNo` is 0-based in the model, rendered 1-based.
+    return {
+      ...common,
+      [TEMPLATE_PARAM_PART_CLAUSE]: renderPartClause(pc.nodeAt(indexPath, partsIdx + 2)),
+      [TEMPLATE_PARAM_OLD_VALUE]: oneBased(beforeValueOf(diff)),
+      [TEMPLATE_PARAM_NEW_VALUE]: oneBased(afterValueOf(diff)),
+    }
+  }
+  if (last === DdlapiProperties.Unique) {
+    return {
+      ...common,
+      [TEMPLATE_PARAM_OLD_VALUE]: renderUnique(beforeValueOf(diff)),
+      [TEMPLATE_PARAM_NEW_VALUE]: renderUnique(afterValueOf(diff)),
+    }
+  }
+  if (lastSegments(indexPath)[0] === DdlapiProperties.Parts && typeof last === 'number') {
+    // a key part (column / expression) added to or removed from an existing index
+    return { ...common, [TEMPLATE_PARAM_PART_CLAUSE]: renderPartClause(pc.nodeAt(indexPath, partsIdx + 2)) }
+  }
+  // whole index add/remove (and any unrecognised index change → name-only fallback)
+  return {
+    ...common,
+    [TEMPLATE_PARAM_INDEX_KIND]: isObject(indexNode) && indexNode[DdlapiProperties.Unique] === true ? 'unique index' : 'index',
+    [TEMPLATE_PARAM_COLUMNS_CLAUSE]: renderColumnsClause(indexNode),
+  }
+}
+
+// Foreign key: add/remove (and any non referential-action change) renders the full identity via
+// local/ref clauses; an onDelete/onUpdate change is name-only with from/to.
+const foreignKeyParams: DdlParamHandler = (pc, diff) => {
+  const fkPath = pc.pathWhere(p => p.includes(DdlapiProperties.ForeignKeys))
+  if (!fkPath) { return undefined }
+  const fkIdx = fkPath.indexOf(DdlapiProperties.ForeignKeys)
+  const fkNode = pc.nodeAt(fkPath, fkIdx + 2)
+  const fkName = nameOf(fkNode, DdlapiProperties.Symbol) ?? nameOf(fkNode)
+  const last = fkPath[fkPath.length - 1]
+  if (last === DdlapiProperties.OnDelete || last === DdlapiProperties.OnUpdate) {
+    return {
+      ...pc.base,
+      [TEMPLATE_PARAM_FK_NAME]: fkName,
+      [TEMPLATE_PARAM_FK_ACTION]: last === DdlapiProperties.OnDelete ? 'on-delete action' : 'on-update action',
+      [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(fkPath, TABLE_DEPTH)),
+      [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(fkPath),
+      [TEMPLATE_PARAM_OLD_VALUE]: checkPrimitiveType(beforeValueOf(diff)),
+      [TEMPLATE_PARAM_NEW_VALUE]: checkPrimitiveType(afterValueOf(diff)),
+    }
+  }
+  const localColumns = columnNames(fkNode, DdlapiProperties.Columns)
+  const localTable = nameOf(pc.nodeAt(fkPath, TABLE_DEPTH))
+  const localSchema = pc.schemaOf(fkPath)
+  const refTable = isObject(fkNode) ? fkNode[DdlapiProperties.RefTable] : undefined
+  const refColumns = columnNames(fkNode, DdlapiProperties.RefColumns)
+  const refSchema = pc.schemaOfTable(refTable)
+  return {
+    ...pc.base,
+    [TEMPLATE_PARAM_FK_NAME]: fkName,
+    [TEMPLATE_PARAM_LOCAL_CLAUSE]: `on ${columnNoun(localColumns.length)} ${quoteJoin(localColumns)} of table '${localTable}'${localSchema ? ` in schema '${localSchema}'` : ''}`,
+    [TEMPLATE_PARAM_REF_CLAUSE]: `referencing ${columnNoun(refColumns.length)} ${quoteJoin(refColumns)} of table '${nameOf(refTable)}'${refSchema ? ` in schema '${refSchema}'` : ''}`,
+  }
+}
+
+// attrs[*] / objects[*] member — a Check, a Collation / generated expression (column facet), or a
+// Comment (description at schema / table / column level). The member `kind` selects the family.
+const attrMemberParams: DdlParamHandler = (pc, diff) => {
+  const containerKey = pc.pathWhere(p => p.includes(DdlapiProperties.Attrs))
+    ? DdlapiProperties.Attrs
+    : (pc.pathWhere(p => p.includes(DdlapiProperties.Objects)) ? DdlapiProperties.Objects : undefined)
+  const memberPath = containerKey ? pc.pathWhere(p => p.includes(containerKey)) : undefined
+  if (!memberPath || !containerKey) { return undefined }
+  const containerIdx = memberPath.indexOf(containerKey)
+  const member = pc.nodeAt(memberPath, containerIdx + 2)
+  const kind = isObject(member) ? member[DdlapiProperties.Kind] : undefined
+  const level = memberPath[containerIdx - 2]
+  // A scalar leaf change inside the attr (Comment.text, Collation.value, GeneratedExpr.expr)
+  // carries before/after directly on the diff; an add/remove carries the (truncated) value inline.
+  // Exactly one of the two sets is supplied so suitability picks the right template variant.
+  const lastSegment = memberPath[memberPath.length - 1]
+  const leafChange = lastSegment === DdlapiProperties.Text ||
+    lastSegment === DdlapiProperties.Value ||
+    lastSegment === DdlapiProperties.Expr
+  const oldNew = leafChange
+    ? {
+      [TEMPLATE_PARAM_OLD_VALUE]: truncate(checkPrimitiveType(beforeValueOf(diff))),
+      [TEMPLATE_PARAM_NEW_VALUE]: truncate(checkPrimitiveType(afterValueOf(diff))),
+    }
+    : {}
+  const valueParam = (property: PropertyKey): DynamicParams =>
+    (leafChange ? {} : { [TEMPLATE_PARAM_VALUE]: truncate(nameOf(member, property)) })
+
+  // Check — same describe whether it lives in attrs[] or objects[]; expression inline / from-to.
+  if (kind === AttrKind.Check) {
+    return {
+      ...pc.base,
+      ...oldNew,
+      ...valueParam(DdlapiProperties.Expr),
+      [TEMPLATE_PARAM_CHECK_NAME]: nameOf(member),
+      [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(memberPath, TABLE_DEPTH)),
+      [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(memberPath),
+    }
+  }
+
+  // Collation / generated expression — column-level value attrs (column facet).
+  const columnAttrFacet = typeof kind === 'string' ? COLUMN_ATTR_FACETS[kind] : undefined
+  if (columnAttrFacet) {
+    return {
+      ...pc.base,
+      ...oldNew,
+      ...valueParam(kind === AttrKind.GeneratedExpr ? DdlapiProperties.Expr : DdlapiProperties.Value),
+      [TEMPLATE_PARAM_FACET]: columnAttrFacet,
+      [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(pc.nodeAt(memberPath, COLUMN_DEPTH)),
+      [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(memberPath, TABLE_DEPTH)),
+      [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(memberPath),
+    }
+  }
+
+  // Comment — description at schema / table / column level.
+  if (kind === AttrKind.Comment) {
+    const text = valueParam(DdlapiProperties.Text)
+    if (level === DdlapiProperties.Schemas) {
+      // schema is the subject here — keep its name even when it is the default schema.
+      return { ...pc.base, ...oldNew, ...text, [TEMPLATE_PARAM_SCHEMA_NAME]: nameOf(pc.nodeAt(memberPath, SCHEMA_DEPTH)) }
+    }
+    if (level === DdlapiProperties.Tables) {
+      return {
+        ...pc.base,
+        ...oldNew,
+        ...text,
+        [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(memberPath, TABLE_DEPTH)),
+        [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(memberPath),
+      }
+    }
+    if (level === DdlapiProperties.Columns) {
+      return {
+        ...pc.base,
+        ...oldNew,
+        ...text,
+        [TEMPLATE_PARAM_COLUMN_NAME]: nameOf(pc.nodeAt(memberPath, COLUMN_DEPTH)),
+        [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(memberPath, TABLE_DEPTH)),
+        [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(memberPath),
+      }
+    }
+  }
+
+  return undefined
+}
+
+// Enum value add / remove — EnumType.values[*].
+const enumValueParams: DdlParamHandler = (pc, diff) => {
+  const enumValuePath = pc.pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Values && typeof lastSegments(p)[1] === 'number')
+  if (!enumValuePath) { return undefined }
+  const enumValue = checkPrimitiveType(afterValueOf(diff)) ?? checkPrimitiveType(beforeValueOf(diff))
+  return {
+    ...pc.base,
+    [TEMPLATE_PARAM_ENUM_VALUE]: enumValue,
+    [TEMPLATE_PARAM_ENUM_TYPE_NAME]: nameOf(pc.nodeAt(enumValuePath, ENUM_DEPTH), DdlapiProperties.Type),
+    [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(enumValuePath),
+  }
+}
+
+// Factories — each binds the dialect and the family handler into a descriptionParamCalculator.
+export const createTableParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => paramsCalculator(dialect, tableParams)
+export const createColumnParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => paramsCalculator(dialect, columnParams)
+export const createIndexParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => paramsCalculator(dialect, indexParams)
+export const createForeignKeyParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => paramsCalculator(dialect, foreignKeyParams)
+export const createAttrMemberParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => paramsCalculator(dialect, attrMemberParams)
+export const createEnumValueParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => paramsCalculator(dialect, enumValueParams)

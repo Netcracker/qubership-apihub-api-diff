@@ -34,7 +34,12 @@ import {
   columnDescription,
   columnFacetDescription,
   commentDescription,
-  createDdlParamsCalculator,
+  createAttrMemberParamsCalculator,
+  createColumnParamsCalculator,
+  createEnumValueParamsCalculator,
+  createForeignKeyParamsCalculator,
+  createIndexParamsCalculator,
+  createTableParamsCalculator,
   enumValueDescription,
   foreignKeyDescription,
   indexDescription,
@@ -77,7 +82,14 @@ const asElement = (rules: CompareRules): CompareRules => ({
  */
 export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): CompareRules => {
   const typeNameClassifier = createTypeNameClassifier(dialect)
-  const descriptionParamCalculator = createDdlParamsCalculator(dialect)
+  // One scoped descriptionParamCalculator per family, attached at the subtree node that owns it;
+  // `diffDescription` resolves the nearest one up the rule tree for each rendered description.
+  const tableParams = createTableParamsCalculator(dialect)
+  const columnParams = createColumnParamsCalculator(dialect)
+  const indexParams = createIndexParamsCalculator(dialect)
+  const foreignKeyParams = createForeignKeyParamsCalculator(dialect)
+  const attrMemberParams = createAttrMemberParamsCalculator(dialect)
+  const enumValueParams = createEnumValueParamsCalculator(dialect)
 
   // --- union kind-dispatchers (lazy; default branch → dialect lookup → fall through) ---
 
@@ -167,6 +179,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
       // set semantics — a reorder maps a value to a new index; ignoreKeyDifference (on the
       // element) stops that index change being reported as a rename.
       '/*': {
+        descriptionParamCalculator: enumValueParams,
         $: enumValueClassifier,
         [IGNORE_DIFFERENCE_IN_KEYS_RULE]: true,
         description: enumValueDescription,
@@ -179,6 +192,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   // A Comment attr is a column/table/schema description (COMMENT ON …): documentation-only →
   // annotation, at the attr node (add/remove) and its text leaf (change).
   const commentRules: CompareRules = {
+    descriptionParamCalculator: attrMemberParams,
     $: allAnnotation,
     description: commentDescription,
     '/kind': SUPPRESS,
@@ -189,6 +203,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   // param calculator renders it as the `collation` column facet. (Charset is a MySQL-ism not
   // emitted by the PostgreSQL parser and is intentionally not handled — out of scope.)
   const collationRules: CompareRules = {
+    descriptionParamCalculator: attrMemberParams,
     $: allNonBreaking,
     description: columnFacetDescription,
     '/kind': SUPPRESS,
@@ -198,6 +213,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   // check is a write-time constraint invisible to SELECT → add/remove and expr change are
   // non-breaking.
   const checkRules: CompareRules = {
+    descriptionParamCalculator: attrMemberParams,
     $: allNonBreaking,
     description: checkDescription,
     '/kind': SUPPRESS,
@@ -208,6 +224,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   // it shifts the column's computed values (a result change) but the column stays selectable →
   // non-breaking. Rendered as the `generated expression` column facet.
   const generatedExprRules: CompareRules = {
+    descriptionParamCalculator: attrMemberParams,
     $: allNonBreaking,
     description: columnFacetDescription,
     '/kind': SUPPRESS,
@@ -245,6 +262,9 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
     '/null': { $: nullabilityClassifier, description: columnFacetDescription }, // facet = nullability
   }
   const columnRules: CompareRules = {
+    // Serves the column's own add/remove and its scalar facets (type, nullability, default),
+    // which render below it; column attrs (collation/generated/comment) carry their own.
+    descriptionParamCalculator: columnParams,
     $: columnClassifier,
     description: columnDescription,
     '/type': columnTypeRules,
@@ -265,6 +285,8 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
     '/attrs': attrsArrayRule,
   }
   const indexRules: CompareRules = {
+    // Serves the whole index/primary key and its part/seqNo/unique sub-changes rendered below.
+    descriptionParamCalculator: indexParams,
     $: allNonBreaking,
     description: indexDescription,
     '/kind': SUPPRESS,
@@ -278,6 +300,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   // invisible to a reader → non-breaking. refTable reuses the table rule via a lazy
   // cyclic edge — never cloned (the shared-instance contract).
   const foreignKeyRules: CompareRules = {
+    descriptionParamCalculator: foreignKeyParams,
     $: allNonBreaking,
     description: foreignKeyDescription,
     '/kind': SUPPRESS,
@@ -291,6 +314,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
 
   // --- Table ---
   const tableRules: CompareRules = {
+    descriptionParamCalculator: tableParams,
     $: tableClassifier,
     description: tableDescription,
     '/kind': SUPPRESS,
@@ -311,10 +335,9 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
 
   // --- Realm (root) ---
   return {
-    // Nearest descriptionParamCalculator for every node (resolved up the rule tree).
-    descriptionParamCalculator,
     // Single root-level catch-all: any node without a more specific rule classifies as
-    // `unclassified`. `/**` is propagated to descendants by json-crawl.
+    // `unclassified`. `/**` is propagated to descendants by json-crawl. Description params come
+    // from the per-family calculators attached on the subtree nodes above.
     '/**': { $: allUnclassified },
     '/schemas': { mapping: nameMappingResolver, '/*': asElement(schemaRules) },
     '/attrs': attrsArrayRule,
