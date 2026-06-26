@@ -93,6 +93,22 @@ A node's `description: diffDescription([...templates])` renders a diff; the near
 - `beforeValue` / `afterValue` exist only on specific `Diff` union members — guard before reading.
 - **Rendering convention is spec-type-local.** If you bracket actions (`[Added]`) or quote names, do it in that spec type's templates. Do **not** change the shared core `DIFF_ACTION_TO_ACTION_MAP` — it affects every spec type.
 
+## Type guards
+
+Narrow `unknown` with the shared guards in `src/utils.ts` — `isObject`, `isString`, `isArray`,
+`isNumber`, `isBoolean` (and `checkPrimitiveType` for "any scalar") — never hand-rolled
+`typeof x === 'object' && x !== null` or `typeof x === 'string'` checks. Beyond reading
+consistently, `isObject` narrows to `Record<string | symbol, unknown>`, so it also removes the
+`as Record<…>` cast a manual check would otherwise need:
+
+```ts
+const readKind = (value: unknown): string | undefined =>
+  (isObject(value) && isString(value.kind) ? value.kind : undefined)
+```
+
+Import them from the library `utils` (`../utils`), not from a dependency — json-crawl ships its
+own `isObject`, but the api-diff guards are the canonical choice and keep one source of truth.
+
 ## Registering a new spec type
 
 Wire it in `src/api.ts`: a `compare<Spec>(version)` engine that calls `compare(before, after, { ...<NORMALIZE_OPTIONS>, ...options, rules, fresh caches })`, an entry in `COMPARE_ENGINES_MAP`, and the `areSpecTypesCompatible` / `selectEngineSpecType` branches. Heads-up: `COMPARE_ENGINES_MAP` is typed over api-unifier's `SpecType`; when api-unifier adds a member, an exhaustive `Record<SpecType, …>` stops compiling — use `Partial<Record<…>>` + a runtime "no engine" guard.
