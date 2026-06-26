@@ -1,6 +1,6 @@
 import { createPropertyMappingResolver, deepEqualsUniqueItemsArrayMappingResolver } from '../core'
 import { MapKeysResult, MappingArrayResolver } from '../types'
-import { onlyExistedArrayIndexes } from '../utils'
+import { isObject, onlyExistedArrayIndexes } from '../utils'
 import { DdlapiProperties } from './ddl.const'
 
 // ddlapi collections are arrays whose elements have stable identity keys, so the default
@@ -20,11 +20,10 @@ export const symbolMappingResolver: MappingArrayResolver = createPropertyMapping
  * Returns `undefined` for non-object / kind-less elements so they are treated as unmatched.
  */
 const attrIdentityKey = (item: unknown): string | undefined => {
-  if (item === null || typeof item !== 'object') { return undefined }
-  const record = item as Record<PropertyKey, unknown>
-  const kind = record[DdlapiProperties.Kind]
+  if (!isObject(item)) { return undefined }
+  const kind = item[DdlapiProperties.Kind]
   if (typeof kind !== 'string') { return undefined }
-  const id = record[DdlapiProperties.Name] ?? record[DdlapiProperties.Symbol] ?? record[DdlapiProperties.Type]
+  const id = item[DdlapiProperties.Name] ?? item[DdlapiProperties.Symbol] ?? item[DdlapiProperties.Type]
   return typeof id === 'string' ? `${kind}:${id}` : kind
 }
 
@@ -79,10 +78,10 @@ export const enumValuesMappingResolver: MappingArrayResolver = deepEqualsUniqueI
  */
 export const indexPartMappingResolver: MappingArrayResolver = (before, after) => {
   const partColumnName = (part: unknown): string | undefined => {
-    if (part === null || typeof part !== 'object') { return undefined }
-    const column = (part as Record<PropertyKey, unknown>)[DdlapiProperties.Column]
-    if (column === null || typeof column !== 'object') { return undefined }
-    const name = (column as Record<PropertyKey, unknown>)[DdlapiProperties.Name]
+    if (!isObject(part)) { return undefined }
+    const column = part[DdlapiProperties.Column]
+    if (!isObject(column)) { return undefined }
+    const name = column[DdlapiProperties.Name]
     return typeof name === 'string' ? name : undefined
   }
 
