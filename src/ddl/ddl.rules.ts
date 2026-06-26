@@ -57,11 +57,20 @@ export interface DdlRulesOptions {
 // (whole node, all actions) so an end user never sees "changed kind/raw from X to Y".
 const SUPPRESS: CompareRule = { [IGNORE_DIFFERENCE_RULE]: true }
 
-// ddlapi arrays are identity-keyed, so an element matched to a different index is a
-// reorder, not a rename. `ignoreKeyDifference` on the element stops that index change being
-// reported as a `[Renamed]` diff. Applied to every mapped-array element.
+// Decorates a rule object for use as an element of an identity-keyed array. ddlapi arrays are
+// keyed by logical identity, so a resolver may match an element to a *different* index; without
+// this the engine would report that index change as a `[Renamed]` diff. `ignoreKeyDifference`
+// on the element suppresses it.
+//
+// It returns a shallow copy carrying the flag rather than setting it on the rule object directly,
+// because the same rule objects (columnRules, tableRules, indexRules) are reused both as
+// keyed-array elements *and* as plain single-reference edges (`/primaryKey`, `/refTable`,
+// `/column`), where the flag is meaningless. Keeping it a per-use-site copy leaves the shared
+// base object clean for those other uses. (An element rule that is defined inline and used once —
+// e.g. enum `/values/*` — just sets the flag directly; this wrapper is for the shared, reused
+// rules so the spread is not hand-repeated at every mapped `/*`.)
 const asElement = (rules: CompareRules): CompareRules => ({
-  ...rules as object,
+  ...rules,
   [IGNORE_DIFFERENCE_IN_KEYS_RULE]: true,
 })
 
