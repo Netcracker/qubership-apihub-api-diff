@@ -1,5 +1,6 @@
 import { createEvaluationCacheService } from '@netcracker/qubership-apihub-api-unifier'
 import { allNonBreaking, nestedCompare } from '../src/core'
+import { isObject } from '../src/utils'
 import {
   COMPARE_MODE_DEFAULT,
   COMPARE_SCOPE_ROOT,
@@ -49,8 +50,8 @@ const childRules: CompareRules = {
 }
 
 const hasMeta = (node: unknown, key: PropertyKey): boolean =>
-  !!node && typeof node === 'object' && META_KEY in (node as Record<PropertyKey, unknown>) &&
-  key in ((node as Record<PropertyKey, unknown>)[META_KEY] as Record<PropertyKey, unknown>)
+  isObject(node) && META_KEY in node && isObject(node[META_KEY]) &&
+  key in node[META_KEY]
 
 describe('ignoreDifference rule (T0.2)', () => {
   it('suppresses the node and its whole subtree but still merges the after-value', () => {

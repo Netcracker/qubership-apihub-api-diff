@@ -1,5 +1,5 @@
 import { MapKeysResult, MappingArrayResolver, MappingResolver } from '../types'
-import { onlyExistedArrayIndexes } from '../utils'
+import { isObject, onlyExistedArrayIndexes } from '../utils'
 import { deepEqual } from 'fast-equals'
 
 //todo this method nor ready to sparse array
@@ -115,8 +115,8 @@ export const createKeyMappingResolver = (
 export const createPropertyMappingResolver = (
   propertyKey: PropertyKey,
 ): MappingArrayResolver => createKeyMappingResolver(item => {
-  if (item === null || typeof item !== 'object') { return undefined }
-  const key = (item as Record<PropertyKey, unknown>)[propertyKey]
+  if (!isObject(item)) { return undefined }
+  const key = item[propertyKey]
   return typeof key === 'string' ? key : undefined
 })
 
