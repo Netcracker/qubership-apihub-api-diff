@@ -7,6 +7,7 @@ import {
   CompareOptions,
   DiffAction,
   nonBreaking,
+  unclassified,
 } from '../src';
 import { diffsMatcher } from './helper/matchers';
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper';
@@ -366,4 +367,343 @@ describe('security scheme / oauth2 fields (flows)', () => {
       ]),
     );
   });
+
+  it('adding tokenUrl to an existing flow is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              clientCredentials: {
+                scopes: { 'read:api': 'Read access' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              clientCredentials: {
+                tokenUrl: 'https://example.com/token',
+                scopes: { 'read:api': 'Read access' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.add,
+          afterDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'clientCredentials',
+              'tokenUrl',
+            ],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('adding authorizationUrl to an existing flow is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              authorizationCode: {
+                tokenUrl: 'https://example.com/token',
+                scopes: { 'read:api': 'Read access' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              authorizationCode: {
+                authorizationUrl: 'https://example.com/auth',
+                tokenUrl: 'https://example.com/token',
+                scopes: { 'read:api': 'Read access' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.add,
+          afterDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'authorizationCode',
+              'authorizationUrl',
+            ],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('adding scopes to an existing flow is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              clientCredentials: {
+                tokenUrl: 'https://example.com/token',
+              },
+            },
+          },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              clientCredentials: {
+                tokenUrl: 'https://example.com/token',
+                scopes: { 'read:api': 'Read access' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.add,
+          afterDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'clientCredentials',
+              'scopes',
+            ],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('changing tokenUrl is breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'oauth2', flows: clientCredentialsFlow },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              clientCredentials: {
+                tokenUrl: 'https://other.com/token',
+                scopes: { 'read:api': 'Read access' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.replace,
+          beforeDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'clientCredentials',
+              'tokenUrl',
+            ],
+          ],
+          afterDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'clientCredentials',
+              'tokenUrl',
+            ],
+          ],
+          type: breaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('changing authorizationUrl is breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'oauth2', flows: { ...authorizationCodeFlow } },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              authorizationCode: {
+                authorizationUrl: 'https://other.com/auth',
+                tokenUrl: 'https://example.com/token',
+                scopes: { 'read:api': 'Read access' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.replace,
+          beforeDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'authorizationCode',
+              'authorizationUrl',
+            ],
+          ],
+          afterDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'authorizationCode',
+              'authorizationUrl',
+            ],
+          ],
+          type: breaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('changing scopes content is breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'oauth2', flows: clientCredentialsFlow },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              clientCredentials: {
+                tokenUrl: 'https://example.com/token',
+                scopes: { 'read:api': 'Updated description' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.replace,
+          beforeDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'clientCredentials',
+              'scopes',
+              'read:api',
+            ],
+          ],
+          afterDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'clientCredentials',
+              'scopes',
+              'read:api',
+            ],
+          ],
+          type: unclassified,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
 });
