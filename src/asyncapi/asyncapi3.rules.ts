@@ -55,22 +55,26 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
 
   const oAuthFlowRules: CompareRules = {
     $: [breaking, nonBreaking, breaking],
+    '/authorizationUrl': { $: [nonBreaking, nonBreaking, breaking] },
+    '/tokenUrl': { $: [nonBreaking, nonBreaking, breaking] },
+    '/availableScopes': { $: [nonBreaking, nonBreaking, breaking] },
+    '/refreshUrl': { $: allAnnotation },
     ...asyncApiSpecificationExtensionRulesFunction(),
   }
 
   const oAuthFlowsRules: CompareRules = {
-    $: [breaking, nonBreaking, breaking],
+    $: [nonBreaking, nonBreaking, breaking],
     ...asyncApiSpecificationExtensionRulesFunction(),
     '/*': oAuthFlowRules,
   }
 
   const securitySchemeRules: CompareRules = {
     $: [breaking, nonBreaking, breaking],
-    '/type': { $: [breaking, nonBreaking, breaking] },
+    '/type': { $: [nonBreaking, nonBreaking, breaking] },
     '/description': { $: allAnnotation },
-    '/name': { $: [breaking, nonBreaking, breaking] },
-    '/in': { $: [breaking, nonBreaking, breaking] },
-    '/scheme': { $: [breaking, nonBreaking, breaking] },
+    '/name': { $: [nonBreaking, nonBreaking, breaking] },
+    '/in': { $: [nonBreaking, nonBreaking, breaking] },
+    '/scheme': { $: [nonBreaking, nonBreaking, breaking] },
     '/bearerFormat': { $: allAnnotation },
     '/flows': oAuthFlowsRules,
     '/openIdConnectUrl': { $: allAnnotation },
