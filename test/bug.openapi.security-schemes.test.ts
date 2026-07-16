@@ -9,8 +9,9 @@ import {
   nonBreaking,
   unclassified,
 } from '../src';
-import { diffsMatcher } from './helper/matchers';
+import { diffsMatcher, expectOpenApiVersionChange } from './helper/matchers';
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper';
+import { loadYaml } from '@netcracker/qubership-apihub-api-unifier';
 
 const TEST_COMPARE_OPTIONS: CompareOptions = {
   originsFlag: TEST_ORIGINS_FLAG,
@@ -90,31 +91,91 @@ describe('security scheme / type field', () => {
       ]),
     );
   });
-});
 
-describe('security scheme / apiKey fields (name, in)', () => {
-  it('adding name is non-breaking', () => {
+  it('removing type is non-breaking', () => {
     const before = {
       ...BASE,
       components: {
-        securitySchemes: { Auth: { type: 'apiKey', in: 'header' } },
+        securitySchemes: { Auth: { type: 'apiKey', in: 'header', name: 'X-Key' } },
       },
     };
     const after = {
       ...BASE,
       components: {
-        securitySchemes: {
-          Auth: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
-        },
+        securitySchemes: { Auth: { in: 'header', name: 'X-Key' } },
       },
     };
     const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
     expect(diffs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            ['components', 'securitySchemes', 'Auth', 'type'],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+});
+
+describe('security scheme / apiKey fields (name, in)', () => {
+  it('adding name is non-breaking', () => {
+    const before = loadYaml(`
+openapi: 3.0.1
+info:
+  title: Control REST API
+  description: REST API for Control
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/components/{componentName}/datasource/tableconfig/validate:
+    post:
+      tags:
+        - Component
+      summary: Endpoint for validation of a DataSource TableConfig.
+      description: Endpoint for validation of DataSource TableConfig.
+      operationId: validateDataSourceV1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+`);
+    const after = loadYaml(`
+openapi: 3.1.0
+info:
+  title: Control REST API
+  description: REST API for Control
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/components/{componentName}/datasource/tableconfig/validate:
+    post:
+      tags:
+        - Component
+      summary: Endpoint for validation of a DataSource TableConfig.
+      description: Endpoint for validation of DataSource TableConfig.
+      operationId: validateDataSourceV1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      name: bearerAuth
+      scheme: bearer
+      bearerFormat: JWT
+`);
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
       diffsMatcher([
+        expectOpenApiVersionChange('3.0.1', '3.1.0'),
         expect.objectContaining({
           action: DiffAction.add,
           afterDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'name'],
+            ['components', 'securitySchemes', 'bearerAuth', 'name'],
           ],
           type: nonBreaking,
           scope: 'components',
@@ -222,6 +283,66 @@ describe('security scheme / apiKey fields (name, in)', () => {
       ]),
     );
   });
+
+  it('removing name is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: { Auth: { type: 'apiKey', in: 'header' } },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            ['components', 'securitySchemes', 'Auth', 'name'],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('removing in is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: { Auth: { type: 'apiKey', name: 'X-API-Key' } },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            ['components', 'securitySchemes', 'Auth', 'in'],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
 });
 
 describe('security scheme / http fields (scheme)', () => {
@@ -276,6 +397,34 @@ describe('security scheme / http fields (scheme)', () => {
             ['components', 'securitySchemes', 'Auth', 'scheme'],
           ],
           type: breaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('removing scheme is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: { Auth: { type: 'http', scheme: 'bearer' } },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: { Auth: { type: 'http' } },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            ['components', 'securitySchemes', 'Auth', 'scheme'],
+          ],
+          type: nonBreaking,
           scope: 'components',
         }),
       ]),
@@ -641,6 +790,138 @@ describe('security scheme / oauth2 fields (flows)', () => {
             ],
           ],
           type: breaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('removing a flow type is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: { ...clientCredentialsFlow, ...authorizationCodeFlow },
+          },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'oauth2', flows: clientCredentialsFlow },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'authorizationCode',
+            ],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('removing tokenUrl from an existing flow is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'oauth2', flows: clientCredentialsFlow },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              clientCredentials: { scopes: { 'read:api': 'Read access' } },
+            },
+          },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'clientCredentials',
+              'tokenUrl',
+            ],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('removing authorizationUrl from an existing flow is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'oauth2', flows: { ...authorizationCodeFlow } },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              authorizationCode: {
+                tokenUrl: 'https://example.com/token',
+                scopes: { 'read:api': 'Read access' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'authorizationCode',
+              'authorizationUrl',
+            ],
+          ],
+          type: nonBreaking,
           scope: 'components',
         }),
       ]),

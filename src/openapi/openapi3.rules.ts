@@ -409,10 +409,10 @@ export const openApi3Rules = (options: OpenApi3RulesOptions): CompareRules => {
 
   const oAuthFlowObjectRules: CompareRules = {
     $: [breaking, nonBreaking, breaking],
-      '/authorizationUrl': { $: [nonBreaking, nonBreaking, breaking] },
-      '/tokenUrl': { $: [nonBreaking, nonBreaking, breaking] },
-      '/scopes': { $: [nonBreaking, nonBreaking, breaking] },
-      '/refreshUrl': { $: allAnnotation },
+    '/authorizationUrl': { $: [nonBreaking, nonBreaking, breaking] },
+    '/tokenUrl': { $: [nonBreaking, nonBreaking, breaking] },
+    '/scopes': { $: [nonBreaking, nonBreaking, breaking] },
+    '/refreshUrl': { $: allAnnotation },
     ...openApiSpecificationExtensionRulesFunction(),
   }
 

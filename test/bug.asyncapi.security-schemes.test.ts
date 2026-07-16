@@ -90,6 +90,34 @@ describe('asyncapi security scheme / type field', () => {
       ]),
     );
   });
+
+  it('removing type is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: { Auth: { type: 'apiKey', in: 'header', name: 'X-Key' } },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: { Auth: { in: 'header', name: 'X-Key' } },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            ['components', 'securitySchemes', 'Auth', 'type'],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
 });
 
 // ── apiKey fields: name, in ───────────────────────────────────────────────────
@@ -224,6 +252,66 @@ describe('asyncapi security scheme / apiKey fields (name, in)', () => {
       ]),
     );
   });
+
+  it('removing name is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: { Auth: { type: 'apiKey', in: 'header' } },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            ['components', 'securitySchemes', 'Auth', 'name'],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('removing in is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: { Auth: { type: 'apiKey', name: 'X-API-Key' } },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            ['components', 'securitySchemes', 'Auth', 'in'],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
 });
 
 // ── http fields: scheme ───────────────────────────────────────────────────────
@@ -280,6 +368,34 @@ describe('asyncapi security scheme / http fields (scheme)', () => {
             ['components', 'securitySchemes', 'Auth', 'scheme'],
           ],
           type: breaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('removing scheme is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: { Auth: { type: 'http', scheme: 'bearer' } },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: { Auth: { type: 'http' } },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            ['components', 'securitySchemes', 'Auth', 'scheme'],
+          ],
+          type: nonBreaking,
           scope: 'components',
         }),
       ]),
@@ -604,4 +720,137 @@ describe('asyncapi security scheme / oauth2 fields (flows)', () => {
       ]),
     );
   });
+
+  it('removing a flow type is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: { ...clientCredentialsFlow, ...authorizationCodeFlow },
+          },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'oauth2', flows: clientCredentialsFlow },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'authorizationCode',
+            ],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('removing tokenUrl from an existing flow is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'oauth2', flows: clientCredentialsFlow },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              clientCredentials: { availableScopes: { 'read:api': 'Read access' } },
+            },
+          },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'clientCredentials',
+              'tokenUrl',
+            ],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
+  it('removing authorizationUrl from an existing flow is non-breaking', () => {
+    const before = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: { type: 'oauth2', flows: { ...authorizationCodeFlow } },
+        },
+      },
+    };
+    const after = {
+      ...BASE,
+      components: {
+        securitySchemes: {
+          Auth: {
+            type: 'oauth2',
+            flows: {
+              authorizationCode: {
+                tokenUrl: 'https://example.com/token',
+                availableScopes: { 'read:api': 'Read access' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
+    expect(diffs).toEqual(
+      diffsMatcher([
+        expect.objectContaining({
+          action: DiffAction.remove,
+          beforeDeclarationPaths: [
+            [
+              'components',
+              'securitySchemes',
+              'Auth',
+              'flows',
+              'authorizationCode',
+              'authorizationUrl',
+            ],
+          ],
+          type: nonBreaking,
+          scope: 'components',
+        }),
+      ]),
+    );
+  });
+
 });
