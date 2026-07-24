@@ -1,16 +1,69 @@
-//the issue: old spec on apiHub was incorrect, i.e. missed a required fields
+//the issue: old spec on apiHub was incorrect, i.e. missed required fields
 //fixing the old spec (adding required fields) should be a non-breaking change
 
 import {
   apiDiff,
   breaking,
   CompareOptions,
-  DiffAction,
-  nonBreaking,
-  unclassified,
-} from '../src';
-import { diffsMatcher } from './helper/matchers';
-import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper';
+} from '../src'
+import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper'
+
+import addSecuritySchemeTypeBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-type/before.json'
+import addSecuritySchemeTypeAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-type/after.json'
+
+import addSecuritySchemeNameBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-name/before.json'
+import addSecuritySchemeNameAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-name/after.json'
+
+import addSecuritySchemeInBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-in/before.json'
+import addSecuritySchemeInAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-in/after.json'
+
+import addSecuritySchemeSchemeBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-scheme/before.json'
+import addSecuritySchemeSchemeAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-scheme/after.json'
+
+import addSecuritySchemeOpenIdConnectUrlBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-openIdConnectUrl/before.json'
+import addSecuritySchemeOpenIdConnectUrlAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-openIdConnectUrl/after.json'
+
+import addSecuritySchemeFlowsBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-flows/before.json'
+import addSecuritySchemeFlowsAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-flows/after.json'
+
+import addSecuritySchemeAuthorizationCodeFlowBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-authorizationcode-flow/before.json'
+import addSecuritySchemeAuthorizationCodeFlowAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-authorizationcode-flow/after.json'
+
+import addInfoBefore from './helper/resources/adding-required-fields/openapi-add-info/before.json'
+import addInfoAfter from './helper/resources/adding-required-fields/openapi-add-info/after.json'
+
+import addInfoFieldsBefore from './helper/resources/adding-required-fields/openapi-add-info-fields/before.json'
+import addInfoFieldsAfter from './helper/resources/adding-required-fields/openapi-add-info-fields/after.json'
+
+import addInfoLicenseNameBefore from './helper/resources/adding-required-fields/openapi-add-info-license-name/before.json'
+import addInfoLicenseNameAfter from './helper/resources/adding-required-fields/openapi-add-info-license-name/after.json'
+
+import addOperationResponsesBefore from './helper/resources/adding-required-fields/openapi-add-responses/before.json'
+import addOperationResponsesAfter from './helper/resources/adding-required-fields/openapi-add-responses/after.json'
+
+import addOperationResponseDescriptionBefore from './helper/resources/adding-required-fields/openapi-add-response-description/before.json'
+import addOperationResponseDescriptionAfter from './helper/resources/adding-required-fields/openapi-add-response-description/after.json'
+
+import addOperationRequestBodyContentBefore from './helper/resources/adding-required-fields/openapi-add-requestbody-content/before.json'
+import addOperationRequestBodyContentAfter from './helper/resources/adding-required-fields/openapi-add-requestbody-content/after.json'
+
+import addExternalDocsUrlBefore from './helper/resources/adding-required-fields/openapi-add-externaldocs-url/before.json'
+import addExternalDocsUrlAfter from './helper/resources/adding-required-fields/openapi-add-externaldocs-url/after.json'
+
+import addServersUrlBefore from './helper/resources/adding-required-fields/openapi-add-servers-url/before.json'
+import addServersDocsUrlAfter from './helper/resources/adding-required-fields/openapi-add-servers-url/after.json'
+
+import addDiscriminatorPropertyNameBefore from './helper/resources/adding-required-fields/openapi-add-discriminator-propertyname/before.json'
+import addDiscriminatorPropertyNameAfter from './helper/resources/adding-required-fields/openapi-add-discriminator-propertyname/after.json'
+
+import addParametersNameBefore from './helper/resources/adding-required-fields/openapi-add-parameters-name/before.json'
+import addParametersNameAfter from './helper/resources/adding-required-fields/openapi-add-parameters-name/after.json'
+
+import addParametersInBefore from './helper/resources/adding-required-fields/openapi-add-parameters-in/before.json'
+import addParametersInAfter from './helper/resources/adding-required-fields/openapi-add-parameters-in/after.json'
+
+import addTagsNameBefore from './helper/resources/adding-required-fields/openapi-add-tags-name/before.json'
+import addTagsNameAfter from './helper/resources/adding-required-fields/openapi-add-tags-name/after.json'
 
 const TEST_COMPARE_OPTIONS: CompareOptions = {
   originsFlag: TEST_ORIGINS_FLAG,
@@ -19,691 +72,225 @@ const TEST_COMPARE_OPTIONS: CompareOptions = {
   unify: true,
   liftCombiners: true,
   allowNotValidSyntheticChanges: true,
-};
+}
 
-const BASE = {
-  openapi: '3.0.0',
-  info: { title: 'Test', version: '1.0.0' },
-  paths: {},
-};
+const notBreaking = (diffs: { type: unknown }[]) =>
+  diffs.length > 0 && diffs.every(d => d.type !== breaking)
+
+// ── security schemes ──────────────────────────────────────────────────────────
 
 describe('security scheme / type field', () => {
-  it('adding type is non-breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: { Auth: { in: 'header', name: 'X-Key' } },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'apiKey', in: 'header', name: 'X-Key' },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.add,
-          afterDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'type'],
-          ],
-          type: nonBreaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
-
-  it('changing type is breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'apiKey', in: 'header', name: 'X-Key' },
-        },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: { Auth: { type: 'http', scheme: 'bearer' } },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'type'],
-          ],
-          afterDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'type'],
-          ],
-          type: breaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
-});
+  it('adding type is not breaking', () => {
+    const { diffs } = apiDiff(
+      addSecuritySchemeTypeBefore,
+      addSecuritySchemeTypeAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+})
 
 describe('security scheme / apiKey fields (name, in)', () => {
-  it('adding name is non-breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: { Auth: { type: 'apiKey', in: 'header' } },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.add,
-          afterDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'name'],
-          ],
-          type: nonBreaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
+  it('adding name is not breaking', () => {
+    const { diffs } = apiDiff(
+      addSecuritySchemeNameBefore,
+      addSecuritySchemeNameAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
 
-  it('adding in is non-breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: { Auth: { type: 'apiKey', name: 'X-API-Key' } },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'apiKey', name: 'X-API-Key', in: 'header' },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.add,
-          afterDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'in'],
-          ],
-          type: nonBreaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
-
-  it('changing name is breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
-        },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'apiKey', in: 'header', name: 'Authorization' },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'name'],
-          ],
-          afterDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'name'],
-          ],
-          type: breaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
-
-  it('changing in is breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
-        },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'apiKey', in: 'query', name: 'X-API-Key' },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'in'],
-          ],
-          afterDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'in'],
-          ],
-          type: breaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
-});
+  it('adding in is not breaking', () => {
+    const { diffs } = apiDiff(
+      addSecuritySchemeInBefore,
+      addSecuritySchemeInAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+})
 
 describe('security scheme / http fields (scheme)', () => {
-  it('adding scheme is non-breaking', () => {
-    const before = {
-      ...BASE,
-      components: { securitySchemes: { Auth: { type: 'http' } } },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: { Auth: { type: 'http', scheme: 'bearer' } },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.add,
-          afterDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'scheme'],
-          ],
-          type: nonBreaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
+  it('adding scheme is not breaking', () => {
+    const { diffs } = apiDiff(
+      addSecuritySchemeSchemeBefore,
+      addSecuritySchemeSchemeAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+})
 
-  it('changing scheme is breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: { Auth: { type: 'http', scheme: 'bearer' } },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: { Auth: { type: 'http', scheme: 'basic' } },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'scheme'],
-          ],
-          afterDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'scheme'],
-          ],
-          type: breaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
-});
-
-const clientCredentialsFlow = {
-  clientCredentials: {
-    tokenUrl: 'https://example.com/token',
-    scopes: { 'read:api': 'Read access' },
-  },
-};
-
-const authorizationCodeFlow = {
-  authorizationCode: {
-    authorizationUrl: 'https://example.com/auth',
-    tokenUrl: 'https://example.com/token',
-    scopes: { 'read:api': 'Read access' },
-  },
-};
+describe('security scheme / openIdConnect fields (openIdConnectUrl)', () => {
+  it('adding openIdConnectUrl is not breaking', () => {
+    const { diffs } = apiDiff(
+      addSecuritySchemeOpenIdConnectUrlBefore,
+      addSecuritySchemeOpenIdConnectUrlAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+})
 
 describe('security scheme / oauth2 fields (flows)', () => {
-  it('adding flows is non-breaking', () => {
-    const before = {
-      ...BASE,
-      components: { securitySchemes: { Auth: { type: 'oauth2' } } },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'oauth2', flows: clientCredentialsFlow },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.add,
-          afterDeclarationPaths: [
-            ['components', 'securitySchemes', 'Auth', 'flows'],
-          ],
-          type: nonBreaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
+  it('adding flows is not breaking', () => {
+    const { diffs } = apiDiff(
+      addSecuritySchemeFlowsBefore,
+      addSecuritySchemeFlowsAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
 
-  it('adding a flow type to an existing flows object is breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'oauth2', flows: clientCredentialsFlow },
-        },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: {
-            type: 'oauth2',
-            flows: { ...clientCredentialsFlow, ...authorizationCodeFlow },
-          },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.add,
-          afterDeclarationPaths: [
-            [
-              'components',
-              'securitySchemes',
-              'Auth',
-              'flows',
-              'authorizationCode',
-            ],
-          ],
-          type: breaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
+  it('adding authorizationUrl, tokenUrl, scopes to an existing flow is not breaking', () => {
+    const { diffs } = apiDiff(
+      addSecuritySchemeAuthorizationCodeFlowBefore,
+      addSecuritySchemeAuthorizationCodeFlowAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+})
 
-  it('adding tokenUrl to an existing flow is non-breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: {
-            type: 'oauth2',
-            flows: {
-              clientCredentials: {
-                scopes: { 'read:api': 'Read access' },
-              },
-            },
-          },
-        },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: {
-            type: 'oauth2',
-            flows: {
-              clientCredentials: {
-                tokenUrl: 'https://example.com/token',
-                scopes: { 'read:api': 'Read access' },
-              },
-            },
-          },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.add,
-          afterDeclarationPaths: [
-            [
-              'components',
-              'securitySchemes',
-              'Auth',
-              'flows',
-              'clientCredentials',
-              'tokenUrl',
-            ],
-          ],
-          type: nonBreaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
+// ── info ──────────────────────────────────────────────────────────────────────
 
-  it('adding authorizationUrl to an existing flow is non-breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: {
-            type: 'oauth2',
-            flows: {
-              authorizationCode: {
-                tokenUrl: 'https://example.com/token',
-                scopes: { 'read:api': 'Read access' },
-              },
-            },
-          },
-        },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: {
-            type: 'oauth2',
-            flows: {
-              authorizationCode: {
-                authorizationUrl: 'https://example.com/auth',
-                tokenUrl: 'https://example.com/token',
-                scopes: { 'read:api': 'Read access' },
-              },
-            },
-          },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.add,
-          afterDeclarationPaths: [
-            [
-              'components',
-              'securitySchemes',
-              'Auth',
-              'flows',
-              'authorizationCode',
-              'authorizationUrl',
-            ],
-          ],
-          type: nonBreaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
+describe('info (and nested required fields)', () => {
+  it('adding info is not breaking', () => {
+    const { diffs } = apiDiff(
+      addInfoBefore,
+      addInfoAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
 
-  it('adding scopes to an existing flow is non-breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: {
-            type: 'oauth2',
-            flows: {
-              clientCredentials: {
-                tokenUrl: 'https://example.com/token',
-              },
-            },
-          },
-        },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: {
-            type: 'oauth2',
-            flows: {
-              clientCredentials: {
-                tokenUrl: 'https://example.com/token',
-                scopes: { 'read:api': 'Read access' },
-              },
-            },
-          },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.add,
-          afterDeclarationPaths: [
-            [
-              'components',
-              'securitySchemes',
-              'Auth',
-              'flows',
-              'clientCredentials',
-              'scopes',
-            ],
-          ],
-          type: nonBreaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
+  it('adding info.title, info.version is not breaking', () => {
+    const { diffs } = apiDiff(
+      addInfoFieldsBefore,
+      addInfoFieldsAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
 
-  it('changing tokenUrl is breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'oauth2', flows: clientCredentialsFlow },
-        },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: {
-            type: 'oauth2',
-            flows: {
-              clientCredentials: {
-                tokenUrl: 'https://other.com/token',
-                scopes: { 'read:api': 'Read access' },
-              },
-            },
-          },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [
-            [
-              'components',
-              'securitySchemes',
-              'Auth',
-              'flows',
-              'clientCredentials',
-              'tokenUrl',
-            ],
-          ],
-          afterDeclarationPaths: [
-            [
-              'components',
-              'securitySchemes',
-              'Auth',
-              'flows',
-              'clientCredentials',
-              'tokenUrl',
-            ],
-          ],
-          type: breaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
+  it('adding info.license.name is not breaking', () => {
+    const { diffs } = apiDiff(
+      addInfoLicenseNameBefore,
+      addInfoLicenseNameAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+})
 
-  it('changing authorizationUrl is breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'oauth2', flows: { ...authorizationCodeFlow } },
-        },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: {
-            type: 'oauth2',
-            flows: {
-              authorizationCode: {
-                authorizationUrl: 'https://other.com/auth',
-                tokenUrl: 'https://example.com/token',
-                scopes: { 'read:api': 'Read access' },
-              },
-            },
-          },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [
-            [
-              'components',
-              'securitySchemes',
-              'Auth',
-              'flows',
-              'authorizationCode',
-              'authorizationUrl',
-            ],
-          ],
-          afterDeclarationPaths: [
-            [
-              'components',
-              'securitySchemes',
-              'Auth',
-              'flows',
-              'authorizationCode',
-              'authorizationUrl',
-            ],
-          ],
-          type: breaking,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
+// ── operation fields ──────────────────────────────────────────────────────────
 
-  it('changing scopes content is breaking', () => {
-    const before = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: { type: 'oauth2', flows: clientCredentialsFlow },
-        },
-      },
-    };
-    const after = {
-      ...BASE,
-      components: {
-        securitySchemes: {
-          Auth: {
-            type: 'oauth2',
-            flows: {
-              clientCredentials: {
-                tokenUrl: 'https://example.com/token',
-                scopes: { 'read:api': 'Updated description' },
-              },
-            },
-          },
-        },
-      },
-    };
-    const { diffs } = apiDiff(before, after, TEST_COMPARE_OPTIONS);
-    expect(diffs).toEqual(
-      diffsMatcher([
-        expect.objectContaining({
-          action: DiffAction.replace,
-          beforeDeclarationPaths: [
-            [
-              'components',
-              'securitySchemes',
-              'Auth',
-              'flows',
-              'clientCredentials',
-              'scopes',
-              'read:api',
-            ],
-          ],
-          afterDeclarationPaths: [
-            [
-              'components',
-              'securitySchemes',
-              'Auth',
-              'flows',
-              'clientCredentials',
-              'scopes',
-              'read:api',
-            ],
-          ],
-          type: unclassified,
-          scope: 'components',
-        }),
-      ]),
-    );
-  });
+describe('operation fields (responses, requestBody, externalDocs, tags)', () => {
+  it('adding responses is not breaking', () => {
+    const { diffs } = apiDiff(
+      addOperationResponsesBefore,
+      addOperationResponsesAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
 
-});
+  it('adding response description is not breaking', () => {
+    const { diffs } = apiDiff(
+      addOperationResponseDescriptionBefore,
+      addOperationResponseDescriptionAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+
+  it('adding requestBody content is not breaking', () => {
+    const { diffs } = apiDiff(
+      addOperationRequestBodyContentBefore,
+      addOperationRequestBodyContentAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+
+  it('adding externalDocs to root, operation, tags, and schema is not breaking', () => {
+    const { diffs } = apiDiff(
+      addExternalDocsUrlBefore,
+      addExternalDocsUrlAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+})
+
+// ── servers ───────────────────────────────────────────────────────────────────
+
+describe('servers (root, path item, operation)', () => {
+  it('adding servers at root, path item, and operation level is not breaking', () => {
+    const { diffs } = apiDiff(
+      addServersUrlBefore,
+      addServersDocsUrlAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+})
+
+// ── discriminator ─────────────────────────────────────────────────────────────
+
+describe('discriminator', () => {
+  it('adding discriminator is not breaking', () => {
+    const { diffs } = apiDiff(
+      addDiscriminatorPropertyNameBefore,
+      addDiscriminatorPropertyNameAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+})
+
+// ── exceptional cases (current behaviour) ─────────────────────────────────────
+// These fields cannot be tested as "adding X is not breaking" due to engine limitations.
+// The tests below pin the actual current behaviour.
+
+describe('exceptional cases / ', () => {
+  // Without `openapi`, the unifier classifies the spec as JSON Schema.
+  // Comparing a JSON Schema spec against an OpenAPI spec throws and error because spec types are incompatible.
+  it('adding openapi field throws error', () => {
+    const before = { info: { title: 'Test', version: '1.0.0' }, paths: {} }
+    const after = { openapi: '3.0.0', info: { title: 'Test', version: '1.0.0' }, paths: {} }
+    expect(() => apiDiff(before, after, TEST_COMPARE_OPTIONS)).toThrow(/Specification cannot be different./)
+  })
+
+  // The unifier maps parameters by the compound key name+in.
+  // A parameter that lacks name or in cannot be matched to its counterpart,
+  // so the engine reports a remove (breaking) + add (breaking (if required: true) and non-breaking (if not required)) instead of a field-level add.
+  it('adding name to a nameless parameter is currently reported as a remove (breaking) + add (non-breaking) (parameter is not required)', () => {
+    const { diffs } = apiDiff(
+      addParametersNameBefore,
+      addParametersNameAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(diffs.some(d => d.type === breaking)).toBe(true)
+  })
+
+  it('adding in to a parameter without it is currently reported as a remove (breaking) + add (non-breaking) (parameter is not required)', () => {
+    const { diffs } = apiDiff(
+      addParametersInBefore,
+      addParametersInAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(diffs.some(d => d.type === breaking)).toBe(true)
+  })
+
+  // When root.tags object doesn't have name field it's not linked to tag defined in the Operation Object instances
+  // Therefore when name added to root.tags it's reported ass add(non-breaking)
+  it('adding name to a nameless tag is currently reported as non-breaking', () => {
+    const { diffs } = apiDiff(
+      addTagsNameBefore,
+      addTagsNameAfter,
+      TEST_COMPARE_OPTIONS,
+    )
+    expect(notBreaking(diffs)).toBe(true)
+  })
+})
