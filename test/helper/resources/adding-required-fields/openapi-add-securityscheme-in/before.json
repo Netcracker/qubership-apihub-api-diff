@@ -17,7 +17,12 @@
                 ],
                 "summary": "Endpoint for validation of a DataSource TableConfig.",
                 "description": "Endpoint for validation of DataSource TableConfig.",
-                "operationId": "validateDataSourceV1"
+                "operationId": "validateDataSourceV1",
+                "security": [
+                    {
+                        "apiKeyAuth": []
+                    }
+                ]
             }
         }
     },
