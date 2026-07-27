@@ -211,6 +211,14 @@ describe('asyncApi: adding previously missing required fields is not breaking', 
 // These fields cannot be tested as "adding X is not breaking" due to engine limitations.
 // The tests below pin the actual current behaviour.
 
+  // Without `openapi`, the unifier classifies the spec as JSON Schema.
+  // Comparing a JSON Schema spec against an OpenAPI spec throws and error because spec types are incompatible.
+  it('adding asyncapi field throws error', () => {
+    const before = { info: { title: 'Test', version: '1.0.0' }, paths: {} }
+    const after = { asyncapi: '3.0.0', info: { title: 'Test', version: '1.0.0' }, paths: {} }
+    expect(() => apiDiff(before, after, TEST_COMPARE_OPTIONS)).toThrow(/Specification cannot be different./)
+  })
+
   // AsyncAPI unifier synthesizes `flows: {}` for type:oauth2 even when absent,
   // so the diff always surfaces at the flow-type level rather than at `flows` itself.
   // The oAuthFlowsRules.$[0]=nonBreaking change is a defensive guard for unify:false callers.
@@ -223,7 +231,8 @@ describe('asyncApi: adding previously missing required fields is not breaking', 
     expect(diffs.some(d => d.type === breaking)).toBe(true)
   })
 
-  // Adding a new operation without action is impossible, so the add case is unreachable.
+  // some of the apiDiff logic is based on the operation.action value
+  // therefore it was decided to keep adding operation.action as breaking change
   it('adding action to operations is breaking', () => {
     const { diffs } = apiDiff(
       addOperationsActionBefore,
