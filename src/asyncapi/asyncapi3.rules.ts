@@ -55,10 +55,6 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
 
   const oAuthFlowRules: CompareRules = {
     $: [breaking, nonBreaking, breaking],
-    '/authorizationUrl': { $: [nonBreaking, nonBreaking, breaking] },
-    '/tokenUrl': { $: [nonBreaking, nonBreaking, breaking] },
-    '/availableScopes': { $: [nonBreaking, nonBreaking, breaking] },
-    '/refreshUrl': { $: allAnnotation },
     ...asyncApiSpecificationExtensionRulesFunction(),
   }
 

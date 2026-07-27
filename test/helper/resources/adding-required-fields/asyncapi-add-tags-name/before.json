@@ -1,0 +1,113 @@
+{
+    "asyncapi": "3.0.0",
+    "info": {
+        "title": "AsyncAPI Example",
+        "description": "Example",
+        "version": "1.0.0",
+        "tags": {
+            "infoTag": {
+                "description": "Public endpoints"
+            }
+        }
+    },
+    "servers": {
+        "production": {
+            "host": "api.example.com",
+            "protocol": "https",
+            "description": "Production server",
+            "tags": {
+                "serverTag": {
+                    "description": "Public endpoints"
+                }
+            }
+        }
+    },
+    "channels": {
+        "userSignup": {
+            "address": "/api/v1/users/{userId}/signup",
+            "description": "Channel for user signup events",
+            "tags": {
+                "publicTag": {
+                    "description": "Public endpoints"
+                }
+            }
+        }
+    },
+    "operations": {
+        "handleUserSignup": {
+            "action": "receive",
+            "summary": "Handle user signup",
+            "description": "Process user signup requests",
+            "security": [
+                {
+                    "$ref": "#/components/securitySchemes/bearerAuth"
+                }
+            ],
+            "channel": {
+                "$ref": "#/channels/userSignup"
+            },
+            "tags": {
+                "operationTag": {
+                    "description": "Public endpoints"
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        },
+        "messages": {
+            "signupRequest": {
+                "summary": "User signup request",
+                "description": "Request payload for user signup",
+                "contentType": "application/json",
+                "payload": {
+                    "type": "object",
+                    "properties": {
+                        "userId": {
+                            "type": "string"
+                        },
+                        "email": {
+                            "type": "string"
+                        },
+                        "password": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "healthStatus": {
+                "summary": "Health status",
+                "description": "Service health status response",
+                "contentType": "application/json",
+                "payload": {
+                    "type": "object",
+                    "properties": {
+                        "status": {
+                            "type": "string",
+                            "enum": [
+                                "healthy",
+                                "unhealthy"
+                            ]
+                        }
+                    }
+                },
+                "tags": {
+                    "messageTag": {
+                        "description": "Public endpoints"
+                    }
+                }
+            }
+        },
+        "tags": {
+            "componentTag": {
+                "description": "Public endpoints"
+            }
+        }
+    }
+}

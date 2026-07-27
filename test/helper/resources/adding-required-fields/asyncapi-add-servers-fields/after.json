@@ -1,0 +1,67 @@
+{
+    "asyncapi": "3.0.0",
+    "info": {
+        "title": "AsyncAPI Example",
+        "description": "Example",
+        "version": "1.0.0"
+    },
+    "servers": {
+        "production": {
+            "host": "api.example.com",
+            "protocol": "https",
+            "description": "Production server"
+        }
+    },
+    "channels": {
+        "userSignup": {
+            "address": "/api/v1/users/{userId}/signup",
+            "description": "Channel for user signup events",
+            "servers": [
+                {
+                    "$ref": "#/servers/production"
+                }
+            ]
+        }
+    },
+    "operations": {
+        "handleUserSignup": {
+            "action": "receive",
+            "summary": "Handle user signup",
+            "description": "Process user signup requests",
+            "security": [
+                {
+                    "$ref": "#/components/securitySchemes/bearerAuth"
+                }
+            ],
+            "channel": {
+                "$ref": "#/channels/userSignup"
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        },
+        "tags": {
+            "authTag": {
+                "name": "authentication",
+                "description": "Operations requiring authentication"
+            },
+            "publicTag": {
+                "name": "public",
+                "description": "Public endpoints"
+            }
+        },
+        "servers": {
+            "development": {
+                "host": "localhost:8080",
+                "protocol": "http",
+                "description": "Development server"
+            }
+        }
+    }
+}
