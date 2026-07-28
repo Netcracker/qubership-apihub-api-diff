@@ -5,20 +5,16 @@
         "description": "Example",
         "version": "1.0.0",
         "externalDocs": {
-            "apiDocs": {
-                "url": "https://api.example.com/docs",
-                "description": "Additional API documentation"
-            }
+            "url": "https://api.example.com/docs",
+            "description": "Additional API documentation"
         },
         "tags": {
             "infoTag": {
                 "name": "info",
                 "description": "Public endpoints",
                 "externalDocs": {
-                    "apiDocs": {
-                        "url": "https://api.example.com/docs",
-                        "description": "Additional API documentation"
-                    }
+                    "url": "https://api.example.com/docs",
+                    "description": "Additional API documentation"
                 }
             }
         }
@@ -29,20 +25,16 @@
             "protocol": "https",
             "description": "Production server",
             "externalDocs": {
-                "apiDocs": {
-                    "url": "https://api.example.com/docs",
-                    "description": "Additional API documentation"
-                }
+                "url": "https://api.example.com/docs",
+                "description": "Additional API documentation"
             },
             "tags": {
                 "serverTag": {
                     "name": "server",
                     "description": "Public endpoints",
                     "externalDocs": {
-                        "apiDocs": {
-                            "url": "https://api.example.com/docs",
-                            "description": "Additional API documentation"
-                        }
+                        "url": "https://api.example.com/docs",
+                        "description": "Additional API documentation"
                     }
                 }
             }
@@ -53,20 +45,16 @@
             "address": "/api/v1/users/{userId}/signup",
             "description": "Channel for user signup events",
             "externalDocs": {
-                "apiDocs": {
-                    "url": "https://api.example.com/docs",
-                    "description": "Additional API documentation"
-                }
+                "url": "https://api.example.com/docs",
+                "description": "Additional API documentation"
             },
             "tags": {
                 "publicTag": {
                     "name": "public",
                     "description": "Public endpoints",
                     "externalDocs": {
-                        "apiDocs": {
-                            "url": "https://api.example.com/docs",
-                            "description": "Additional API documentation"
-                        }
+                        "url": "https://api.example.com/docs",
+                        "description": "Additional API documentation"
                     }
                 }
             }
@@ -90,10 +78,8 @@
                     "name": "operation",
                     "description": "Public endpoints",
                     "externalDocs": {
-                        "apiDocs": {
-                            "url": "https://api.example.com/docs",
-                            "description": "Additional API documentation"
-                        }
+                        "url": "https://api.example.com/docs",
+                        "description": "Additional API documentation"
                     }
                 }
             }
@@ -127,10 +113,8 @@
                     }
                 },
                 "externalDocs": {
-                    "apiDocs": {
-                        "url": "https://api.example.com/docs",
-                        "description": "Additional API documentation"
-                    }
+                    "url": "https://api.example.com/docs",
+                    "description": "Additional API documentation"
                 }
             },
             "healthStatus": {
@@ -154,10 +138,8 @@
                         "name": "message",
                         "description": "Public endpoints",
                         "externalDocs": {
-                            "apiDocs": {
-                                "url": "https://api.example.com/docs",
-                                "description": "Additional API documentation"
-                            }
+                            "url": "https://api.example.com/docs",
+                            "description": "Additional API documentation"
                         }
                     }
                 }
@@ -168,10 +150,8 @@
                 "name": "component",
                 "description": "Public endpoints",
                 "externalDocs": {
-                    "apiDocs": {
-                        "url": "https://api.example.com/docs",
-                        "description": "Additional API documentation"
-                    }
+                    "url": "https://api.example.com/docs",
+                    "description": "Additional API documentation"
                 }
             }
         }

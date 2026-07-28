@@ -187,7 +187,7 @@ describe('asyncApi: adding previously missing required fields is not breaking', 
 
 // ── externalDocs ───────────────────────────────────────────────────────────────────
 
-  it.skip('adding url to externalDocs at any level is not breaking', () => {
+  it('adding url to externalDocs at any level is not breaking', () => {
     const { diffs } = apiDiff(
       addExternalDocsUrlBefore,
       addExternalDocsUrlAfter,
