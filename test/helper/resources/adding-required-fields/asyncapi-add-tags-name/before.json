@@ -4,33 +4,33 @@
         "title": "AsyncAPI Example",
         "description": "Example",
         "version": "1.0.0",
-        "tags": {
-            "infoTag": {
+        "tags": [
+            {
                 "description": "Public endpoints"
             }
-        }
+        ]
     },
     "servers": {
         "production": {
             "host": "api.example.com",
             "protocol": "https",
             "description": "Production server",
-            "tags": {
-                "serverTag": {
+            "tags": [
+                {
                     "description": "Public endpoints"
                 }
-            }
+            ]
         }
     },
     "channels": {
         "userSignup": {
             "address": "/api/v1/users/{userId}/signup",
             "description": "Channel for user signup events",
-            "tags": {
-                "publicTag": {
+            "tags": [
+                {
                     "description": "Public endpoints"
                 }
-            }
+            ]
         }
     },
     "operations": {
@@ -46,11 +46,11 @@
             "channel": {
                 "$ref": "#/channels/userSignup"
             },
-            "tags": {
-                "operationTag": {
+            "tags": [
+                {
                     "description": "Public endpoints"
                 }
-            }
+            ]
         }
     },
     "components": {
@@ -97,11 +97,11 @@
                         }
                     }
                 },
-                "tags": {
-                    "messageTag": {
+                "tags": [
+                    {
                         "description": "Public endpoints"
                     }
-                }
+                ]
             }
         },
         "tags": {

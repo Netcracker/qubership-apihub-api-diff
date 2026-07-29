@@ -7,9 +7,9 @@
         "externalDocs": {
             "description": "Additional API documentation"
         },
-        "tags": {
-            "infoTag": {
-                "name": "info",
+        "tags": [
+            {
+                "name": "infoTag",
                 "description": "Public endpoints",
                 "externalDocs": {
                     "apiDocs": {
@@ -17,7 +17,7 @@
                     }
                 }
             }
-        }
+        ]
     },
     "servers": {
         "production": {
@@ -27,15 +27,15 @@
             "externalDocs": {
                 "description": "Additional API documentation"
             },
-            "tags": {
-                "serverTag": {
-                    "name": "server",
+            "tags": [
+                {
+                    "name": "serverTag",
                     "description": "Public endpoints",
                     "externalDocs": {
                         "description": "Additional API documentation"
                     }
                 }
-            }
+            ]
         }
     },
     "channels": {
@@ -45,15 +45,15 @@
             "externalDocs": {
                 "description": "Additional API documentation"
             },
-            "tags": {
-                "publicTag": {
-                    "name": "public",
+            "tags": [
+                {
+                    "name": "publicTag",
                     "description": "Public endpoints",
                     "externalDocs": {
                         "description": "Additional API documentation"
                     }
                 }
-            }
+            ]
         }
     },
     "operations": {
@@ -69,15 +69,15 @@
             "channel": {
                 "$ref": "#/channels/userSignup"
             },
-            "tags": {
-                "operationTag": {
-                    "name": "operation",
+            "tags": [
+                {
+                    "name": "operationTag",
                     "description": "Public endpoints",
                     "externalDocs": {
                         "description": "Additional API documentation"
                     }
                 }
-            }
+            ]
         }
     },
     "components": {
@@ -127,20 +127,20 @@
                         }
                     }
                 },
-                "tags": {
-                    "messageTag": {
-                        "name": "message",
+                "tags": [
+                    {
+                        "name": "messageTag",
                         "description": "Public endpoints",
                         "externalDocs": {
                             "description": "Additional API documentation"
                         }
                     }
-                }
+                ]
             }
         },
         "tags": {
             "componentTag": {
-                "name": "component",
+                "name": "componentTag",
                 "description": "Public endpoints",
                 "externalDocs": {
                     "description": "Additional API documentation"

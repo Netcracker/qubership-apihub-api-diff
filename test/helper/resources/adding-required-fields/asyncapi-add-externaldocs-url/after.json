@@ -8,16 +8,16 @@
             "url": "https://api.example.com/docs",
             "description": "Additional API documentation"
         },
-        "tags": {
-            "infoTag": {
-                "name": "info",
+        "tags": [
+            {
+                "name": "infoTag",
                 "description": "Public endpoints",
                 "externalDocs": {
                     "url": "https://api.example.com/docs",
                     "description": "Additional API documentation"
                 }
             }
-        }
+        ]
     },
     "servers": {
         "production": {
@@ -28,16 +28,16 @@
                 "url": "https://api.example.com/docs",
                 "description": "Additional API documentation"
             },
-            "tags": {
-                "serverTag": {
-                    "name": "server",
+            "tags": [
+                {
+                    "name": "serverTag",
                     "description": "Public endpoints",
                     "externalDocs": {
                         "url": "https://api.example.com/docs",
                         "description": "Additional API documentation"
                     }
                 }
-            }
+            ]
         }
     },
     "channels": {
@@ -48,16 +48,16 @@
                 "url": "https://api.example.com/docs",
                 "description": "Additional API documentation"
             },
-            "tags": {
-                "publicTag": {
-                    "name": "public",
+            "tags": [
+                {
+                    "name": "publicTag",
                     "description": "Public endpoints",
                     "externalDocs": {
                         "url": "https://api.example.com/docs",
                         "description": "Additional API documentation"
                     }
                 }
-            }
+            ]
         }
     },
     "operations": {
@@ -73,8 +73,8 @@
             "channel": {
                 "$ref": "#/channels/userSignup"
             },
-            "tags": {
-                "operationTag": {
+            "tags": [
+                {
                     "name": "operation",
                     "description": "Public endpoints",
                     "externalDocs": {
@@ -82,7 +82,7 @@
                         "description": "Additional API documentation"
                     }
                 }
-            }
+            ]
         }
     },
     "components": {
@@ -133,8 +133,8 @@
                         }
                     }
                 },
-                "tags": {
-                    "messageTag": {
+                "tags": [
+                    {
                         "name": "message",
                         "description": "Public endpoints",
                         "externalDocs": {
@@ -142,7 +142,7 @@
                             "description": "Additional API documentation"
                         }
                     }
-                }
+                ]
             }
         },
         "tags": {
