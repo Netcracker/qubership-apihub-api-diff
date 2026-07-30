@@ -1,5 +1,5 @@
 {
-    "openapi": "3.0.1",
+    "openapi": "3.1.0",
     "info": {
         "title": "Vehicle API",
         "version": "1.0.0"
@@ -7,12 +7,12 @@
     "paths": {
         "/vehicles": {
             "post": {
+                "operationId": "creaveVehicleV1",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
                                 "discriminator": {},
                                 "oneOf": [
                                     {
@@ -20,9 +20,6 @@
                                     },
                                     {
                                         "$ref": "#/components/schemas/Gas"
-                                    },
-                                    {
-                                        "$ref": "#/components/schemas/Pedal"
                                     }
                                 ]
                             }
@@ -74,27 +71,6 @@
                     },
                     "fuelEfficiency": {
                         "type": "number"
-                    }
-                },
-                "required": [
-                    "powerSource",
-                    "topSpeed"
-                ]
-            },
-            "Pedal": {
-                "type": "object",
-                "properties": {
-                    "powerSource": {
-                        "type": "string",
-                        "enum": [
-                            "pedal"
-                        ]
-                    },
-                    "topSpeed": {
-                        "type": "integer"
-                    },
-                    "gearCount": {
-                        "type": "integer"
                     }
                 },
                 "required": [

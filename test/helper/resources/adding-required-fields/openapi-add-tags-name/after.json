@@ -5,11 +5,6 @@
         "description": "REST API for Control",
         "version": "1.0.1"
     },
-    "security": [
-        {
-            "bearerAuth": []
-        }
-    ],
     "tags": [
         {
             "name": "Component",
@@ -17,7 +12,7 @@
         }
     ],
     "paths": {
-        "/api/v1/components/{componentName}/datasource/tableconfig/validate": {
+        "/api/v1/components/datasource/tableconfig/validate": {
             "post": {
                 "tags": [
                     "Component"
@@ -29,27 +24,7 @@
                     "200": {
                         "description": "A simple string response"
                     }
-                },
-                "parameters": [
-                    {
-                        "name": "componentName",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        },
-                        "description": "The name of the component"
-                    }
-                ]
-            }
-        }
-    },
-    "components": {
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
+                }
             }
         }
     }

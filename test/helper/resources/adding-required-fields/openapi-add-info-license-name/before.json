@@ -1,5 +1,5 @@
 {
-    "openapi": "3.0.1",
+    "openapi": "3.1.0",
     "info": {
         "title": "Control REST API",
         "description": "REST API for Control",
@@ -8,29 +8,17 @@
             "url": "https://www.qubership.org/licenses/LICENSE-2.0.html"
         }
     },
-    "security": [
-        {
-            "bearerAuth": []
-        }
-    ],
     "paths": {
-        "/api/v1/components/{componentName}/datasource/tableconfig/validate": {
+        "/api/v1/components/datasource/tableconfig/validate": {
             "post": {
-                "tags": [
-                    "Component"
-                ],
                 "summary": "Endpoint for validation of a DataSource TableConfig.",
                 "description": "Endpoint for validation of DataSource TableConfig.",
-                "operationId": "validateDataSourceV1"
-            }
-        }
-    },
-    "components": {
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
+                "operationId": "validateDataSourceV1",
+                "responses": {
+                    "200": {
+                        "description": "A simple string response"
+                    }
+                }
             }
         }
     }
