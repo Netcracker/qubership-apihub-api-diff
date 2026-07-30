@@ -7,12 +7,12 @@
     "paths": {
         "/vehicles": {
             "post": {
+                "operationId": "creaveVehicleV1",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
                                 "discriminator": {
                                     "propertyName": "powerSource"
                                 },
@@ -22,9 +22,6 @@
                                     },
                                     {
                                         "$ref": "#/components/schemas/Gas"
-                                    },
-                                    {
-                                        "$ref": "#/components/schemas/Pedal"
                                     }
                                 ]
                             }
@@ -76,27 +73,6 @@
                     },
                     "fuelEfficiency": {
                         "type": "number"
-                    }
-                },
-                "required": [
-                    "powerSource",
-                    "topSpeed"
-                ]
-            },
-            "Pedal": {
-                "type": "object",
-                "properties": {
-                    "powerSource": {
-                        "type": "string",
-                        "enum": [
-                            "pedal"
-                        ]
-                    },
-                    "topSpeed": {
-                        "type": "integer"
-                    },
-                    "gearCount": {
-                        "type": "integer"
                     }
                 },
                 "required": [

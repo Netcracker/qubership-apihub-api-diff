@@ -19,16 +19,11 @@
             }
         }
     ],
-    "security": [
-        {
-            "bearerAuth": []
-        }
-    ],
     "paths": {
-        "/api/v1/components/{componentName}/datasource/tableconfig/validate": {
+        "/api/v1/components/datasource/tableconfig/validate": {
             "post": {
                 "tags": [
-                    "Component"
+                    "items"
                 ],
                 "externalDocs": {
                     "description": "Example operation docs description",
@@ -53,15 +48,6 @@
                         }
                     }
                 }
-            }
-        }
-    },
-    "components": {
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
             }
         }
     }

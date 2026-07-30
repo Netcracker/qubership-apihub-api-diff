@@ -11,13 +11,8 @@
             "description": "Root-level servers"
         }
     ],
-    "security": [
-        {
-            "bearerAuth": []
-        }
-    ],
     "paths": {
-        "/api/v1/components/{componentName}/datasource/tableconfig/validate": {
+        "/api/v1/components/datasource/tableconfig/validate": {
             "servers": [
                 {
                     "url": "https://api.example-1.com",
@@ -25,9 +20,6 @@
                 }
             ],
             "post": {
-                "tags": [
-                    "Component"
-                ],
                 "servers": [
                     {
                         "url": "https://api.example-2.com",
@@ -42,15 +34,6 @@
                         "description": "A simple string response"
                     }
                 }
-            }
-        }
-    },
-    "components": {
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
             }
         }
     }

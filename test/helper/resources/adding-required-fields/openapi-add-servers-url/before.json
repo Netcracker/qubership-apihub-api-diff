@@ -1,5 +1,5 @@
 {
-    "openapi": "3.0.1",
+    "openapi": "3.1.0",
     "info": {
         "title": "Control REST API",
         "description": "REST API for Control",
@@ -10,22 +10,14 @@
             "description": "Root-level servers"
         }
     ],
-    "security": [
-        {
-            "bearerAuth": []
-        }
-    ],
     "paths": {
-        "/api/v1/components/{componentName}/datasource/tableconfig/validate": {
+        "/api/v1/components/datasource/tableconfig/validate": {
             "servers": [
                 {
                     "description": "Path-level override"
                 }
             ],
             "post": {
-                "tags": [
-                    "Component"
-                ],
                 "servers": [
                     {
                         "description": "Operation-level override"
@@ -39,15 +31,6 @@
                         "description": "A simple string response"
                     }
                 }
-            }
-        }
-    },
-    "components": {
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
             }
         }
     }
