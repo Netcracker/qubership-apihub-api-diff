@@ -12,11 +12,7 @@
     },
     "channels": {
         "userSignup": {
-            "address": "/api/v1/users/{userId}/signup",
-            "description": "Channel for user signup events",
-            "servers": [
-                {}
-            ]
+            "$ref": "#/components/channels/userSignup"
         }
     },
     "operations": {
@@ -24,32 +20,19 @@
             "action": "receive",
             "summary": "Handle user signup",
             "description": "Process user signup requests",
-            "security": [
-                {
-                    "$ref": "#/components/securitySchemes/bearerAuth"
-                }
-            ],
             "channel": {
                 "$ref": "#/channels/userSignup"
             }
         }
     },
     "components": {
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
-            }
-        },
-        "tags": {
-            "authTag": {
-                "name": "authentication",
-                "description": "Operations requiring authentication"
-            },
-            "publicTag": {
-                "name": "public",
-                "description": "Public endpoints"
+        "channels": {
+            "userSignup": {
+                "address": "/api/v1/users/{userId}/signup",
+                "description": "Channel for user signup events",
+                "servers": [
+                    {}
+                ]
             }
         },
         "servers": {

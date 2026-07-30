@@ -29,9 +29,7 @@
     "components": {
         "securitySchemes": {
             "httpApiKeyAuth": {
-                "type": "httpApiKey",
-                "name": "http_api_key",
-                "in": "header"
+                "type": "httpApiKey"
             }
         }
     }

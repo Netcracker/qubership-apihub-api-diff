@@ -135,7 +135,7 @@ describe('adding previously missing required fields is not breaking (openApi): '
     })
   })
 
-  describe('info (and nested required fields): ', () => {
+  describe('info: ', () => {
     it('adding info is not breaking', () => {
       const { diffs } = apiDiff(
         addInfoBefore,
@@ -164,7 +164,7 @@ describe('adding previously missing required fields is not breaking (openApi): '
     })
   })
 
-  describe('paths and operation fields (responses, requestBody, externalDocs, tags): ', () => {
+  describe('paths and operation fields: ', () => {
     it('adding paths is not breaking', () => {
       const { diffs } = apiDiff(
         addPathsBefore,
@@ -174,7 +174,7 @@ describe('adding previously missing required fields is not breaking (openApi): '
       expect(notBreaking(diffs)).toBe(true)
     })
 
-    it('adding responses is not breaking', () => {
+    it('adding responses to operation is not breaking', () => {
       const { diffs } = apiDiff(
         addOperationResponsesBefore,
         addOperationResponsesAfter,
@@ -183,7 +183,7 @@ describe('adding previously missing required fields is not breaking (openApi): '
       expect(notBreaking(diffs)).toBe(true)
     })
 
-    it('adding response description is not breaking', () => {
+    it('adding description to response at operation is not breaking', () => {
       const { diffs } = apiDiff(
         addOperationResponseDescriptionBefore,
         addOperationResponseDescriptionAfter,
@@ -192,7 +192,7 @@ describe('adding previously missing required fields is not breaking (openApi): '
       expect(notBreaking(diffs)).toBe(true)
     })
 
-    it('adding requestBody content is not breaking', () => {
+    it('adding content to requestBody at operation is not breaking', () => {
       const { diffs } = apiDiff(
         addOperationRequestBodyContentBefore,
         addOperationRequestBodyContentAfter,
@@ -211,8 +211,8 @@ describe('adding previously missing required fields is not breaking (openApi): '
     })
   })
 
-  describe('servers (root, path item, operation): ', () => {
-    it('adding servers at root, path item, and operation level is not breaking', () => {
+  describe('servers: ', () => {
+    it('adding url to servers at root, path item, and operation level is not breaking', () => {
       const { diffs } = apiDiff(
         addServersUrlBefore,
         addServersUrlAfter,
@@ -268,7 +268,7 @@ describe('adding previously missing required fields is not breaking (openApi): '
 
     // When root.tags object doesn't have name field it's not linked to tag defined in the Operation Object instances
     // Therefore when name added to root.tags it's reported ass add(non-breaking)
-    it('adding name to a nameless tag is currently reported as non-breaking', () => {
+    it('adding name to a nameless tag is currently reported as nonBreaking', () => {
       const { diffs } = apiDiff(
         addTagsNameBefore,
         addTagsNameAfter,

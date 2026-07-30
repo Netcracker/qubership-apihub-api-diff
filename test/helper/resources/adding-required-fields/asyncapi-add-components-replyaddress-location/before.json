@@ -16,24 +16,17 @@
             "action": "receive",
             "summary": "Handle user signup",
             "description": "Process user signup requests",
-            "security": [
-                {
-                    "$ref": "#/components/securitySchemes/bearerAuth"
-                }
-            ],
             "channel": {
                 "$ref": "#/channels/userSignup"
+            },
+            "reply": {
+                "address": {
+                    "$ref": "#/components/replyAddresses/defaultReply"
+                }
             }
         }
     },
     "components": {
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
-            }
-        },
         "replyAddresses": {
             "defaultReply": {
                 "description": "Default reply address"

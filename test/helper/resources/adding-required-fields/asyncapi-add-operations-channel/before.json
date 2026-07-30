@@ -15,21 +15,7 @@
         "handleUserSignup": {
             "action": "receive",
             "summary": "Handle user signup",
-            "description": "Process user signup requests",
-            "security": [
-                {
-                    "$ref": "#/components/securitySchemes/bearerAuth"
-                }
-            ]
-        }
-    },
-    "components": {
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
-            }
+            "description": "Process user signup requests"
         }
     }
 }

@@ -30,7 +30,12 @@
                 {
                     "description": "Public endpoints"
                 }
-            ]
+            ],
+            "messages": {
+                "signupRequest": {
+                    "$ref": "#/components/messages/signupRequest"
+                }
+            }
         }
     },
     "operations": {
@@ -38,15 +43,13 @@
             "action": "receive",
             "summary": "Handle user signup",
             "description": "Process user signup requests",
-            "security": [
-                {
-                    "$ref": "#/components/securitySchemes/bearerAuth"
-                }
-            ],
             "channel": {
                 "$ref": "#/channels/userSignup"
             },
             "tags": [
+                {
+                    "$ref": "#/components/tags/componentTag"
+                },
                 {
                     "description": "Public endpoints"
                 }
@@ -54,13 +57,6 @@
         }
     },
     "components": {
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
-            }
-        },
         "messages": {
             "signupRequest": {
                 "summary": "User signup request",
@@ -77,23 +73,6 @@
                         },
                         "password": {
                             "type": "string"
-                        }
-                    }
-                }
-            },
-            "healthStatus": {
-                "summary": "Health status",
-                "description": "Service health status response",
-                "contentType": "application/json",
-                "payload": {
-                    "type": "object",
-                    "properties": {
-                        "status": {
-                            "type": "string",
-                            "enum": [
-                                "healthy",
-                                "unhealthy"
-                            ]
                         }
                     }
                 },
