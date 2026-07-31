@@ -8,62 +8,62 @@ import {
 } from '../src'
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper'
 
-import addSecuritySchemeTypeBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-type/before.json'
-import addSecuritySchemeTypeAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-type/after.json'
+import addSecuritySchemeTypeBefore from './helper/resources/add-required-fields/openapi/add-securityscheme-type/before.json'
+import addSecuritySchemeTypeAfter from './helper/resources/add-required-fields/openapi/add-securityscheme-type/after.json'
 
-import addSecuritySchemeNameAndInBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-name-and-in/before.json'
-import addSecuritySchemeNameAndInAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-name-and-in/after.json'
+import addSecuritySchemeNameAndInBefore from './helper/resources/add-required-fields/openapi/add-securityscheme-name-and-in/before.json'
+import addSecuritySchemeNameAndInAfter from './helper/resources/add-required-fields/openapi/add-securityscheme-name-and-in/after.json'
 
-import addSecuritySchemeSchemeBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-scheme/before.json'
-import addSecuritySchemeSchemeAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-scheme/after.json'
+import addSecuritySchemeSchemeBefore from './helper/resources/add-required-fields/openapi/add-securityscheme-scheme/before.json'
+import addSecuritySchemeSchemeAfter from './helper/resources/add-required-fields/openapi/add-securityscheme-scheme/after.json'
 
-import addSecuritySchemeOpenIdConnectUrlBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-openIdConnectUrl/before.json'
-import addSecuritySchemeOpenIdConnectUrlAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-openIdConnectUrl/after.json'
+import addSecuritySchemeOpenIdConnectUrlBefore from './helper/resources/add-required-fields/openapi/add-securityscheme-openIdConnectUrl/before.json'
+import addSecuritySchemeOpenIdConnectUrlAfter from './helper/resources/add-required-fields/openapi/add-securityscheme-openIdConnectUrl/after.json'
 
-import addSecuritySchemeFlowsBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-flows/before.json'
-import addSecuritySchemeFlowsAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-flows/after.json'
+import addSecuritySchemeFlowsBefore from './helper/resources/add-required-fields/openapi/add-securityscheme-flows/before.json'
+import addSecuritySchemeFlowsAfter from './helper/resources/add-required-fields/openapi/add-securityscheme-flows/after.json'
 
-import addSecuritySchemeAuthorizationCodeFlowBefore from './helper/resources/adding-required-fields/openapi-add-securityscheme-authorizationcode-flow-fields/before.json'
-import addSecuritySchemeAuthorizationCodeFlowAfter from './helper/resources/adding-required-fields/openapi-add-securityscheme-authorizationcode-flow-fields/after.json'
+import addSecuritySchemeAuthorizationCodeFlowBefore from './helper/resources/add-required-fields/openapi/add-securityscheme-authorizationcode-flow-fields/before.json'
+import addSecuritySchemeAuthorizationCodeFlowAfter from './helper/resources/add-required-fields/openapi/add-securityscheme-authorizationcode-flow-fields/after.json'
 
-import addPathsBefore from './helper/resources/adding-required-fields/openapi-add-paths/before.json'
-import addPathsAfter from './helper/resources/adding-required-fields/openapi-add-paths/after.json'
+import addPathsBefore from './helper/resources/add-required-fields/openapi/add-paths/before.json'
+import addPathsAfter from './helper/resources/add-required-fields/openapi/add-paths/after.json'
 
-import addInfoBefore from './helper/resources/adding-required-fields/openapi-add-info/before.json'
-import addInfoAfter from './helper/resources/adding-required-fields/openapi-add-info/after.json'
+import addInfoBefore from './helper/resources/add-required-fields/openapi/add-info/before.json'
+import addInfoAfter from './helper/resources/add-required-fields/openapi/add-info/after.json'
 
-import addInfoFieldsBefore from './helper/resources/adding-required-fields/openapi-add-info-fields/before.json'
-import addInfoFieldsAfter from './helper/resources/adding-required-fields/openapi-add-info-fields/after.json'
+import addInfoFieldsBefore from './helper/resources/add-required-fields/openapi/add-info-fields/before.json'
+import addInfoFieldsAfter from './helper/resources/add-required-fields/openapi/add-info-fields/after.json'
 
-import addInfoLicenseNameBefore from './helper/resources/adding-required-fields/openapi-add-info-license-name/before.json'
-import addInfoLicenseNameAfter from './helper/resources/adding-required-fields/openapi-add-info-license-name/after.json'
+import addInfoLicenseNameBefore from './helper/resources/add-required-fields/openapi/add-info-license-name/before.json'
+import addInfoLicenseNameAfter from './helper/resources/add-required-fields/openapi/add-info-license-name/after.json'
 
-import addOperationResponsesBefore from './helper/resources/adding-required-fields/openapi-add-responses/before.json'
-import addOperationResponsesAfter from './helper/resources/adding-required-fields/openapi-add-responses/after.json'
+import addOperationResponsesBefore from './helper/resources/add-required-fields/openapi/add-responses/before.json'
+import addOperationResponsesAfter from './helper/resources/add-required-fields/openapi/add-responses/after.json'
 
-import addOperationResponseDescriptionBefore from './helper/resources/adding-required-fields/openapi-add-response-description/before.json'
-import addOperationResponseDescriptionAfter from './helper/resources/adding-required-fields/openapi-add-response-description/after.json'
+import addOperationResponseDescriptionBefore from './helper/resources/add-required-fields/openapi/add-response-description/before.json'
+import addOperationResponseDescriptionAfter from './helper/resources/add-required-fields/openapi/add-response-description/after.json'
 
-import addOperationRequestBodyContentBefore from './helper/resources/adding-required-fields/openapi-add-requestbody-content/before.json'
-import addOperationRequestBodyContentAfter from './helper/resources/adding-required-fields/openapi-add-requestbody-content/after.json'
+import addOperationRequestBodyContentBefore from './helper/resources/add-required-fields/openapi/add-requestbody-content/before.json'
+import addOperationRequestBodyContentAfter from './helper/resources/add-required-fields/openapi/add-requestbody-content/after.json'
 
-import addExternalDocsUrlBefore from './helper/resources/adding-required-fields/openapi-add-externaldocs-url/before.json'
-import addExternalDocsUrlAfter from './helper/resources/adding-required-fields/openapi-add-externaldocs-url/after.json'
+import addExternalDocsUrlBefore from './helper/resources/add-required-fields/openapi/add-externaldocs-url/before.json'
+import addExternalDocsUrlAfter from './helper/resources/add-required-fields/openapi/add-externaldocs-url/after.json'
 
-import addServersUrlBefore from './helper/resources/adding-required-fields/openapi-add-servers-url/before.json'
-import addServersUrlAfter from './helper/resources/adding-required-fields/openapi-add-servers-url/after.json'
+import addServersUrlBefore from './helper/resources/add-required-fields/openapi/add-servers-url/before.json'
+import addServersUrlAfter from './helper/resources/add-required-fields/openapi/add-servers-url/after.json'
 
-import addDiscriminatorPropertyNameBefore from './helper/resources/adding-required-fields/openapi-add-discriminator-propertyname/before.json'
-import addDiscriminatorPropertyNameAfter from './helper/resources/adding-required-fields/openapi-add-discriminator-propertyname/after.json'
+import addDiscriminatorPropertyNameBefore from './helper/resources/add-required-fields/openapi/add-discriminator-propertyname/before.json'
+import addDiscriminatorPropertyNameAfter from './helper/resources/add-required-fields/openapi/add-discriminator-propertyname/after.json'
 
-import addParametersNameBefore from './helper/resources/adding-required-fields/openapi-add-parameters-name/before.json'
-import addParametersNameAfter from './helper/resources/adding-required-fields/openapi-add-parameters-name/after.json'
+import addParametersNameBefore from './helper/resources/add-required-fields/openapi/add-parameters-name/before.json'
+import addParametersNameAfter from './helper/resources/add-required-fields/openapi/add-parameters-name/after.json'
 
-import addParametersInBefore from './helper/resources/adding-required-fields/openapi-add-parameters-in/before.json'
-import addParametersInAfter from './helper/resources/adding-required-fields/openapi-add-parameters-in/after.json'
+import addParametersInBefore from './helper/resources/add-required-fields/openapi/add-parameters-in/before.json'
+import addParametersInAfter from './helper/resources/add-required-fields/openapi/add-parameters-in/after.json'
 
-import addTagsNameBefore from './helper/resources/adding-required-fields/openapi-add-tags-name/before.json'
-import addTagsNameAfter from './helper/resources/adding-required-fields/openapi-add-tags-name/after.json'
+import addTagsNameBefore from './helper/resources/add-required-fields/openapi/add-tags-name/before.json'
+import addTagsNameAfter from './helper/resources/add-required-fields/openapi/add-tags-name/after.json'
 
 const TEST_COMPARE_OPTIONS: CompareOptions = {
   originsFlag: TEST_ORIGINS_FLAG,

@@ -8,50 +8,50 @@ import {
 } from '../src'
 import { TEST_DIFF_FLAG, TEST_ORIGINS_FLAG } from './helper'
 
-import addSecuritySchemeTypeBefore from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-type/before.json'
-import addSecuritySchemeTypeAfter from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-type/after.json'
+import addSecuritySchemeTypeBefore from './helper/resources/add-required-fields/asyncapi/add-securityscheme-type/before.json'
+import addSecuritySchemeTypeAfter from './helper/resources/add-required-fields/asyncapi/add-securityscheme-type/after.json'
 
-import addSecuritySchemeNameAndInBefore from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-name-and-in/before.json'
-import addSecuritySchemeNameAndInAfter from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-name-and-in/after.json'
+import addSecuritySchemeNameAndInBefore from './helper/resources/add-required-fields/asyncapi/add-securityscheme-name-and-in/before.json'
+import addSecuritySchemeNameAndInAfter from './helper/resources/add-required-fields/asyncapi/add-securityscheme-name-and-in/after.json'
 
-import addSecuritySchemeSchemeBefore from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-scheme/before.json'
-import addSecuritySchemeSchemeAfter from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-scheme/after.json'
+import addSecuritySchemeSchemeBefore from './helper/resources/add-required-fields/asyncapi/add-securityscheme-scheme/before.json'
+import addSecuritySchemeSchemeAfter from './helper/resources/add-required-fields/asyncapi/add-securityscheme-scheme/after.json'
 
-import addSecuritySchemeOpenIdConnectUrlBefore from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-openIdConnectUrl/before.json'
-import addSecuritySchemeOpenIdConnectUrlAfter from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-openIdConnectUrl/after.json'
+import addSecuritySchemeOpenIdConnectUrlBefore from './helper/resources/add-required-fields/asyncapi/add-securityscheme-openIdConnectUrl/before.json'
+import addSecuritySchemeOpenIdConnectUrlAfter from './helper/resources/add-required-fields/asyncapi/add-securityscheme-openIdConnectUrl/after.json'
 
-import addSecuritySchemeFlowsBefore from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-flows/before.json'
-import addSecuritySchemeFlowsAfter from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-flows/after.json'
+import addSecuritySchemeFlowsBefore from './helper/resources/add-required-fields/asyncapi/add-securityscheme-flows/before.json'
+import addSecuritySchemeFlowsAfter from './helper/resources/add-required-fields/asyncapi/add-securityscheme-flows/after.json'
 
-import addSecuritySchemeAuthorizationCodeFlowBefore from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-authorizationcode-flow-fields/before.json'
-import addSecuritySchemeAuthorizationCodeFlowAfter from './helper/resources/adding-required-fields/asyncapi-add-securityscheme-authorizationcode-flow-fields/after.json'
+import addSecuritySchemeAuthorizationCodeFlowBefore from './helper/resources/add-required-fields/asyncapi/add-securityscheme-authorizationcode-flow-fields/before.json'
+import addSecuritySchemeAuthorizationCodeFlowAfter from './helper/resources/add-required-fields/asyncapi/add-securityscheme-authorizationcode-flow-fields/after.json'
 
-import addInfoBefore from './helper/resources/adding-required-fields/asyncapi-add-info/before.json'
-import addInfoAfter from './helper/resources/adding-required-fields/asyncapi-add-info/after.json'
+import addInfoBefore from './helper/resources/add-required-fields/asyncapi/add-info/before.json'
+import addInfoAfter from './helper/resources/add-required-fields/asyncapi/add-info/after.json'
 
-import addInfoFieldsBefore from './helper/resources/adding-required-fields/asyncapi-add-info-fields/before.json'
-import addInfoFieldsAfter from './helper/resources/adding-required-fields/asyncapi-add-info-fields/after.json'
+import addInfoFieldsBefore from './helper/resources/add-required-fields/asyncapi/add-info-fields/before.json'
+import addInfoFieldsAfter from './helper/resources/add-required-fields/asyncapi/add-info-fields/after.json'
 
-import addInfoLicenseNameBefore from './helper/resources/adding-required-fields/asyncapi-add-info-license-name/before.json'
-import addInfoLicenseNameAfter from './helper/resources/adding-required-fields/asyncapi-add-info-license-name/after.json'
+import addInfoLicenseNameBefore from './helper/resources/add-required-fields/asyncapi/add-info-license-name/before.json'
+import addInfoLicenseNameAfter from './helper/resources/add-required-fields/asyncapi/add-info-license-name/after.json'
 
-import addServersFieldsBefore from './helper/resources/adding-required-fields/asyncapi-add-servers-fields/before.json'
-import addServersFieldsAfter from './helper/resources/adding-required-fields/asyncapi-add-servers-fields/after.json'
+import addServersFieldsBefore from './helper/resources/add-required-fields/asyncapi/add-servers-fields/before.json'
+import addServersFieldsAfter from './helper/resources/add-required-fields/asyncapi/add-servers-fields/after.json'
 
-import addOperationsChannelBefore from './helper/resources/adding-required-fields/asyncapi-add-operations-channel/before.json'
-import addOperationsChannelAfter from './helper/resources/adding-required-fields/asyncapi-add-operations-channel/after.json'
+import addOperationsChannelBefore from './helper/resources/add-required-fields/asyncapi/add-operations-channel/before.json'
+import addOperationsChannelAfter from './helper/resources/add-required-fields/asyncapi/add-operations-channel/after.json'
 
-import addReplyAddressLocationBefore from './helper/resources/adding-required-fields/asyncapi-add-components-replyaddress-location/before.json'
-import addReplyAddressLocationAfter from './helper/resources/adding-required-fields/asyncapi-add-components-replyaddress-location/after.json'
+import addReplyAddressLocationBefore from './helper/resources/add-required-fields/asyncapi/add-components-replyaddress-location/before.json'
+import addReplyAddressLocationAfter from './helper/resources/add-required-fields/asyncapi/add-components-replyaddress-location/after.json'
 
-import addExternalDocsUrlBefore from './helper/resources/adding-required-fields/asyncapi-add-externaldocs-url/before.json'
-import addExternalDocsUrlAfter from './helper/resources/adding-required-fields/asyncapi-add-externaldocs-url/after.json'
+import addExternalDocsUrlBefore from './helper/resources/add-required-fields/asyncapi/add-externaldocs-url/before.json'
+import addExternalDocsUrlAfter from './helper/resources/add-required-fields/asyncapi/add-externaldocs-url/after.json'
 
-import addTagsNameBefore from './helper/resources/adding-required-fields/asyncapi-add-tags-name/before.json'
-import addTagsNameAfter from './helper/resources/adding-required-fields/asyncapi-add-tags-name/after.json'
+import addTagsNameBefore from './helper/resources/add-required-fields/asyncapi/add-tags-name/before.json'
+import addTagsNameAfter from './helper/resources/add-required-fields/asyncapi/add-tags-name/after.json'
 
-import addOperationsActionBefore from './helper/resources/adding-required-fields/asyncapi-add-operations-action/before.json'
-import addOperationsActionAfter from './helper/resources/adding-required-fields/asyncapi-add-operations-action/after.json'
+import addOperationsActionBefore from './helper/resources/add-required-fields/asyncapi/add-operations-action/before.json'
+import addOperationsActionAfter from './helper/resources/add-required-fields/asyncapi/add-operations-action/after.json'
 
 const TEST_COMPARE_OPTIONS: CompareOptions = {
   originsFlag: TEST_ORIGINS_FLAG,
