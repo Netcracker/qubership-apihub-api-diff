@@ -67,6 +67,11 @@
             "channel": {
                 "$ref": "#/channels/userSignup"
             },
+            "messages": {
+                "signupRequest": {
+                    "$ref": "#/channels/userSignup/messages/signupRequest"
+                }
+            },
             "tags": [
                 {
                     "$ref": "#/components/tags/componentTag"
