@@ -77,9 +77,9 @@ const TEST_COMPARE_OPTIONS: CompareOptions = {
 const notBreaking = (diffs: { type: unknown }[]) =>
   diffs.length > 0 && diffs.every(d => d.type !== breaking)
 
-describe('adding previously missing required fields is not breaking (openApi): ', () => {
+describe('openapi: adding previously missing required fields is not breaking', () => {
 
-  describe('components: ', () => {
+  describe('securitySchemes: ', () => {
     it('adding type to securitySchemes is not breaking', () => {
       const { diffs } = apiDiff(
         addSecuritySchemeTypeBefore,
