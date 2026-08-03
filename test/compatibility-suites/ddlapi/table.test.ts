@@ -1,8 +1,7 @@
 import { compareFiles } from '../utils'
 import { diffsMatcher } from '../../helper/matchers'
-import { annotation, breaking, deprecated, DiffAction, nonBreaking, unclassified } from '../../../src'
+import { annotation, breaking, DiffAction, nonBreaking } from '../../../src'
 import { TEST_SPEC_TYPE_DDL_API } from '@netcracker/qubership-apihub-compatibility-suites'
-import { COMPARE_SCOPE_ROOT } from '../../../src/types'
 
 const SUITE_ID = 'table'
 

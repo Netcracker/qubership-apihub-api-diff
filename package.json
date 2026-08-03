@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@asyncapi/parser": "3.4.0",
-    "@netcracker/qubership-apihub-compatibility-suites": "2.6.1",
+    "@netcracker/qubership-apihub-compatibility-suites": "feature-compatibility-suites-for-ddl",
     "@netcracker/qubership-apihub-graphapi": "dev",
     "@netcracker/qubership-apihub-npm-gitflow": "3.1.1",
     "@types/jest": "30.0.0",
