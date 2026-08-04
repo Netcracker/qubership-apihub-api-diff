@@ -414,6 +414,16 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
               mergedJsoValue[options.firstReferenceKeyProperty] = firstRefKey
             }
           }
+
+          // merge case- publish the mapping decision. Written for EVERY mapped node, also when the
+          // key did not change, so that absence of the symbol means exactly one thing: the node was
+          // not mapped (it was added). Added nodes adopt the raw after-value and removed nodes the
+          // raw before-value, neither of which is written here.
+          // Caveat: `mergedJsoCache`'s footprint does not include keys, so a shared object pair
+          // reached under two different key pairs records whichever traversal arrived first.
+          if (options.beforeKeyProperty) {
+            mergedJsoValue[options.beforeKeyProperty] = beforeKey
+          }
         }
 
         return {

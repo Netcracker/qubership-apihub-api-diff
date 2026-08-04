@@ -123,6 +123,13 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
    * Set automatically by the AsyncAPI engine when `firstReferenceKeyProperty` is user-provided.
    */
   retainFirstReferenceKeyProperty?: boolean
+  /**
+   * When set, every merged node that was **mapped** (present on both sides) carries its before-key
+   * under this symbol — whether or not the key changed. Absence therefore means exactly one thing:
+   * the node was not mapped (it was added). Lets consumers read api-diff's mapping decision instead
+   * of re-deriving it.
+   */
+  beforeKeyProperty?: symbol
 }
 
 export type DiffCallback = (diff: Diff/*, ctx: CompareContext*/) => void
