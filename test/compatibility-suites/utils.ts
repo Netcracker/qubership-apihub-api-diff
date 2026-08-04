@@ -153,8 +153,9 @@ export async function compareFiles(
   testId: string,
   type: TestSpecType = TEST_SPEC_TYPE_OPEN_API,
   specificationVersionPair?: SpecificationVersionPair,
+  compareOptionsOverride?: CompareOptions,
 ): Promise<Array<Diff>> {
-  const result = await compareFilesWithMerge(suiteId, testId, type, specificationVersionPair)
+  const result = await compareFilesWithMerge(suiteId, testId, type, specificationVersionPair, compareOptionsOverride)
   return result.diffs
 }
 
@@ -171,6 +172,7 @@ export async function compareFilesWithMerge(
   testId: string,
   type: TestSpecType = TEST_SPEC_TYPE_OPEN_API,
   specificationVersionPair?: SpecificationVersionPair,
+  compareOptionsOverride?: CompareOptions,
 ): Promise<CompareResult> {
   const [before, after] = getCompatibilitySuite(type, suiteId, testId, specificationVersionPair)
 
@@ -205,7 +207,10 @@ export async function compareFilesWithMerge(
     beforeSchemaWithoutComponents,
     afterSchemaWithoutComponents,
     {
+      // Overrides are applied per call rather than by mutating the shared constant, so one
+      // suite's needs (extra symbols, a feature toggle) cannot leak into every other suite.
       ...TEST_NORMALIZE_OPTIONS,
+      ...compareOptionsOverride,
       beforeSource: beforeObject,
       afterSource: afterObject,
     },

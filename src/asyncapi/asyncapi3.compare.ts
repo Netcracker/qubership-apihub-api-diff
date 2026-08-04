@@ -15,6 +15,7 @@ export const compareAsyncApi = (version: typeof SPEC_TYPE_ASYNCAPI_3) => (before
       mode: options.mode,
       version: version,
       firstReferenceKeyProperty: effectiveFirstRefKeyProp,
+      asyncApiSemanticEntityMapping: options.asyncApiSemanticEntityMapping,
     }),
   })
 }

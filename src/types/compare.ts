@@ -124,6 +124,20 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
    */
   retainFirstReferenceKeyProperty?: boolean
   /**
+   * AsyncAPI only. Some AsyncAPI documents are generated from code, and when the generator needs
+   * two entities that differ only by their human-readable text it emits ids embedding a hash of
+   * that text - so a pure documentation edit changes the `operationId` / `channelId` / `messageId`
+   * and degrades into a remove plus an add of the whole entity.
+   *
+   * When enabled, entities the key-based mapping leaves unmatched are offered to a second pass
+   * that matches them by action x channel address x payload identity. The key-based mapping stays
+   * authoritative: a pair it produced is never touched, and the second pass does not run at all
+   * unless a map holds both an addition and a removal.
+   *
+   * Default: `true`.
+   */
+  asyncApiSemanticEntityMapping?: boolean
+  /**
    * When set, every merged node that was **mapped** (present on both sides) carries its before-key
    * under this symbol — whether or not the key changed. Absence therefore means exactly one thing:
    * the node was not mapped (it was added). Lets consumers read api-diff's mapping decision instead
