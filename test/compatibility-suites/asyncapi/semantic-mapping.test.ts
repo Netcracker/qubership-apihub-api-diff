@@ -5,7 +5,6 @@ import { Diff, DiffAction, unclassified } from '../../../src'
 import { COMPARE_SCOPE_ROOT } from '../../../src/types'
 import { COMPARE_SCOPE_SEND } from '../../../src/asyncapi'
 import { diffsMatcher } from '../../helper/matchers'
-import { asyncApiSuiteCaseIds, loadValidAsyncApiSuiteCase } from '../../helper/asyncapi'
 import { compareFiles } from '../utils'
 
 const SUITE_ID = 'semantic-mapping'
@@ -30,14 +29,6 @@ const underChannelMessages = (diffs: Diff[]): Diff[] =>
   diffs.filter(diff => declarationPathsOf(diff).some(path => startsWith(path, CHANNEL_MESSAGES_PATH)))
 
 describe('AsyncAPI semantic entity mapping', () => {
-  // Enumerated from the corpus rather than listed here, so a case added to the suite is validated
-  // without a second edit. `compareFiles` loads the corpus itself, so nothing else in this file
-  // would notice a fixture that stopped being a valid AsyncAPI document - and the corpus lives in
-  // a separately versioned package, where it can be edited without this repository seeing it.
-  it.each(asyncApiSuiteCaseIds(SUITE_ID))('%s is a valid AsyncAPI 3.0.0 pair', async testId => {
-    await loadValidAsyncApiSuiteCase(SUITE_ID, testId)
-  })
-
   describe('message-id-changed', () => {
     it('reports nothing at all', async () => {
       const diffs = await compareFiles(SUITE_ID, 'message-id-changed', TEST_SPEC_TYPE_ASYNC_API)

@@ -2,7 +2,7 @@ import type { v3 as AsyncAPIV3 } from '@asyncapi/parser/esm/spec-types'
 import { normalize } from '@netcracker/qubership-apihub-api-unifier'
 
 import { formatSemanticIdentity, logicalIndexOf, payloadIdentity } from '../src/asyncapi/asyncapi3.identity'
-import { loadValidAsyncApiSuiteCase, parseAsyncApiAndAssertValid, resolved } from './helper/asyncapi'
+import { loadAsyncApiSuiteCase, parseAsyncApiAndAssertValid, resolved } from './helper/asyncapi'
 import { TEST_DEFAULTS_FLAG, TEST_ORIGINS_FLAG, TEST_SYNTHETIC_TITLE_FLAG } from './helper'
 
 // Mirrors the normalization `compare()` performs, so these unit tests see the same tree the
@@ -32,8 +32,8 @@ const SAMPLE_CHANNEL_ID = 'orderEvents_1001'
 const SAMPLE_PAYLOAD_IDENTITY = 'components/schemas/OrderEvent'
 
 describe('payloadIdentity', () => {
-  it('anchors a $ref payload on the schema declaration path, unchanged by an id flip', async () => {
-    const sample = await loadValidAsyncApiSuiteCase(SUITE_ID, 'message-id-changed')
+  it('anchors a $ref payload on the schema declaration path, unchanged by an id flip', () => {
+    const sample = loadAsyncApiSuiteCase(SUITE_ID, 'message-id-changed')
     const before = normalizeDocument(sample.before)
     const after = normalizeDocument(sample.after)
 
@@ -116,13 +116,10 @@ describe('logicalIndexOf', () => {
   /** Mirrors the serialization of `formatSemanticIdentity`, pinning the wire form it produces. */
   const identity = (...segments: string[]): string => segments.join('|')
 
-  // Validated once - every case in this block reads the same before-document.
-  let sample: AsyncAPIV3.AsyncAPIObject
-  beforeAll(async () => {
-    sample = (await loadValidAsyncApiSuiteCase(SUITE_ID, 'message-id-changed')).before
-  })
-
-  const sampleDocument = (): AsyncAPIV3.AsyncAPIObject => normalizeDocument(sample)
+  // Every case in this block reads the same before-document, normalized fresh so no case can
+  // observe another's normalization.
+  const sampleDocument = (): AsyncAPIV3.AsyncAPIObject =>
+    normalizeDocument(loadAsyncApiSuiteCase(SUITE_ID, 'message-id-changed').before)
 
   const channel = (document: AsyncAPIV3.AsyncAPIObject, channelId: string): AsyncAPIV3.ChannelObject =>
     resolved(document.channels?.[channelId])

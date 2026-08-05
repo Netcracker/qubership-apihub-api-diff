@@ -1,15 +1,28 @@
 import { Parser } from '@asyncapi/parser'
+import type { RulesetOptions } from '@asyncapi/parser/esm/ruleset'
 import type { Input } from '@asyncapi/parser/esm/types'
 import type { v3 } from '@asyncapi/parser/esm/spec-types'
-import {
-  getCompatibilitySuite,
-  getCompatibilitySuites,
-  TEST_SPEC_TYPE_ASYNC_API,
-} from '@netcracker/qubership-apihub-compatibility-suites'
+import { getCompatibilitySuite, TEST_SPEC_TYPE_ASYNC_API } from '@netcracker/qubership-apihub-compatibility-suites'
 import { loadYaml } from '@netcracker/qubership-apihub-api-unifier'
 import 'jest-extended'
 
-const parser = new Parser()
+/**
+ * Parser ruleset with one rule intentionally suppressed.
+ *
+ * asyncapi-latest-version: fires when the document uses AsyncAPI 3.0.0 instead of the newest
+ * version known to the parser. Test fixtures pin 3.0.0 on purpose, so this is noise rather than a
+ * defect. Turning the rule off beats filtering its output afterwards: a filter also hides the rule
+ * firing for a reason we did not anticipate.
+ *
+ */
+const ASYNCAPI_PARSER_RULESET: RulesetOptions = {
+  extends: [],
+  rules: {
+    'asyncapi-latest-version': 'off',
+  },
+}
+
+const parser = new Parser({ ruleset: ASYNCAPI_PARSER_RULESET })
 
 /**
  * Parses an AsyncAPI spec with the AsyncAPI parser, asserts there are no diagnostics,
@@ -23,35 +36,12 @@ const parser = new Parser()
  */
 export async function parseAsyncApiAndAssertValid(spec: Input | v3.AsyncAPIObject): Promise<v3.AsyncAPIObject> {
   const { document, diagnostics } = await parser.parse(spec as Input)
-  const filteredDiagnostics = diagnostics.filter(
-    diagnostic => !(
-      diagnostic.code === 'asyncapi-latest-version' &&
-      diagnostic.message.includes('The latest version of AsyncAPi is not used')
-    ),
-  )
-  expect(filteredDiagnostics).toBeEmpty()
+  expect(diagnostics).toBeEmpty()
   const json = document?.json()
   if (json === undefined) {
     throw new Error('Expected document when diagnostics are empty')
   }
   return json as v3.AsyncAPIObject
-}
-
-/**
- * Every testId of an AsyncAPI compatibility suite, in a stable order.
- *
- * Enumerating beats a hand-kept list: a case added to the corpus is picked up here without a
- * second edit, and one removed or renamed cannot leave a test silently pointing at nothing.
- *
- * Throws on an empty result, because `it.each([])` registers no tests at all - a suite that
- * vanished (renamed, or a corpus version without it) would otherwise read as "all green".
- */
-export function asyncApiSuiteCaseIds(suiteId: string): string[] {
-  const testIds = getCompatibilitySuites(TEST_SPEC_TYPE_ASYNC_API).get(suiteId)
-  if (!testIds || testIds.length === 0) {
-    throw new Error(`No compatibility suite cases found for ${TEST_SPEC_TYPE_ASYNC_API}/${suiteId}`)
-  }
-  return [...testIds].sort()
 }
 
 export interface AsyncApiSuiteCase {
@@ -60,23 +50,19 @@ export interface AsyncApiSuiteCase {
 }
 
 /**
- * Loads an AsyncAPI case from the shared compatibility corpus and asserts **both** documents are
- * valid AsyncAPI 3.0.0 before handing them back.
+ * Loads an AsyncAPI case from the shared compatibility corpus.
  *
- * A corpus sample is a test fixture like any inline literal, so it gets the same validation - and
- * because the corpus lives in a separately versioned package, a fixture can be edited without the
- * consuming test noticing. Loading through here is what keeps that from going unnoticed.
- *
- * Returns the parsed **source** documents (not the parser's own model), which is what api-diff and
- * api-unifier consume.
+ * The samples are **not** validated here. Validity is the corpus package's own concern and is
+ * asserted by its `test/asyncapi-samples.test.ts`, so a malformed sample can never be published -
+ * which also spares every consumer re-parsing the whole corpus on every test run. Inline fixtures
+ * written in this repository still go through `parseAsyncApiAndAssertValid`.
  */
-export async function loadValidAsyncApiSuiteCase(suiteId: string, testId: string): Promise<AsyncApiSuiteCase> {
+export function loadAsyncApiSuiteCase(suiteId: string, testId: string): AsyncApiSuiteCase {
   const [beforeYaml, afterYaml] = getCompatibilitySuite(TEST_SPEC_TYPE_ASYNC_API, suiteId, testId)
-  const before = loadYaml(beforeYaml) as v3.AsyncAPIObject
-  const after = loadYaml(afterYaml) as v3.AsyncAPIObject
-  await parseAsyncApiAndAssertValid(before)
-  await parseAsyncApiAndAssertValid(after)
-  return { before, after }
+  return {
+    before: loadYaml(beforeYaml) as v3.AsyncAPIObject,
+    after: loadYaml(afterYaml) as v3.AsyncAPIObject,
+  }
 }
 
 /**

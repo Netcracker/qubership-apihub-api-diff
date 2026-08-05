@@ -33,7 +33,7 @@
     "fast-equals": "6.0.0"
   },
   "devDependencies": {
-    "@asyncapi/parser": "3.4.0",
+    "@asyncapi/parser": "3.6.0",
     "@netcracker/qubership-apihub-compatibility-suites": "2.6.1",
     "@netcracker/qubership-apihub-graphapi": "1.0.12",
     "@netcracker/qubership-apihub-npm-gitflow": "3.1.1",
