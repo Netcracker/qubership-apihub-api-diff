@@ -42,3 +42,14 @@ export {
   onlyExistedArrayIndexes
 } from './utils'
 
+/**
+ * AsyncAPI semantic entity mapping - `asyncApi.payloadIdentity(...)`, `asyncApi.SemanticIdentity`.
+ *
+ * Namespaced rather than flattened into this entry point, because every member is scoped to
+ * AsyncAPI and nothing in a bare `payloadIdentity` says so. Exported at all so no component
+ * re-implements identity or pairing: api-processor supplies its own value accessors but calls
+ * these, so the identity string and the pairing algorithm are literally the same code on both
+ * sides.
+ */
+export * as asyncApi from './asyncapi/public'
+

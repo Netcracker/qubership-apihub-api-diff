@@ -4,6 +4,7 @@ import { normalize } from '@netcracker/qubership-apihub-api-unifier'
 import { formatSemanticIdentity, logicalIndexOf, payloadIdentity } from '../src/asyncapi/asyncapi3.identity'
 import { loadAsyncApiSuiteCase, parseAsyncApiAndAssertValid, resolved } from './helper/asyncapi'
 import { TEST_DEFAULTS_FLAG, TEST_ORIGINS_FLAG, TEST_SYNTHETIC_TITLE_FLAG } from './helper'
+import { describe, expect, it } from '@jest/globals'
 
 // Mirrors the normalization `compare()` performs, so these unit tests see the same tree the
 // mapping resolvers do.

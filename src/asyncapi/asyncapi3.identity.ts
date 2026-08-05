@@ -11,8 +11,8 @@ import {
   isAsyncApiChannelObject,
   isAsyncApiMessageObject,
   isAsyncApiOperationObject,
-  SemanticIdentity,
-} from './asyncapi3.types'
+} from './asyncapi3.spec-guards'
+import { SemanticIdentity } from './asyncapi3.types'
 
 /**
  * Segment separator for a composite identity: `send|order-events|components/schemas/OrderEvent`.
