@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@asyncapi/parser": "3.6.0",
-    "@netcracker/qubership-apihub-compatibility-suites": "2.6.1",
+    "@netcracker/qubership-apihub-compatibility-suites": "feature-async-mapping-by-payload",
     "@netcracker/qubership-apihub-graphapi": "1.0.12",
     "@netcracker/qubership-apihub-npm-gitflow": "3.1.1",
     "@types/jest": "30.0.0",
