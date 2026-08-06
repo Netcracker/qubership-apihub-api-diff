@@ -4,10 +4,11 @@ import { OpenAPIV3 } from 'openapi-types'
 import { apiDiff, CompareOptions } from '../src'
 import { parseAsyncApiAndAssertValid, resolved } from './helper/asyncapi'
 
-// `beforeKeyProperty` publishes api-diff's mapping decision on the merged document:
-// every mapped node carries its before-key, so absence of the symbol means exactly
-// one thing - the node was not mapped (it was added, or it is a removed node adopted
-// from the before document).
+// `beforeKeyProperty` publishes api-diff's mapping decision on the merged document, but only
+// where it is not already evident: a node mapped onto a DIFFERENT key carries its before-key.
+// A node mapped onto its own key needs no record - its merged key is its before-key - and
+// decorating every merged object would put a stray property in front of consumers that walk
+// values generically.
 
 const BEFORE_KEY_PROPERTY = Symbol('test-before-key')
 
@@ -67,7 +68,7 @@ const getOperationMessage = (merged: unknown, index: number): AsyncAPIV3.Message
 
 describe('beforeKeyProperty', () => {
   describe('option passed', () => {
-    it('mapped node carries its own key when the key did not change', async () => {
+    it('leaves a node mapped onto its own key undecorated', async () => {
       const before = makeAsyncApiSpec(['MessageA'])
       const after = makeAsyncApiSpec(['MessageA'])
       await parseAsyncApiAndAssertValid(before)
@@ -75,9 +76,12 @@ describe('beforeKeyProperty', () => {
 
       const { merged } = apiDiff(before, after, COMPARE_OPTIONS)
 
-      expect(beforeKeyOf(getChannel(merged))).toBe('myChannel')
-      expect(beforeKeyOf(getOperation(merged))).toBe('myOp')
-      expect(beforeKeyOf(getChannelMessage(merged, 'MessageA'))).toBe('MessageA')
+      // Its key in the merged document already is its before-key, so there is nothing to record -
+      // and decorating every merged object puts a stray property in front of every consumer that
+      // walks values generically.
+      expect(beforeKeyOf(getChannel(merged))).toBeUndefined()
+      expect(beforeKeyOf(getOperation(merged))).toBeUndefined()
+      expect(beforeKeyOf(getChannelMessage(merged, 'MessageA'))).toBeUndefined()
     })
 
     it('added node carries no before-key', async () => {
@@ -88,7 +92,6 @@ describe('beforeKeyProperty', () => {
 
       const { merged } = apiDiff(before, after, COMPARE_OPTIONS)
 
-      expect(beforeKeyOf(getChannelMessage(merged, 'MessageA'))).toBe('MessageA')
       expect(beforeKeyOf(getChannelMessage(merged, 'MessageB'))).toBeUndefined()
     })
 
@@ -100,7 +103,6 @@ describe('beforeKeyProperty', () => {
 
       const { merged } = apiDiff(before, after, COMPARE_OPTIONS)
 
-      expect(beforeKeyOf(getChannelMessage(merged, 'MessageA'))).toBe('MessageA')
       expect(beforeKeyOf(getChannelMessage(merged, 'MessageB'))).toBeUndefined()
     })
 
@@ -133,10 +135,9 @@ describe('beforeKeyProperty', () => {
   })
 
   describe('merged arrays', () => {
-    // An array is a mapped node like any other, so it carries its before-key too - unlike
-    // `firstReferenceKeyProperty`, which belongs to each element and is skipped on containers.
+    // An array is a mapped node like any other, so the same rule applies to it and its elements.
 
-    it('array container carries its own key', async () => {
+    it('leaves an array container mapped onto its own key undecorated', async () => {
       const before = makeAsyncApiSpec(['MessageA'])
       const after = makeAsyncApiSpec(['MessageA'])
       await parseAsyncApiAndAssertValid(before)
@@ -144,7 +145,7 @@ describe('beforeKeyProperty', () => {
 
       const { merged } = apiDiff(before, after, COMPARE_OPTIONS)
 
-      expect(beforeKeyOf(getOperationMessages(merged))).toBe('messages')
+      expect(beforeKeyOf(getOperationMessages(merged))).toBeUndefined()
     })
 
     it('element carries its numeric before-key, which is also its merged index', async () => {
@@ -161,6 +162,8 @@ describe('beforeKeyProperty', () => {
       const { merged } = apiDiff(before, after, COMPARE_OPTIONS)
 
       expect(getOperationMessages(merged)).toHaveLength(2) // both mapped, neither added nor removed
+      // Both elements are mapped onto a different index, so both are decorated - and the recorded
+      // value is the element's own merged index, since a merged array is keyed by the before side.
       expect(beforeKeyOf(getOperationMessage(merged, 0))).toBe(0)
       expect(beforeKeyOf(getOperationMessage(merged, 1))).toBe(1)
     })
@@ -174,7 +177,6 @@ describe('beforeKeyProperty', () => {
       const { merged } = apiDiff(before, after, COMPARE_OPTIONS)
 
       expect(getOperationMessages(merged)).toHaveLength(2) // MessageA mapped, MessageB added
-      expect(beforeKeyOf(getOperationMessage(merged, 0))).toBe(0)
       expect(beforeKeyOf(getOperationMessage(merged, 1))).toBeUndefined()
     })
   })

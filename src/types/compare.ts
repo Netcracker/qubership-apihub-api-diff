@@ -138,10 +138,17 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
    */
   asyncApiSemanticEntityMapping?: boolean
   /**
-   * When set, every merged node that was **mapped** (present on both sides) carries its before-key
-   * under this symbol — whether or not the key changed. Absence therefore means exactly one thing:
-   * the node was not mapped (it was added). Lets consumers read api-diff's mapping decision instead
-   * of re-deriving it.
+   * When set, a merged node that was mapped onto a **different** key carries its before-key under
+   * this symbol. Lets consumers locate an entity by either version's key instead of re-deriving
+   * which one corresponds to which - an AsyncAPI generator, for instance, embeds a hash of
+   * description text in its ids, so editing a description renames the entity.
+   *
+   * Written only where the key actually changed. A node mapped onto its own key is already keyed by
+   * its before-key in the merged document, and decorating it anyway would put a stray property on
+   * every merged object, which consumers walking values generically have to skip.
+   *
+   * Absence therefore means "this node's key did not change, or it was added" - to tell those two
+   * apart, read the parent's diff metadata, which records additions.
    */
   beforeKeyProperty?: symbol
 }

@@ -415,13 +415,19 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
             }
           }
 
-          // merge case- publish the mapping decision. Written for EVERY mapped node, also when the
-          // key did not change, so that absence of the symbol means exactly one thing: the node was
-          // not mapped (it was added). Added nodes adopt the raw after-value and removed nodes the
-          // raw before-value, neither of which is written here.
+          // merge case- publish the mapping decision, but only where it is not already evident:
+          // when the resolver mapped this node onto a DIFFERENT key. A node mapped onto its own key
+          // needs no record - its key in the merged document is its before-key - and decorating it
+          // anyway put a stray string property on every merged object in the document, which any
+          // consumer that walks values generically then has to know to skip.
+          //
+          // The cost is that absence no longer distinguishes "mapped, key unchanged" from "added".
+          // Consumers that need to tell them apart read the parent's diff metadata, which is the
+          // authoritative record of what was added; this symbol only ever answered it by proxy.
+          //
           // Caveat: `mergedJsoCache`'s footprint does not include keys, so a shared object pair
           // reached under two different key pairs records whichever traversal arrived first.
-          if (options.beforeKeyProperty) {
+          if (options.beforeKeyProperty && beforeKey !== afterKey) {
             mergedJsoValue[options.beforeKeyProperty] = beforeKey
           }
         }

@@ -292,13 +292,14 @@ describe('AsyncAPI semantic entity mapping', () => {
       expect(beforeKeyOf(at(messages, AFTER_MESSAGE_ID))).toBe(BEFORE_MESSAGE_ID)
     })
 
-    it('records a before-key on base-matched nodes too, equal to their own key', async () => {
-      // Absence has to mean exactly one thing - "not mapped" - so the symbol is written even when
-      // the key did not change.
+    it('leaves base-matched nodes undecorated', async () => {
+      // Their merged key already is their before-key, so there is nothing to record. Writing it
+      // anyway would decorate every merged object in the document, which any consumer walking
+      // values generically then has to know to skip.
       const merged = await mergedWithBeforeKeys('message-id-changed')
 
-      expect(beforeKeyOf(at(merged, 'channels', PLAIN_CHANNEL_ID))).toBe(PLAIN_CHANNEL_ID)
-      expect(beforeKeyOf(at(merged, 'operations', HASHED_OPERATION_ID))).toBe(HASHED_OPERATION_ID)
+      expect(beforeKeyOf(at(merged, 'channels', PLAIN_CHANNEL_ID))).toBeUndefined()
+      expect(beforeKeyOf(at(merged, 'operations', HASHED_OPERATION_ID))).toBeUndefined()
     })
 
     it('records no before-key on an added node', async () => {
