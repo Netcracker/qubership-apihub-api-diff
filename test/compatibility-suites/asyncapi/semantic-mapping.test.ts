@@ -215,6 +215,33 @@ describe('AsyncAPI semantic entity mapping', () => {
   })
 
   describe('an ambiguous group pairs deterministically', () => {
+    it('message-ids-swapped-in-ambiguous-group pairs each message with the other one', async () => {
+      const { diffs, merged } = await compareFilesWithMerge(
+        SUITE_ID, 'message-ids-swapped-in-ambiguous-group', TEST_SPEC_TYPE_ASYNC_API, undefined,
+        { beforeKeyProperty: BEFORE_KEY_PROPERTY },
+      )
+      const messages = at(merged, 'channels', 'orderEvents', 'messages')
+
+      // Two messages on one channel sharing `components/schemas/OrderEvent` and differing only by
+      // description: within a channel the identity is the payload identity alone, so the two are
+      // indistinguishable and the tie-break decides. It zips sorted before keys against sorted
+      // after keys - [_1001, _2002] against [_3003, _9001] - which lands each message on the
+      // other's node.
+      //
+      // Pinned exactly, because this ordering is not predictable by inspection: an earlier version
+      // of this fixture named the ids `OrderEventAlpha_*` / `OrderEventBeta_*`, where the
+      // alphabetic part dominates the sort and the pairing came out correct instead.
+      expect(beforeKeyOf(at(messages, 'OrderEvent_3003'))).toBe('OrderEvent_1001')
+      expect(beforeKeyOf(at(messages, 'OrderEvent_9001'))).toBe('OrderEvent_2002')
+
+      // The cost D6 accepts: the swap surfaces as two descriptions reading as changed, rather than
+      // as two messages removed and two added. Strictly less noise, and every diff is an
+      // annotation - nothing is reported as breaking.
+      expect(wholeEntityDiffs(diffs)).toBeEmpty()
+      expect(diffs).toHaveLength(4) // two descriptions, each in the root and send scopes
+      expect(diffs.every(diff => diff.type === annotation)).toBe(true)
+    })
+
     it('both-channel-ids-changed pairs by the tie-break and says so via beforeKeyProperty', async () => {
       const { diffs, merged } = await compareFilesWithMerge(
         SUITE_ID, 'both-channel-ids-changed', TEST_SPEC_TYPE_ASYNC_API, undefined,
