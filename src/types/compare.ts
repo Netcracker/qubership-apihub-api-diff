@@ -91,6 +91,27 @@ export type ApiCompatibilityKind = typeof API_COMPATIBILITY_KIND_BACKWARD_COMPAT
 
 export type ApiCompatibilityScopeFunction = (path?: JsonPath, beforeJso?: unknown, afterJso?: unknown) => ApiCompatibilityKind | undefined
 
+/** Name of a group of traversals that must not share difference instances. */
+export type TraversalPartition = string
+
+export type TraversalPartitionFunction = (path?: JsonPath, beforeJso?: unknown, afterJso?: unknown) => TraversalPartition | undefined
+
+/**
+ * State of a difference at the moment it is classified.
+ * `type` is the verdict the rules produced, after the api-compatibility downgrade.
+ * `partition` is the traversal group the difference was reached through, and the only field
+ * that says where it was reached from, so an override can answer per route.
+ */
+export interface DiffClassificationContext {
+  action: ActionType
+  type: DiffType
+  partition: TraversalPartition | undefined
+  beforeDeclarationPaths: JsonPath[]
+  beforeValue: unknown
+}
+
+export type DiffClassificationOverride = (context: DiffClassificationContext) => DiffType | undefined
+
 export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   mode?: CompareMode
   normalizedResult?: boolean
@@ -110,6 +131,30 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
    * `undefined` to inherit the parent scope.
    */
   apiCompatibilityScopeFunction?: ApiCompatibilityScopeFunction
+  /**
+   * Last word on how a single difference is classified. Use it when the verdict depends on
+   * knowledge the library does not have, such as publication history. Unlike
+   * `apiCompatibilityScopeFunction`, which marks a whole subtree, this is called once per
+   * difference, while it is created.
+   * Returns
+   * a diff type to use instead of the computed one.
+   * `undefined` to keep the computed one, which is also what happens if the function throws.
+   */
+  diffClassificationOverride?: DiffClassificationOverride
+  /**
+   * Function that names the route a node is reached through, so two routes to the same node yield
+   * separate difference instances instead of one shared. It changes no verdict by itself:
+   * `diffClassificationOverride` reads the name and decides.
+   * Returns
+   * a partition name for the matched path.
+   * `undefined` to inherit the parent partition.
+   *
+   * The name joins the reuse footprint, so keep it constant within a subtree and match on whole
+   * paths. A name that varies from node to node disables the reuse that makes traversal of a cyclic
+   * document terminate, and combiner options report paths relative to the option. Every extra
+   * partition repeats the traversal it shares with the others.
+   */
+  traversalPartitionFunction?: TraversalPartitionFunction
   /**
    * For OpenAPI specs:
    * If a whole PathItem is removed, generate separate diffs for each HTTP operation (get/post/...)
@@ -142,6 +187,12 @@ export interface StrictCompareOptions extends Omit<CompareOptions, 'defaultsFlag
 
 export interface InternalCompareOptions extends StrictCompareOptions {
   rules: CompareRules
+  /**
+   * Traversal partition the nested compare starts from. A nested compare (combiner items) begins
+   * its own crawl and would otherwise fall back to what `traversalPartitionFunction` answers for
+   * the root, losing the partition it was reached under.
+   */
+  initialTraversalPartition?: TraversalPartition
 }
 
 export type CompareEngine = (before: unknown, after: unknown, options: StrictCompareOptions) => CompareResult
@@ -165,6 +216,7 @@ export interface MergeState<T extends PropertyKey = string> {
   createdMergedJso: Set<JsonNode>,
   compareScope: CompareScope
   apiCompatibilityScope: ApiCompatibilityKind
+  traversalPartition: TraversalPartition | undefined
 }
 
 export type JsonNode<Key extends PropertyKey = string> = Key extends (string | symbol) ? Record<string | symbol, unknown> : Record<number, unknown> | Array<unknown>

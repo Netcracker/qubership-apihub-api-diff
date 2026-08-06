@@ -33,6 +33,7 @@ import {
   JsonNode,
   MergeState,
   NodeContext,
+  TraversalPartition,
   ValueTransformer,
 } from '../types'
 import { getObjectValue, isArray, isDiffAdd, isDiffRemove, isDiffReplace, isNumber, isObject, typeOf } from '../utils'
@@ -79,6 +80,7 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     compareScope,
     parentContext,
     apiCompatibilityScope,
+    traversalPartition,
   } = data
   return {
     parentContext: parentContext,
@@ -89,6 +91,7 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     rules,
     options,
     apiCompatibilityScope: apiCompatibilityScope,
+    traversalPartition,
   }
 }
 
@@ -98,6 +101,7 @@ export const createChildContext = (
   beforeChildKey: PropertyKey | undefined,
   afterChildKey: PropertyKey | undefined,
   apiCompatibilityScope: ApiCompatibilityKind = ctx.apiCompatibilityScope,
+  traversalPartition: TraversalPartition | undefined = ctx.traversalPartition,
 ): CompareContext => {
   const { before, after, rules, options, scope } = ctx
   let beforeContext: NodeContext
@@ -130,6 +134,7 @@ export const createChildContext = (
     parentContext: ctx,
     before: beforeContext,
     after: afterContext,
+    traversalPartition,
     mergeKey: mergedKey,
     rules: getNodeRules(
       rules,
@@ -168,13 +173,15 @@ export const getOrCreateChildDiffAdd = (diffUniquenessCache: EvaluationCacheServ
     string,
     CompareScope,
     typeof DiffAction.add,
-    ApiCompatibilityKind
+    ApiCompatibilityKind,
+    TraversalPartition | undefined
   ], DiffAdd>([
     childCtx.after.value,
     buildPathsIdentifier(childCtx.after.declarativePaths),
     childCtx.scope,
     DiffAction.add,
     childCtx.apiCompatibilityScope,
+    childCtx.traversalPartition,
   ], () => {
     return diffFactory.added(childCtx)
   }, {} as DiffAdd, (result, guard) => {
@@ -191,13 +198,15 @@ export const getOrCreateChildDiffRemove = (diffUniquenessCache: EvaluationCacheS
     string,
     CompareScope,
     typeof DiffAction.remove,
-    ApiCompatibilityKind
+    ApiCompatibilityKind,
+    TraversalPartition | undefined
   ], DiffRemove>([
     childCtx.before.value,
     buildPathsIdentifier(childCtx.before.declarativePaths),
     childCtx.scope,
     DiffAction.remove,
     childCtx.apiCompatibilityScope,
+    childCtx.traversalPartition,
   ], () => {
     return diffFactory.removed(childCtx)
   }, {} as DiffRemove, (result, guard) => {
@@ -233,7 +242,7 @@ const adaptValues = (beforeJso: JsonNode, beforeKey: PropertyKey, afterJso: Json
   return [beforeValueAdapted, afterValueAdapted]
 }
 const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions): SyncCrawlHook<MergeState, CompareRule> => {
-  const { metaKey, apiCompatibilityScopeFunction } = options
+  const { metaKey, apiCompatibilityScopeFunction, traversalPartitionFunction } = options
   const diffs: Set<Diff> = new Set()
   const addDiff: (diff: Diff) => void = (diff) => {
     const oldSize = diffs.size
@@ -262,6 +271,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       createdMergedJso,
       compareScope,
       apiCompatibilityScope: parentApiCompatibilityScope,
+      traversalPartition: parentTraversalPartition,
     } = state
 
     if (typeof unsafeKey === 'symbol') {
@@ -302,6 +312,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
     ] = adaptValues(beforeJso, beforeKey, afterJso, afterKey, adapter, options)
 
     const computedApiCompatibilityScope = apiCompatibilityScopeFunction?.(crawlContext.path, beforeValueAdapted, afterValueAdapted) ?? parentApiCompatibilityScope
+    const computedTraversalPartition = traversalPartitionFunction?.(crawlContext.path, beforeValueAdapted, afterValueAdapted) ?? parentTraversalPartition
 
     const ctx = createContext({
       ...state,
@@ -313,6 +324,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       rules,
       compareScope: newCompareScope ?? compareScope,
       apiCompatibilityScope: computedApiCompatibilityScope,
+      traversalPartition: computedTraversalPartition,
     }, options)
 
     const beforeDeclarativePathsId = buildPathsIdentifier(cleanUpRecursive(ctx.before).declarativePaths)
@@ -324,7 +336,8 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       typeof beforeDeclarativePathsId,
       typeof afterDeclarativePathsId,
       CompareScope,
-      ApiCompatibilityKind
+      ApiCompatibilityKind,
+      TraversalPartition | undefined
     ], ReusableMergeResult>([
       ctx.before.value,
       ctx.after.value,
@@ -332,6 +345,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       afterDeclarativePathsId,
       ctx.scope,
       computedApiCompatibilityScope,
+      computedTraversalPartition,
     ], ([beforeValue, afterValue]) => {
       if (!ignoreKeyDifference && beforeKey !== afterKey) {
         const diffEntry = createDiffEntry(ctx, diffFactory.renamed(ctx))
@@ -382,15 +396,19 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
           once = true
 
           keyToRemove.forEach((keyToBefore) => {
-            const removalBwc = apiCompatibilityScopeFunction?.([...crawlContext.path, keyToBefore], beforeValue[keyToBefore]) || computedApiCompatibilityScope
-            const childCtx = createChildContext(ctx, keyToBefore, keyToBefore, undefined, removalBwc)
+            const removalPath = [...crawlContext.path, keyToBefore]
+            const removalBwc = apiCompatibilityScopeFunction?.(removalPath, beforeValue[keyToBefore]) || computedApiCompatibilityScope
+            const removalPartition = traversalPartitionFunction?.(removalPath, beforeValue[keyToBefore]) ?? computedTraversalPartition
+            const childCtx = createChildContext(ctx, keyToBefore, keyToBefore, undefined, removalBwc, removalPartition)
             jsoDiffEntries.push(getOrCreateChildDiffRemove(diffUniquenessCache, childCtx))
           })
 
           keysToAdd.forEach((keyInAfter) => {
-            const additionBwc = apiCompatibilityScopeFunction?.([...crawlContext.path, keyInAfter], undefined, afterJso[keyInAfter]) || computedApiCompatibilityScope
+            const additionPath = [...crawlContext.path, keyInAfter]
+            const additionBwc = apiCompatibilityScopeFunction?.(additionPath, undefined, afterValue[keyInAfter]) || computedApiCompatibilityScope
+            const additionPartition = traversalPartitionFunction?.(additionPath, undefined, afterValue[keyInAfter]) ?? computedTraversalPartition
             const keyInMerge = isArray(mergedJsoValue) ? mergedJsoValue.length : keyInAfter
-            const childCtx = createChildContext(ctx, keyInMerge, undefined, keyInAfter, additionBwc)
+            const childCtx = createChildContext(ctx, keyInMerge, undefined, keyInAfter, additionBwc, additionPartition)
             jsoDiffEntries.push(getOrCreateChildDiffAdd(diffUniquenessCache, childCtx))
             mergedJsoValue[keyInMerge] = afterValue[keyInAfter]
             // add case- cleanup firstReferenceKeyProperty if required
@@ -455,6 +473,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
         mergedJso: mergedValue,
         compareScope: newCompareScope ?? compareScope,
         apiCompatibilityScope: computedApiCompatibilityScope,
+        traversalPartition: computedTraversalPartition,
       }
       return { value: reuseResult.nextValue, state: childState, exitHook: reuseResult.exitHook }
     } else {
@@ -646,6 +665,7 @@ const compareInternal = (before: unknown, after: unknown, onDiff: DiffCallback, 
   const afterRootJso = root.after
 
   const apiCompatibilityScope = options?.apiCompatibilityScopeFunction?.() || API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE
+  const traversalPartition = options.initialTraversalPartition ?? options?.traversalPartitionFunction?.()
 
   if (!isObject(beforeRootJso) || !isObject(afterRootJso)) {
     // TODO
@@ -664,6 +684,7 @@ const compareInternal = (before: unknown, after: unknown, onDiff: DiffCallback, 
     createdMergedJso: options.createdMergedJso,
     compareScope: options.compareScope,
     apiCompatibilityScope: apiCompatibilityScope,
+    traversalPartition: traversalPartition,
   }
   syncCrawl<MergeState, CompareRule>(before, [hook], { state: rootState, rules: options.rules })
   return root.merged[JSO_ROOT]

@@ -49,8 +49,8 @@ export const combinersCompareResolver: CompareResolver = (ctx) => {
 
   const compareCombinerItems = (beforeItem: unknown, afterItem: unknown) =>
     ctx.options.mergedJsoCache.cacheEvaluationResultByFootprint(
-      [beforeItem, afterItem, scope],
-      ([b, a]) => nestedCompare(b, a, { ...options, rules, compareScope: ctx.scope }),
+      [beforeItem, afterItem, scope, ctx.traversalPartition],
+      ([b, a]) => nestedCompare(b, a, { ...options, rules, compareScope: ctx.scope, initialTraversalPartition: ctx.traversalPartition }),
       { diffs: [], ownerDiffEntry: undefined, merged: {} },
       (result, guard) => {
         guard.diffs.push(...result.diffs)

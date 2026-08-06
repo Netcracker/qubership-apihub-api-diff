@@ -36,6 +36,8 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
     } catch (error) {
       ctx.options.onCreateDiffError?.(`Unable to find diff type. ${error instanceof Error ? error.message : ''}`, mutableDiffCopy, ctx)
     }
+
+    mutableDiffCopy.type = applyClassificationOverride(mutableDiffCopy, ctx)
   }
   try {
     mutableDiffCopy.description = ctx.rules.description?.(mutableDiffCopy, ctx) ?? calculateDefaultDiffDescription(mutableDiffCopy)
@@ -47,6 +49,34 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
 
 export const reclassifyBreakingToRisky = (type: DiffType, ctx: CompareContext): DiffType => {
   return type === breaking && ctx.apiCompatibilityScope === API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE ? risky : type
+}
+
+/**
+ * Passes the classified difference to `diffClassificationOverride` and keeps the computed type when
+ * the override declines or throws.
+ * Declaration paths are taken from the diff being built, not from `ctx`, so the override reads what
+ * the diff will carry.
+ */
+const applyClassificationOverride = <D extends Diff>(diff: D, ctx: CompareContext): DiffType => {
+  const { diffClassificationOverride } = ctx.options
+  const type = diff.type
+  if (!diffClassificationOverride) {
+    return type
+  }
+
+  try {
+    const overridden = diffClassificationOverride({
+      action: diff.action,
+      type: type,
+      partition: ctx.traversalPartition,
+      beforeDeclarationPaths: 'beforeDeclarationPaths' in diff ? diff.beforeDeclarationPaths as JsonPath[] : [],
+      beforeValue: ctx.before?.value,
+    })
+    return overridden ?? type
+  } catch (error) {
+    ctx.options.onCreateDiffError?.(`Unable to override diff classification. ${error instanceof Error ? error.message : ''}`, diff, ctx)
+    return type
+  }
 }
 
 export function createDiffEntry(ctx: CompareContext, diff: Diff): DiffEntry<Diff> {
