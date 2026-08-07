@@ -100,32 +100,153 @@ export const payloadIdentity = (message: object, originsFlag: symbol): SemanticI
     throw new Error('Cannot derive a payload identity: the payload carries no origins record. ' +
       'Pass the same originsFlag the document was normalized with.')
   }
-  for (const key of Object.keys(payload)) {
-    const origins = resolveOrigins(payload, key, originsFlag)
-    if (!origins) {
+  for (const declarationPath of declarationPathsOf(payload, originsFlag)) {
+    if (!isSchemaDeclarationPath(declarationPath)) {
       continue
     }
-    for (const origin of origins) {
-      const fullPath = pathItemToFullPath(origin)
-      // Only a plain property declaration reveals its container's path, and it does so by ending
-      // with the property's own key. A synthesized value points at whatever produced it instead -
-      // a synthetic title, for one, origins to the schema node rather than to a `title` property -
-      // so dropping the last segment there would climb one level too far.
-      if (fullPath[fullPath.length - 1] !== key) {
-        continue
-      }
-      const declarationPath = fullPath.slice(0, -1)
-      if (!isSchemaDeclarationPath(declarationPath)) {
-        continue
-      }
-      return formatSemanticIdentity([declarationPath.join(DECLARATION_PATH_SEPARATOR)])
-    }
+    return formatSemanticIdentity([declarationPath.join(DECLARATION_PATH_SEPARATOR)])
   }
   return undefined
 }
 
 /**
- * Semantic identities for the entities of one normalized document.
+ * The paths the node itself is declared at, one per own property that carries a plain declaration
+ * origin.
+ *
+ * Only a plain property declaration reveals its container's path, and it does so by ending with
+ * the property's own key. A synthesized value points at whatever produced it instead - a synthetic
+ * title, for one, origins to the schema node rather than to a `title` property, and a defaulted
+ * value origins to the synthetic defaults record - so dropping the last segment there would climb
+ * one level too far.
+ *
+ * A node reached through a `$ref` yields the path of the declaration, not of the reference, which
+ * is the whole reason this is derived from origins rather than from the traversal.
+ */
+const declarationPathsOf = (node: object, originsFlag: symbol): JsonPath[] => {
+  const paths: JsonPath[] = []
+  for (const key of Object.keys(node)) {
+    const origins = resolveOrigins(node as Jso, key, originsFlag)
+    if (!origins) {
+      continue
+    }
+    for (const origin of origins) {
+      const fullPath = pathItemToFullPath(origin)
+      if (fullPath[fullPath.length - 1] === key) {
+        paths.push(fullPath.slice(0, -1))
+      }
+    }
+  }
+  return paths
+}
+
+/** The three entity kinds that carry a generated, hash-bearing key. */
+const ENTITY_CONTAINERS = ['messages', 'channels', 'operations'] as const
+
+export type AsyncApiEntityKind = typeof ENTITY_CONTAINERS[number]
+
+/** What an entity is, and the raw source key it is declared under. */
+export interface AsyncApiEntityRef {
+  readonly kind: AsyncApiEntityKind
+  readonly key: string
+}
+
+/** An opaque token equal for two nodes exactly when they are the same declared entity. */
+export const entityRefToken = ({ kind, key }: AsyncApiEntityRef): string => `${kind}/${key}`
+
+const asEntityRef = (declarationPath: JsonPath): AsyncApiEntityRef | undefined => {
+  const key = declarationPath[declarationPath.length - 1]
+  const container = declarationPath[declarationPath.length - 2]
+  if (!isString(key) || !isString(container)) {
+    return undefined
+  }
+  const kind = ENTITY_CONTAINERS.find(candidate => candidate === container)
+  return kind === undefined ? undefined : { kind, key }
+}
+
+interface MemoizedEntityRef {
+  readonly originsFlag: symbol
+  readonly ref: AsyncApiEntityRef | undefined
+}
+
+const entityRefCache = new WeakMap<object, MemoizedEntityRef>()
+
+/**
+ * What entity a node *is*, derived from where its own properties are declared.
+ *
+ * This exists because object identity is not enough. A message reached through an operation's
+ * `messages[]` is **not** the same object as the one under a channel's `messages` map - the
+ * compare pipeline's per-reference decoration makes them distinct - so a pairing keyed by object
+ * cannot be read at both sites. Its declaration key can, and it is the same `messageId` either
+ * way.
+ *
+ * Container shapes are matched rather than merely taking the last segment, so a property
+ * contributed by a `messageTraits` entry cannot be mistaken for the message's own declaration.
+ * Every matching path must agree: a node whose properties claim two different declarations names
+ * neither, and keeping the plain add/remove behaviour is the safe answer.
+ */
+export const entityRefOf = (node: object, originsFlag: symbol): AsyncApiEntityRef | undefined => {
+  const memoized = entityRefCache.get(node)
+  if (memoized && memoized.originsFlag === originsFlag) {
+    return memoized.ref
+  }
+  const ref = resolveEntityRef(node, originsFlag)
+  entityRefCache.set(node, { originsFlag, ref })
+  return ref
+}
+
+const resolveEntityRef = (node: object, originsFlag: symbol): AsyncApiEntityRef | undefined => {
+  let found: AsyncApiEntityRef | undefined
+  for (const declarationPath of declarationPathsOf(node, originsFlag)) {
+    const ref = asEntityRef(declarationPath)
+    if (ref === undefined) {
+      continue
+    }
+    if (found === undefined) {
+      found = ref
+    } else if (found.kind !== ref.kind || found.key !== ref.key) {
+      return undefined
+    }
+  }
+  return found
+}
+
+/**
+ * The raw source keys of one entity kind in one document - `operationId`, `channelId` or
+ * `messageId`, never a position in an array.
+ *
+ * This is what makes a *document-level* leftover rule expressible. §5.4's per-site rule ran the
+ * semantic pass only where the base resolver left both an addition and a removal; its real
+ * guarantee was that the pass can never contradict a key match. Globally that becomes: an entity
+ * enters the pairing pool only when its raw key is absent from the other document's key set for
+ * its kind. Without that, a sorted zip over an ambiguous group could pair `C -> A` while the base
+ * resolver had already matched `B -> B` at the site.
+ */
+export interface AsyncApiEntityKeySpace {
+  /**
+   * One representative node per key. A message is reachable as several distinct objects - the
+   * channel map value and each operation's array element - and any of them answers the identity
+   * questions the same way, so the first one found stands for all.
+   */
+  readonly entityOf: ReadonlyMap<string, object>
+
+  /** Every key of the kind. */
+  readonly keys: ReadonlySet<string>
+}
+
+/**
+ * The key a member message is known by, in a key space **shared by both documents**: the after
+ * side canonicalizes each message onto the before-side key it was paired with, so a member whose
+ * id merely churned reads identically on both sides.
+ *
+ * `undefined` means the message has no declaration key at all - it is declared inline, under no
+ * container this recognizes - which makes its container uncharacterizable, exactly as an
+ * unidentifiable payload does.
+ */
+export type MemberKeyResolver = (message: object) => string | undefined
+
+/**
+ * Semantic identities for the entities of one normalized document, plus the key spaces the
+ * document-level pairing needs.
  *
  * Every entity kind returns `undefined` when it cannot be characterized - no address, no action,
  * or a message whose payload has no stable declaration path. `undefined` disables semantic
@@ -133,49 +254,65 @@ export const payloadIdentity = (message: object, originsFlag: symbol): SemanticI
  * than pairing on a partial identity.
  */
 export interface AsyncApiLogicalIndex {
-  /** `action` x channel address x the sorted payload identities of the operation's messages. */
-  identityOfOperation(operation: object): SemanticIdentity | undefined
-
   /**
-   * Channel address x the sorted payload identities of the channel's messages. The address alone
-   * is not enough - a generator emits several channels on one address, differing only by text.
+   * `action` x channel address x the sorted payload identities of the operation's messages x the
+   * sorted canonical keys of those same messages.
    */
-  identityOfChannel(channel: object): SemanticIdentity | undefined
+  identityOfOperation(operation: object, memberKey: MemberKeyResolver): SemanticIdentity | undefined
 
   /**
-   * For a message reached through `components/messages`, where the surrounding action and address
-   * are not available locally: the sorted set of `(action, address)` pairs of every operation that
-   * references it, plus its payload identity.
+   * Channel address x the sorted payload identities of the channel's messages x the sorted
+   * canonical keys of those same messages. The address alone is not enough - a generator emits
+   * several channels on one address, differing only by text - and neither is the address plus the
+   * payload set, which is what leaves the reference sample's two channels indistinguishable.
+   *
+   * The member keys are what separate them. They are safe to use *because* they are canonical: a
+   * member whose id churned has already been mapped onto its before-side key by the message
+   * pairing, so this segment can only split an ambiguous group, never merge two distinct ones.
+   */
+  identityOfChannel(channel: object, memberKey: MemberKeyResolver): SemanticIdentity | undefined
+
+  /**
+   * The sorted set of anchors the message hangs off - `(action, address)` for every operation
+   * that references it and `(channel, address)` for every channel whose `messages` map holds it -
+   * plus its payload identity.
+   *
+   * Both anchor kinds are needed because the two reachability routes are independent: an
+   * operation's `messages[]` gives the action, a channel's map gives an address even for a
+   * message no operation references, such as one used only from a reply.
    */
   identityOfMessage(message: object): SemanticIdentity | undefined
 
-  /**
-   * The message's payload identity alone. Enough inside one channel or one operation, where the
-   * action and address are already fixed by the parent.
-   */
-  payloadIdentityOf(message: object): SemanticIdentity | undefined
-
-  /**
-   * The payload identity of a message inside an `operation.reply`, but only when that reply names
-   * a concrete channel with an address. A reply with no such channel has no anchor at all - a
-   * `reply.address` runtime expression is not one, and the parent operation's own address is the
-   * wrong one - so it keeps the plain add/remove behaviour.
-   *
-   * The anchor cannot be read off the message node, so it is resolved here during the walk.
-   */
-  replyPayloadIdentityOf(message: object): SemanticIdentity | undefined
+  readonly operations: AsyncApiEntityKeySpace
+  readonly channels: AsyncApiEntityKeySpace
+  readonly messages: AsyncApiEntityKeySpace
 }
 
 /** UTF-16 code unit ordering - deliberately not `localeCompare`, which is locale-dependent. */
 const compareStrings = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
 
-interface OperationContext {
+/**
+ * Stands in for an `action` in a message anchor contributed by a channel rather than by an
+ * operation. `send` and `receive` are the only actions AsyncAPI 3 defines, so this cannot collide
+ * with a real one, and it keeps every anchor a fixed-arity pair - which is what makes the flat
+ * segment list of `identityOfMessage` unambiguous.
+ */
+const CHANNEL_ANCHOR_ACTION = 'channel'
+
+interface MessageAnchor {
   readonly action: string
   readonly address: string
 }
 
-const compareOperationContexts = (a: OperationContext, b: OperationContext): number =>
+const compareMessageAnchors = (a: MessageAnchor, b: MessageAnchor): number =>
   compareStrings(a.action, b.action) || compareStrings(a.address, b.address)
+
+interface MutableKeySpace {
+  readonly entityOf: Map<string, object>
+  readonly keys: Set<string>
+}
+
+const emptyKeySpace = (): MutableKeySpace => ({ entityOf: new Map(), keys: new Set() })
 
 const objectValuesOf = (container: unknown, key: string): unknown[] => {
   if (!isObject(container)) { return [] }
@@ -194,8 +331,9 @@ const addressOf = (channel: unknown): string | undefined => {
 }
 
 const buildLogicalIndex = (root: unknown, originsFlag: symbol): AsyncApiLogicalIndex => {
-  // A message is reachable from several paths but is one object instance after normalization, so
-  // caching by object identity also collapses the repeated work.
+  // Keyed by object rather than by declaration key: a payload identity is a pure function of the
+  // node, so every instance of one message answers alike, and this only has to avoid repeating the
+  // origins walk for a node already seen.
   const payloadIdentities = new Map<object, SemanticIdentity | undefined>()
   const payloadIdentityOf = (message: object): SemanticIdentity | undefined => {
     if (!isAsyncApiMessageObject(message)) { return undefined }
@@ -206,97 +344,159 @@ const buildLogicalIndex = (root: unknown, originsFlag: symbol): AsyncApiLogicalI
   }
 
   /**
+   * The payload identities and the canonical member keys of one container's messages, the
+   * payloads sorted then the keys sorted.
+   *
    * All-or-nothing on purpose: one message we cannot characterize makes the whole container's
    * message set unknown, and pairing containers on a partial set could match two channels that
    * merely share an address and one message.
+   *
+   * Concatenating the two sorted runs is unambiguous because each contributes exactly one entry
+   * per message: a `2n`-long result always splits at `n`, so no arrangement of one run can be
+   * mistaken for an arrangement of the other.
    */
-  const payloadIdentitiesOf = (messages: readonly unknown[]): SemanticIdentity[] | undefined => {
-    const identities: SemanticIdentity[] = []
+  const memberIdentitiesOf = (
+    messages: readonly unknown[], memberKey: MemberKeyResolver,
+  ): string[] | undefined => {
+    const payloads: SemanticIdentity[] = []
+    const keys: string[] = []
     for (const message of messages) {
       if (!isAsyncApiMessageObject(message)) { return undefined }
-      const identity = payloadIdentityOf(message)
-      if (identity === undefined) { return undefined }
-      identities.push(identity)
+      const payload = payloadIdentityOf(message)
+      if (payload === undefined) { return undefined }
+      const key = memberKey(message)
+      if (key === undefined) { return undefined }
+      payloads.push(payload)
+      keys.push(key)
     }
-    return identities.sort(compareStrings)
+    return [...payloads.sort(compareStrings), ...keys.sort(compareStrings)]
   }
 
-  const identityOfOperation = (operation: object): SemanticIdentity | undefined => {
+  const identityOfOperation = (
+    operation: object, memberKey: MemberKeyResolver,
+  ): SemanticIdentity | undefined => {
     if (!isAsyncApiOperationObject(operation)) { return undefined }
     // `action` and `channel` are non-optional in the spec types, but api-diff also compares
     // intentionally invalid and partial documents - check at runtime, never trust required-ness.
     const action = isString(operation.action) ? operation.action : undefined
     const address = addressOf(operation.channel)
     if (action === undefined || address === undefined) { return undefined }
-    const payloads = payloadIdentitiesOf(arrayValuesOf(operation, 'messages'))
-    if (payloads === undefined) { return undefined }
-    return formatSemanticIdentity([action, address, ...payloads])
+    const members = memberIdentitiesOf(arrayValuesOf(operation, 'messages'), memberKey)
+    if (members === undefined) { return undefined }
+    return formatSemanticIdentity([action, address, ...members])
   }
 
-  const identityOfChannel = (channel: object): SemanticIdentity | undefined => {
+  const identityOfChannel = (
+    channel: object, memberKey: MemberKeyResolver,
+  ): SemanticIdentity | undefined => {
     const address = addressOf(channel)
     if (address === undefined) { return undefined }
-    const payloads = payloadIdentitiesOf(objectValuesOf(channel, 'messages'))
-    if (payloads === undefined) { return undefined }
-    return formatSemanticIdentity([address, ...payloads])
+    const members = memberIdentitiesOf(objectValuesOf(channel, 'messages'), memberKey)
+    if (members === undefined) { return undefined }
+    return formatSemanticIdentity([address, ...members])
   }
 
-  // message -> the (action, address) pairs of every operation referencing it. Built by one walk
-  // over `operations`, which works by object identity because normalization makes every reference
-  // resolve to the same instance.
-  const operationContexts = new Map<object, OperationContext[]>()
-  // The reply messages that do have a concrete reply-channel address behind them.
-  const anchoredReplyMessages = new Set<object>()
+  const components = isObject(root) ? root.components : undefined
 
-  const registerReply = (reply: unknown): void => {
-    if (!isObject(reply) || addressOf(reply.channel) === undefined) { return }
-    for (const message of arrayValuesOf(reply, 'messages')) {
-      if (isAsyncApiMessageObject(message)) { anchoredReplyMessages.add(message) }
+  const operations = emptyKeySpace()
+  const channels = emptyKeySpace()
+  const messages = emptyKeySpace()
+
+  /**
+   * Files a node under the key its own origins say it is declared at, and remembers the first
+   * node found for each key as that key's representative.
+   *
+   * Keyed by declaration rather than by the container's own key, so the operation array element
+   * and the channel map value of one message land on the same entry - which is the whole point,
+   * since they are different objects.
+   */
+  const register = (node: unknown): AsyncApiEntityRef | undefined => {
+    if (!isObject(node)) { return undefined }
+    const ref = entityRefOf(node, originsFlag)
+    if (ref === undefined) { return undefined }
+    const space = ref.kind === 'messages' ? messages : ref.kind === 'channels' ? channels : operations
+    space.keys.add(ref.key)
+    if (!space.entityOf.has(ref.key)) { space.entityOf.set(ref.key, node) }
+    return ref
+  }
+
+  // message key -> the anchors it hangs off. Keyed by declaration key for the same reason.
+  const messageAnchors = new Map<string, MessageAnchor[]>()
+
+  const anchor = (message: unknown, action: string, address: string): void => {
+    const ref = register(message)
+    if (ref === undefined || ref.kind !== 'messages') { return }
+    const anchors = messageAnchors.get(ref.key)
+    if (!anchors) {
+      messageAnchors.set(ref.key, [{ action, address }])
+      return
+    }
+    // A set, not a list: one channel is walked both in its own right and as some operation's
+    // `channel`, and a message may be referenced by several operations sharing an action and an
+    // address. How many times an anchor is reachable is not part of what the message is.
+    if (!anchors.some(known => known.action === action && known.address === address)) {
+      anchors.push({ action, address })
     }
   }
 
-  for (const operation of objectValuesOf(root, 'operations')) {
-    if (!isAsyncApiOperationObject(operation)) { continue }
-    registerReply(operation.reply)
+  const registerChannel = (channel: unknown): void => {
+    register(channel)
+    const address = addressOf(channel)
+    for (const message of objectValuesOf(channel, 'messages')) {
+      if (address === undefined) { register(message) } else { anchor(message, CHANNEL_ANCHOR_ACTION, address) }
+    }
+  }
+
+  const registerOperation = (operation: unknown): void => {
+    register(operation)
+    if (!isAsyncApiOperationObject(operation)) { return }
+    registerChannel(operation.channel)
+    const reply = isObject(operation) ? operation.reply : undefined
+    if (isObject(reply)) {
+      registerChannel(reply.channel)
+      for (const message of arrayValuesOf(reply, 'messages')) { register(message) }
+    }
     const action = isString(operation.action) ? operation.action : undefined
     const address = addressOf(operation.channel)
-    if (action === undefined || address === undefined) { continue }
     for (const message of arrayValuesOf(operation, 'messages')) {
-      if (!isAsyncApiMessageObject(message)) { continue }
-      const contexts = operationContexts.get(message)
-      if (contexts) {
-        contexts.push({ action, address })
+      if (action === undefined || address === undefined) {
+        register(message)
       } else {
-        operationContexts.set(message, [{ action, address }])
+        anchor(message, action, address)
       }
     }
   }
 
-  // The reply rules are shared between `operations/*/reply` and `components/replies/*`, so a reply
-  // reachable only through components has to be registered too.
-  const components = isObject(root) ? root.components : undefined
+  for (const message of objectValuesOf(components, 'messages')) { register(message) }
+  for (const channel of objectValuesOf(root, 'channels')) { registerChannel(channel) }
+  for (const channel of objectValuesOf(components, 'channels')) { registerChannel(channel) }
+  for (const operation of objectValuesOf(root, 'operations')) { registerOperation(operation) }
+  for (const operation of objectValuesOf(components, 'operations')) { registerOperation(operation) }
+  // The reply rules are shared between `operations/*_/reply` and `components/replies/*_`, so a
+  // reply reachable only through components has to be walked too.
   for (const reply of objectValuesOf(components, 'replies')) {
-    registerReply(reply)
-  }
-
-  const replyPayloadIdentityOf = (message: object): SemanticIdentity | undefined => {
-    return anchoredReplyMessages.has(message) ? payloadIdentityOf(message) : undefined
+    registerChannel(isObject(reply) ? reply.channel : undefined)
+    for (const message of arrayValuesOf(reply, 'messages')) { register(message) }
   }
 
   const identityOfMessage = (message: object): SemanticIdentity | undefined => {
     const payload = payloadIdentityOf(message)
     if (payload === undefined) { return undefined }
-    // Sorted so a message referenced by several operations still gets a deterministic identity.
-    const contexts = [...operationContexts.get(message) ?? []].sort(compareOperationContexts)
-    return formatSemanticIdentity([...contexts.flatMap(({ action, address }) => [action, address]), payload])
+    const ref = entityRefOf(message, originsFlag)
+    // Sorted so a message reachable from several channels or operations still gets a
+    // deterministic identity.
+    const anchors = [...(ref === undefined ? [] : messageAnchors.get(ref.key) ?? [])]
+      .sort(compareMessageAnchors)
+    return formatSemanticIdentity([...anchors.flatMap(({ action, address }) => [action, address]), payload])
   }
 
   return {
     identityOfOperation,
     identityOfChannel,
     identityOfMessage,
-    payloadIdentityOf,
-    replyPayloadIdentityOf,
+    operations,
+    channels,
+    messages,
   }
 }
 

@@ -1,7 +1,13 @@
 import type { v3 as AsyncAPIV3 } from '@asyncapi/parser/esm/spec-types'
 import { normalize } from '@netcracker/qubership-apihub-api-unifier'
 
-import { formatSemanticIdentity, logicalIndexOf, payloadIdentity } from '../src/asyncapi/asyncapi3.identity'
+import {
+  entityRefOf,
+  formatSemanticIdentity,
+  logicalIndexOf,
+  MemberKeyResolver,
+  payloadIdentity,
+} from '../src/asyncapi/asyncapi3.identity'
 import { loadAsyncApiSuiteCase, parseAsyncApiAndAssertValid, resolved } from './helper/asyncapi'
 import { TEST_DEFAULTS_FLAG, TEST_ORIGINS_FLAG, TEST_SYNTHETIC_TITLE_FLAG } from './helper'
 import { describe, expect, it } from '@jest/globals'
@@ -117,6 +123,14 @@ describe('logicalIndexOf', () => {
   /** Mirrors the serialization of `formatSemanticIdentity`, pinning the wire form it produces. */
   const identity = (...segments: string[]): string => segments.join('|')
 
+  /**
+   * What the *before* side of a comparison passes: every message named by the key it is declared
+   * under. The after side substitutes the paired before-key, which is what makes the member-key
+   * segment comparable across two documents.
+   */
+  const ownKey = (): MemberKeyResolver =>
+    message => entityRefOf(message, TEST_ORIGINS_FLAG)?.key
+
   // Every case in this block reads the same before-document, normalized fresh so no case can
   // observe another's normalization.
   const sampleDocument = (): AsyncAPIV3.AsyncAPIObject =>
@@ -133,41 +147,60 @@ describe('logicalIndexOf', () => {
     messageId: string,
   ): AsyncAPIV3.MessageObject => resolved(document.components?.messages?.[messageId])
 
-  it('identifies an operation by action, address and its messages payloads', () => {
+  it('identifies an operation by action, address and its messages payloads and keys', () => {
     const document = sampleDocument()
     const index = logicalIndexOf(document, TEST_ORIGINS_FLAG)
 
-    expect(index.identityOfOperation(operation(document, HASHED_OPERATION_ID)))
-      .toBe(identity('send', ADDRESS, SAMPLE_PAYLOAD_IDENTITY))
+    expect(index.identityOfOperation(operation(document, HASHED_OPERATION_ID), ownKey()))
+      .toBe(identity('send', ADDRESS, SAMPLE_PAYLOAD_IDENTITY, 'OrderEvent_1001'))
   })
 
-  it('identifies a channel by address and its messages payloads', () => {
+  it('identifies a channel by address and its messages payloads and keys', () => {
     const document = sampleDocument()
     const index = logicalIndexOf(document, TEST_ORIGINS_FLAG)
 
-    expect(index.identityOfChannel(channel(document, HASHED_CHANNEL_ID)))
-      .toBe(identity(ADDRESS, SAMPLE_PAYLOAD_IDENTITY))
+    expect(index.identityOfChannel(channel(document, HASHED_CHANNEL_ID), ownKey()))
+      .toBe(identity(ADDRESS, SAMPLE_PAYLOAD_IDENTITY, 'OrderEvent_1001'))
   })
 
-  it('identifies a components message by the referencing operations action and address', () => {
+  it('identifies a components message by the channel and the operations it hangs off', () => {
     const document = sampleDocument()
     const index = logicalIndexOf(document, TEST_ORIGINS_FLAG)
 
+    // Both anchor kinds, sorted and deduplicated: the channel whose `messages` map holds it, then
+    // the operation that references it. The channel anchor is what gives a message no operation
+    // references - one used only from a reply - an address of its own. It appears once even
+    // though the channel is reached twice, in its own right and as the operation's `channel`.
     expect(index.identityOfMessage(componentMessage(document, 'OrderEvent_1001')))
-      .toBe(identity('send', ADDRESS, SAMPLE_PAYLOAD_IDENTITY))
+      .toBe(identity('channel', ADDRESS, 'send', ADDRESS, SAMPLE_PAYLOAD_IDENTITY))
   })
 
-  it('gives the two same-address entities the same identity', () => {
-    // This is the ambiguous group the sample exists to produce: the two channels (and the two
-    // operations on them) differ only by description, so by the stated identity criterion they
-    // are consumer-equivalent.
+  it('separates the two same-address entities by their member keys, and by nothing else', () => {
+    // The ambiguous group the sample exists to produce: the two channels (and the two operations
+    // on them) share an address and a payload set, and differ only by description. The member key
+    // is the one segment that tells them apart - which is why the pairing canonicalizes it first,
+    // so that a member whose id merely churned cannot masquerade as a difference.
+    const document = sampleDocument()
+    const index = logicalIndexOf(document, TEST_ORIGINS_FLAG)
+    const oneKey: MemberKeyResolver = () => 'M'
+
+    expect(index.identityOfChannel(channel(document, PLAIN_CHANNEL_ID), ownKey()))
+      .not.toBe(index.identityOfChannel(channel(document, HASHED_CHANNEL_ID), ownKey()))
+    expect(index.identityOfChannel(channel(document, PLAIN_CHANNEL_ID), oneKey))
+      .toBe(index.identityOfChannel(channel(document, HASHED_CHANNEL_ID), oneKey))
+    expect(index.identityOfOperation(operation(document, PLAIN_OPERATION_ID), oneKey))
+      .toBe(index.identityOfOperation(operation(document, HASHED_OPERATION_ID), oneKey))
+  })
+
+  it('gives a message with no source key no key space entry, so it never enters the pool', () => {
+    // The pool is keyed by raw source key, so an entity that has none simply is not in it. That
+    // is D9's reply gate: a reply message declared inline, under no channel's `messages` map,
+    // keeps the plain add/remove behaviour without a rule site having to test for it.
     const document = sampleDocument()
     const index = logicalIndexOf(document, TEST_ORIGINS_FLAG)
 
-    expect(index.identityOfChannel(channel(document, PLAIN_CHANNEL_ID)))
-      .toBe(index.identityOfChannel(channel(document, HASHED_CHANNEL_ID)))
-    expect(index.identityOfOperation(operation(document, PLAIN_OPERATION_ID)))
-      .toBe(index.identityOfOperation(operation(document, HASHED_OPERATION_ID)))
+    expect(index.messages.keys).toContain('OrderEvent_1001')
+    expect(entityRefOf({}, TEST_ORIGINS_FLAG)).toBeUndefined()
   })
 
   it('is memoized per root, so the walk happens once', () => {
@@ -187,10 +220,11 @@ describe('logicalIndexOf', () => {
     // The spec types mark `action` and `channel` required, but api-diff also compares
     // intentionally invalid and partial documents.
     const index = logicalIndexOf({}, TEST_ORIGINS_FLAG)
+    const anyKey: MemberKeyResolver = () => 'M'
 
-    expect(index.identityOfOperation({ channel: { address: 'a' } })).toBeUndefined()
-    expect(index.identityOfOperation({ action: 'send' })).toBeUndefined()
-    expect(index.identityOfChannel({})).toBeUndefined()
+    expect(index.identityOfOperation({ channel: { address: 'a' } }, anyKey)).toBeUndefined()
+    expect(index.identityOfOperation({ action: 'send' }, anyKey)).toBeUndefined()
+    expect(index.identityOfChannel({}, anyKey)).toBeUndefined()
   })
 
   it('gives no identity when any message of a container has no payload identity', () => {
@@ -218,7 +252,17 @@ describe('logicalIndexOf', () => {
     const document = normalizeDocument(source)
     const index = logicalIndexOf(document, TEST_ORIGINS_FLAG)
 
-    expect(index.identityOfChannel(channel(document, 'ch'))).toBeUndefined()
+    expect(index.identityOfChannel(channel(document, 'ch'), ownKey())).toBeUndefined()
+  })
+
+  it('gives no identity when a member message has no source key', () => {
+    // Same all-or-nothing rule, applied to the other half of a member's contribution: a container
+    // we cannot name every member of is one we must not pair.
+    const document = sampleDocument()
+    const index = logicalIndexOf(document, TEST_ORIGINS_FLAG)
+
+    expect(index.identityOfChannel(channel(document, HASHED_CHANNEL_ID), () => undefined))
+      .toBeUndefined()
   })
 })
 

@@ -223,10 +223,9 @@ describe('AsyncAPI semantic entity mapping', () => {
       const messages = at(merged, 'channels', 'orderEvents', 'messages')
 
       // Two messages on one channel sharing `components/schemas/OrderEvent` and differing only by
-      // description: within a channel the identity is the payload identity alone, so the two are
-      // indistinguishable and the tie-break decides. It zips sorted before keys against sorted
-      // after keys - [_1001, _2002] against [_3003, _9001] - which lands each message on the
-      // other's node.
+      // description, so they are indistinguishable and the tie-break decides. It zips sorted
+      // before keys against sorted after keys - [_1001, _2002] against [_3003, _9001] - which
+      // lands each message on the other's node.
       //
       // Pinned exactly, because this ordering is not predictable by inspection: an earlier version
       // of this fixture named the ids `OrderEventAlpha_*` / `OrderEventBeta_*`, where the
@@ -234,34 +233,51 @@ describe('AsyncAPI semantic entity mapping', () => {
       expect(beforeKeyOf(at(messages, 'OrderEvent_3003'))).toBe('OrderEvent_1001')
       expect(beforeKeyOf(at(messages, 'OrderEvent_9001'))).toBe('OrderEvent_2002')
 
-      // The cost D6 accepts: the swap surfaces as two descriptions reading as changed, rather than
-      // as two messages removed and two added. Strictly less noise, and every diff is an
-      // annotation - nothing is reported as breaking.
+      // The assertion this case exists for. The operation's `messages[]` holds the same two
+      // objects under positions rather than ids, and used to pair them the other way round - the
+      // tie-break sorted them by index, and both indices matched - so its subtree reported nothing
+      // while the channel above reported two changes. Now one pairing serves both containers, so
+      // the array crosses: before-position 0 carries the message after-position 1 holds.
+      //
+      // Asserted here rather than through `diffs.length`, which is insensitive to it: a `Diff` is
+      // cached per (value pair, declaration paths, scope), so re-pairing inside one container can
+      // change nothing observable in the count.
+      const operationMessages = at(merged, 'operations', 'sendOrderEvent', 'messages')
+      expect(beforeKeyOf(at(operationMessages, '0'))).toBe(0)
+      expect(beforeKeyOf(at(operationMessages, '1'))).toBe(1)
+      expect(at(operationMessages, '0').description).toBe('Event representing beta order changes')
+      expect(at(operationMessages, '1').description).toBe('Event representing alpha order changes')
+
+      // The cost D6 accepts: the swap surfaces as descriptions reading as changed, rather than as
+      // two messages removed and two added. Strictly less noise, and every diff is an annotation -
+      // nothing is reported as breaking.
       expect(wholeEntityDiffs(diffs)).toBeEmpty()
-      expect(diffs).toHaveLength(4) // two descriptions, each in the root and send scopes
       expect(diffs.every(diff => diff.type === annotation)).toBe(true)
+      // Six: each of the two descriptions at its `components` declaration path in the root and
+      // send scopes, plus at its channel declaration path in the send scope.
+      expect(diffs).toHaveLength(6)
     })
 
-    it('both-channel-ids-changed pairs by the tie-break and says so via beforeKeyProperty', async () => {
+    it('both-channel-ids-changed pairs by the member key, not by the tie-break', async () => {
       const { diffs, merged } = await compareFilesWithMerge(
         SUITE_ID, 'both-channel-ids-changed', TEST_SPEC_TYPE_ASYNC_API, undefined,
         { beforeKeyProperty: BEFORE_KEY_PROPERTY },
       )
 
       // Both channels sit on one address with one `components/schemas/OrderEvent` message each,
-      // so they share an identity exactly. Refusing to pair would reproduce the remove+add noise
-      // this feature removes, so they pair 1-1 in tie-break order over the raw source key:
-      // sorted before keys against sorted after keys.
+      // so an address-and-payload identity leaves them indistinguishable and the tie-break used to
+      // decide - the wrong way round, costing two swapped descriptions.
+      //
+      // Their member message ids did not churn, so the message keys separate them exactly. That
+      // segment is safe to use because it is canonicalized first: a member whose id *had* churned
+      // would already have been mapped onto its before-side key, which is what keeps
+      // `all-ids-changed` pairing.
       const channels = at(merged, 'channels')
-      expect(beforeKeyOf(at(channels, 'orderEvents_2002'))).toBe('orderEvents')
-      expect(beforeKeyOf(at(channels, 'orderEvents_3003'))).toBe('orderEvents_1001')
+      expect(beforeKeyOf(at(channels, 'orderEvents_3003'))).toBe('orderEvents')
+      expect(beforeKeyOf(at(channels, 'orderEvents_2002'))).toBe('orderEvents_1001')
 
-      // That pairing is the "wrong" one semantically - `orderEvents_3003` was `orderEvents` - and
-      // the cost is exactly what D6 accepts: the two descriptions read as swapped rather than as
-      // two channels removed and two added.
-      expect(wholeEntityDiffs(diffs)).toBeEmpty()
-      expect(diffs).toHaveLength(4) // two channel descriptions and two message descriptions
-      expect(diffs.every(diff => diff.type === annotation)).toBe(true)
+      // And with the channels paired correctly, nothing about the document changed.
+      expect(diffs).toBeEmpty()
     })
   })
 

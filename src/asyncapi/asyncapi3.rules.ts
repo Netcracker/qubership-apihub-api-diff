@@ -216,9 +216,9 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
     '/address': { $: allUnclassified },
     '/messages': {
       $: addNonBreaking,
-      // The parent channel already fixes the address, so the payload identity alone identifies
-      // a message here.
-      mapping: semanticMapping(objectMappingResolver, index => index.payloadIdentityOf),
+      // Every site reads one document-level pairing, so a message reached here and through an
+      // operation's `messages[]` is paired the same way in both.
+      mapping: semanticMapping(objectMappingResolver),
       '/*': { ...messageRules, ...suppressSemanticRename },
     },
     '/title': { $: allAnnotation },
@@ -253,9 +253,10 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
     '/channel': channelRules,
     '/messages': {
       $: allUnclassified,
-      // Gated on the reply naming a concrete channel with an address: a `reply.address` runtime
-      // expression is not an anchor, and the parent operation's address is the wrong one.
-      mapping: semanticMapping(arrayMappingResolver, index => index.replyPayloadIdentityOf),
+      // A reply message declared inline, under no channel's `messages` map, has no source key
+      // and so never enters the pairing pool - which is D9's "no concrete reply channel, no
+      // identity" gate, reached by the key space rather than by a rule-site condition.
+      mapping: semanticMapping(arrayMappingResolver),
       '/*': { ...messageRules, ...suppressSemanticRename },
     },
     ...asyncApiSpecificationExtensionRulesFunction(),
@@ -290,13 +291,12 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
     '/traits': operationTraitsRules,
     '/messages': {
       $: allUnclassified,
-      // The parent operation fixes both the action and the address, so the payload identity alone
-      // identifies a message here. `ignoreKeyDifference` below predates this and is required by
-      // the first-reference-key resolver, which already remaps indices on reorder.
-      mapping: semanticMapping(
-        firstReferenceKeyMapping ?? arrayMappingResolver,
-        index => index.payloadIdentityOf,
-      ),
+      // The site where per-container pairing was unsound: these elements key by position while a
+      // channel's `messages` map keys by message id, and the two hold different candidate sets.
+      // One document-level pairing makes both differences invisible. `ignoreKeyDifference` below
+      // predates this and is required by the first-reference-key resolver, which already remaps
+      // indices on reorder.
+      mapping: semanticMapping(firstReferenceKeyMapping ?? arrayMappingResolver),
       '/*': {
         ...messageRules,
         $: [nonBreaking, breaking, unclassified],
@@ -308,7 +308,7 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
 
   const operationsRules: CompareRules = {
     $: addNonBreaking,
-    mapping: semanticMapping(objectMappingResolver, index => index.identityOfOperation),
+    mapping: semanticMapping(objectMappingResolver),
     '/*': ({ value }) => {
       // Determine if this is a send or receive operation based on the action field
       const action = (value as Record<string, unknown>)?.action
@@ -331,12 +331,12 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
     },
     '/channels': {
       $: [nonBreaking, breaking, breaking],
-      mapping: semanticMapping(objectMappingResolver, index => index.identityOfChannel),
+      mapping: semanticMapping(objectMappingResolver),
       '/*': { ...channelRules, ...suppressSemanticRename },
     },
     '/operations': {
       $: [nonBreaking, breaking, breaking],
-      mapping: semanticMapping(objectMappingResolver, index => index.identityOfOperation),
+      mapping: semanticMapping(objectMappingResolver),
       '/*': ({ value }) => {
         const action = (value as Record<string, unknown>)?.action
         const isSendAction = action === ASYNCAPI_ACTION_SEND
@@ -345,9 +345,9 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
     },
     '/messages': {
       $: allUnclassified,
-      // No parent fixes the action or the address here, so a components message needs the
-      // spec-wide index to learn who references it.
-      mapping: semanticMapping(objectMappingResolver, index => index.identityOfMessage),
+      // The same pairing again - a components message and the channel entry referencing it are
+      // one object after normalization, so they cannot disagree.
+      mapping: semanticMapping(objectMappingResolver),
       '/*': { ...messageRules, ...suppressSemanticRename },
     },
     '/securitySchemes': {
@@ -456,7 +456,7 @@ export const asyncApi3Rules = (options: AsyncApi3RulesOptions): CompareRules => 
     '/defaultContentType': { $: allUnclassified },
     '/channels': {
       $: allUnclassified,
-      mapping: semanticMapping(objectMappingResolver, index => index.identityOfChannel),
+      mapping: semanticMapping(objectMappingResolver),
       '/*': { ...channelRules, ...suppressSemanticRename },
     },
     '/operations': operationsRules,

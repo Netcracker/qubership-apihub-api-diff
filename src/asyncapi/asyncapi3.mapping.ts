@@ -1,20 +1,15 @@
 import { CompareContext, MapKeysResult, MappingArrayResolver, MappingObjectResolver } from '../types'
 import { isObject } from '../utils'
-import { AsyncApiLogicalIndex, logicalIndexOf } from './asyncapi3.identity'
+import {
+  AsyncApiEntityKeySpace,
+  AsyncApiEntityKind,
+  AsyncApiLogicalIndex,
+  entityRefOf,
+  entityRefToken,
+  logicalIndexOf,
+  MemberKeyResolver,
+} from './asyncapi3.identity'
 import { SemanticIdentity } from './asyncapi3.types'
-
-/**
- * Picks which identity of the index applies at a rule site: `payloadIdentityOf` inside a channel
- * or an operation (where the action and address are already fixed by the parent),
- * `identityOfChannel` / `identityOfOperation` / `identityOfMessage` at the top-level maps.
- *
- * There is deliberately no `before | after` parameter. A leftover before-key indexes into the
- * before document and a leftover after-key into the after document, so the wrapper resolves each
- * side's index itself and applies the matching one. The selector only ever sees one document's
- * index and a value from that same document.
- */
-export type SemanticIdentitySelector =
-  (index: AsyncApiLogicalIndex) => (value: object) => SemanticIdentity | undefined
 
 /**
  * The result of pairing leftovers. Uses before/after vocabulary rather than `MapKeysResult`'s
@@ -106,18 +101,55 @@ export const pairLeftoversByIdentity = <K extends PropertyKey>(
   return { pairs, unpairedBefore, unpairedAfter }
 }
 
-const identityMapOf = (
-  keys: readonly PropertyKey[],
-  container: Record<PropertyKey, unknown>,
-  identityOf: (value: object) => SemanticIdentity | undefined,
-): Map<PropertyKey, SemanticIdentity> => {
-  const identities = new Map<PropertyKey, SemanticIdentity>()
-  for (const key of keys) {
-    const value = container[key]
-    if (!isObject(value)) {
+/**
+ * Which after-side entity each before-side entity was paired with, decided **once per document
+ * pair** and read by every rule site.
+ *
+ * The alternative - deciding at each site, from whatever that site's container happened to hold -
+ * is unsound, because the same two entities reach different answers under different containers.
+ * A channel's `messages` map keys by message id while an operation's `messages[]` keys by
+ * position, so a tie-break over "the container's own key" sorts one group two ways; and the two
+ * containers hold different candidate sets, so they are not even the same group. Deciding once,
+ * over a pool assembled from the whole document, makes both differences disappear together.
+ */
+export interface AsyncApiSemanticPairing {
+  /**
+   * An opaque token naming the entity a node *is*, equal for two nodes exactly when they are the
+   * same declared entity of the same document. Object identity would not do: the compare
+   * pipeline's per-reference decoration makes `operations/*_/messages[i]` a different object from
+   * the `channels/*_/messages` entry it references.
+   */
+  tokenOf(entity: object): string | undefined
+
+  /** The token of the after-side entity this before-side node was paired with. */
+  counterpartTokenOf(beforeEntity: object): string | undefined
+}
+
+const EMPTY_PAIRING: AsyncApiSemanticPairing = {
+  tokenOf: () => undefined,
+  counterpartTokenOf: () => undefined,
+}
+
+/**
+ * The identities of the entities that enter the pairing pool: those whose raw source key is
+ * absent from the other document's key set for their kind.
+ *
+ * That key-absence test is the document-level form of the per-site "only when the base resolver
+ * left both an addition and a removal" trigger, and it carries the same guarantee - the semantic
+ * pass can never contradict a key match. Without it, an ambiguous group whose keys partly agree
+ * could be zipped into pairs that cut across what the base resolver already matched at the site.
+ */
+const leftoverIdentities = (
+  space: AsyncApiEntityKeySpace,
+  otherKeys: ReadonlySet<string>,
+  identityOf: (entity: object) => SemanticIdentity | undefined,
+): Map<string, SemanticIdentity> => {
+  const identities = new Map<string, SemanticIdentity>()
+  for (const [key, entity] of space.entityOf) {
+    if (otherKeys.has(key)) {
       continue
     }
-    const identity = identityOf(value)
+    const identity = identityOf(entity)
     if (identity === undefined) {
       continue
     }
@@ -127,22 +159,200 @@ const identityMapOf = (
 }
 
 /**
+ * Decides the whole pairing for one document pair, bottom-up.
+ *
+ * Messages are paired first because a channel's and an operation's identity both name their
+ * member messages by a canonical key, which only exists once the messages have been paired. That
+ * ordering is what separates two containers a payload set alone leaves indistinguishable: the
+ * reference sample's two channels share an address and a payload set, and differ only in which
+ * message they hold.
+ */
+const buildSemanticPairing = (
+  beforeRoot: unknown, afterRoot: unknown, originsFlag: symbol,
+): AsyncApiSemanticPairing => {
+  const before = logicalIndexOf(beforeRoot, originsFlag)
+  const after = logicalIndexOf(afterRoot, originsFlag)
+  const counterpartTokens = new Map<string, string>()
+  const tokenOf = (entity: object): string | undefined => {
+    const ref = entityRefOf(entity, originsFlag)
+    return ref === undefined ? undefined : entityRefToken(ref)
+  }
+
+  const pairKind = (
+    kind: AsyncApiEntityKind,
+    kindOf: (index: AsyncApiLogicalIndex) => AsyncApiEntityKeySpace,
+    identityOfBefore: (entity: object) => SemanticIdentity | undefined,
+    identityOfAfter: (entity: object) => SemanticIdentity | undefined,
+  ): ReadonlyArray<readonly [string, string]> => {
+    const beforeSpace = kindOf(before)
+    const afterSpace = kindOf(after)
+    const { pairs } = pairLeftoversByIdentity(
+      leftoverIdentities(beforeSpace, afterSpace.keys, identityOfBefore),
+      leftoverIdentities(afterSpace, beforeSpace.keys, identityOfAfter),
+      compareSemanticTieBreak,
+    )
+    for (const [beforeKey, afterKey] of pairs) {
+      counterpartTokens.set(entityRefToken({ kind, key: beforeKey }), entityRefToken({ kind, key: afterKey }))
+    }
+    return pairs
+  }
+
+  const messagePairs = pairKind(
+    'messages', index => index.messages,
+    entity => before.identityOfMessage(entity),
+    entity => after.identityOfMessage(entity),
+  )
+
+  // The after side reads its member messages in the *before* side's key space, so a member whose
+  // id merely churned contributes the same segment on both sides and cannot, by itself, keep two
+  // containers apart. A member that was not paired keeps its own key, which is then a genuine
+  // difference between the two containers.
+  const beforeKeyOfAfterMessage = new Map<string, string>(
+    messagePairs.map(([beforeKey, afterKey]) => [afterKey, beforeKey]),
+  )
+  const memberKeyOf = (canonicalize: boolean): MemberKeyResolver => message => {
+    const ref = entityRefOf(message, originsFlag)
+    if (ref === undefined || ref.kind !== 'messages') { return undefined }
+    return canonicalize ? beforeKeyOfAfterMessage.get(ref.key) ?? ref.key : ref.key
+  }
+  const beforeMemberKey = memberKeyOf(false)
+  const afterMemberKey = memberKeyOf(true)
+
+  pairKind(
+    'channels', index => index.channels,
+    entity => before.identityOfChannel(entity, beforeMemberKey),
+    entity => after.identityOfChannel(entity, afterMemberKey),
+  )
+  pairKind(
+    'operations', index => index.operations,
+    entity => before.identityOfOperation(entity, beforeMemberKey),
+    entity => after.identityOfOperation(entity, afterMemberKey),
+  )
+
+  return {
+    tokenOf,
+    counterpartTokenOf: beforeEntity => {
+      const token = tokenOf(beforeEntity)
+      return token === undefined ? undefined : counterpartTokens.get(token)
+    },
+  }
+}
+
+interface MemoizedPairing {
+  readonly originsFlag: symbol
+  readonly pairing: AsyncApiSemanticPairing
+}
+
+const pairingCache = new WeakMap<object, WeakMap<object, MemoizedPairing>>()
+
+/**
+ * The pairing for a pair of normalized roots, memoized so it is decided once per `apiDiff` call
+ * however many rule sites ask for it. Nested rather than single-keyed because the decision belongs
+ * to the *pair*: the same before-document compared against two after-documents has two answers.
+ *
+ * The origins flag is part of what was computed, so a different one rebuilds rather than answering
+ * with identities derived from another document's origins - the same guard `logicalIndexOf` uses.
+ */
+export const semanticPairingOf = (
+  beforeRoot: unknown, afterRoot: unknown, originsFlag: symbol,
+): AsyncApiSemanticPairing => {
+  if (!isObject(beforeRoot) || !isObject(afterRoot)) {
+    return EMPTY_PAIRING
+  }
+  let byAfterRoot = pairingCache.get(beforeRoot)
+  if (!byAfterRoot) {
+    byAfterRoot = new WeakMap()
+    pairingCache.set(beforeRoot, byAfterRoot)
+  }
+  const memoized = byAfterRoot.get(afterRoot)
+  if (memoized && memoized.originsFlag === originsFlag) {
+    return memoized.pairing
+  }
+  const pairing = buildSemanticPairing(beforeRoot, afterRoot, originsFlag)
+  byAfterRoot.set(afterRoot, { originsFlag, pairing })
+  return pairing
+}
+
+/**
+ * Rewrites a base mapping result in the light of an already-decided pairing. Pure, and separate
+ * from `withSemanticMapping` because this is the whole of the per-site logic once the deciding has
+ * moved out: for each key the base resolver could not match, ask which after-side object its value
+ * was paired with, and find the leftover after-key holding that object.
+ *
+ * Restricting the search to `result.added` is what keeps the base resolver authoritative - a pair
+ * it produced is never touched - and `claimed` keeps the result a function even if one object is
+ * reachable under two keys of the same container.
+ */
+export const applySemanticPairing = (
+  result: MapKeysResult<PropertyKey>,
+  before: Record<PropertyKey, unknown>,
+  after: Record<PropertyKey, unknown>,
+  pairing: AsyncApiSemanticPairing,
+): MapKeysResult<PropertyKey> => {
+  if (result.added.length === 0 || result.removed.length === 0) {
+    return result
+  }
+
+  const addedKeyOf = new Map<string, PropertyKey>()
+  for (const key of result.added) {
+    const value = after[key]
+    const token = isObject(value) ? pairing.tokenOf(value) : undefined
+    if (token !== undefined && !addedKeyOf.has(token)) {
+      addedKeyOf.set(token, key)
+    }
+  }
+
+  const pairs: Array<readonly [PropertyKey, PropertyKey]> = []
+  const claimed = new Set<PropertyKey>()
+  for (const beforeKey of result.removed) {
+    const value = before[beforeKey]
+    if (!isObject(value)) {
+      continue
+    }
+    const counterpart = pairing.counterpartTokenOf(value)
+    if (counterpart === undefined) {
+      continue
+    }
+    const afterKey = addedKeyOf.get(counterpart)
+    if (afterKey === undefined || claimed.has(afterKey)) {
+      continue
+    }
+    claimed.add(afterKey)
+    pairs.push([beforeKey, afterKey])
+  }
+  if (pairs.length === 0) {
+    return result
+  }
+
+  // Translate the pairing back into the engine's vocabulary: a pair becomes a `mapped` entry,
+  // and whatever stayed unpaired keeps the base resolver's verdict. Filtering the base arrays
+  // preserves their original order and keeps leftovers the pairing had no opinion about.
+  const pairedBefore = new Set<PropertyKey>(pairs.map(([beforeKey]) => beforeKey))
+  const mapped = { ...result.mapped } as Record<PropertyKey, PropertyKey>
+  for (const [beforeKey, afterKey] of pairs) {
+    mapped[beforeKey] = afterKey
+  }
+  return {
+    mapped,
+    removed: result.removed.filter(key => !pairedBefore.has(key)),
+    added: result.added.filter(key => !claimed.has(key)),
+  }
+}
+
+/**
  * Wraps a mapping resolver with a second, semantic pass over whatever the first pass could not
  * match. The base resolver stays authoritative: a pair it produced is never touched.
  *
  * Runs **only** when the base result holds both an addition and a removal - with nothing to rescue
- * there is nothing to do, and that is the isolation guarantee this feature is specified around: a
- * cleanly-matching document behaves exactly as before.
+ * there is nothing to do, and building the document-level pairing is wasted work. Under the
+ * document-level pairing this is an early-out rather than the isolation guarantee it used to be:
+ * isolation now comes from the pool the pairing is built over, which holds only entities whose raw
+ * key is absent from the other document.
  */
-export function withSemanticMapping(
-  base: MappingObjectResolver<string>, pick: SemanticIdentitySelector,
-): MappingObjectResolver<string>
-export function withSemanticMapping(
-  base: MappingArrayResolver, pick: SemanticIdentitySelector,
-): MappingArrayResolver
+export function withSemanticMapping(base: MappingObjectResolver<string>): MappingObjectResolver<string>
+export function withSemanticMapping(base: MappingArrayResolver): MappingArrayResolver
 export function withSemanticMapping(
   base: MappingObjectResolver<string> | MappingArrayResolver,
-  pick: SemanticIdentitySelector,
 ): MappingObjectResolver<string> | MappingArrayResolver {
   // The two overloads differ in their container type (`Record<string, unknown>` vs
   // `Array<unknown>`) and key type (string vs numeric index), but the wrapping is identical, so
@@ -163,42 +373,16 @@ export function withSemanticMapping(
       return result
     }
 
-    const { originsFlag } = ctx.options
-    const beforeIdentities = identityMapOf(
-      result.removed, before, pick(logicalIndexOf(ctx.before.root, originsFlag)),
-    )
-    const afterIdentities = identityMapOf(
-      result.added, after, pick(logicalIndexOf(ctx.after.root, originsFlag)),
-    )
-
-    const { pairs } = pairLeftoversByIdentity(beforeIdentities, afterIdentities, compareSemanticTieBreak)
-    if (pairs.length === 0) {
-      return result
-    }
-
-    // Translate the pairing back into the engine's vocabulary: a pair becomes a `mapped` entry,
-    // and whatever stayed unpaired keeps the base resolver's verdict. Filtering the base arrays
-    // rather than reading `unpairedBefore` / `unpairedAfter` preserves their original order and
-    // keeps leftovers that never entered the identity maps (identity `undefined`).
-    const pairedBefore = new Set<PropertyKey>(pairs.map(([beforeKey]) => beforeKey))
-    const pairedAfter = new Set<PropertyKey>(pairs.map(([, afterKey]) => afterKey))
-    const mapped = { ...result.mapped } as Record<PropertyKey, PropertyKey>
-    for (const [beforeKey, afterKey] of pairs) {
-      mapped[beforeKey] = afterKey
-    }
-    return {
-      mapped,
-      removed: result.removed.filter(key => !pairedBefore.has(key)),
-      added: result.added.filter(key => !pairedAfter.has(key)),
-    }
+    const pairing = semanticPairingOf(ctx.before.root, ctx.after.root, ctx.options.originsFlag)
+    return applySemanticPairing(result, before, after, pairing)
   }
   return wrapped as MappingObjectResolver<string> | MappingArrayResolver
 }
 
 /** The call signature `withSemanticMapping` exposes, so the disabled variant can stand in for it. */
 export interface SemanticMappingWrapper {
-  (base: MappingObjectResolver<string>, pick: SemanticIdentitySelector): MappingObjectResolver<string>
-  (base: MappingArrayResolver, pick: SemanticIdentitySelector): MappingArrayResolver
+  (base: MappingObjectResolver<string>): MappingObjectResolver<string>
+  (base: MappingArrayResolver): MappingArrayResolver
 }
 
 /**
@@ -207,5 +391,5 @@ export interface SemanticMappingWrapper {
  * site is indistinguishable from what it was before.
  */
 export const semanticMappingWrapper = (enabled: boolean): SemanticMappingWrapper => {
-  return enabled ? withSemanticMapping : (base => base) as SemanticMappingWrapper
+  return enabled ? withSemanticMapping : ((base: unknown) => base) as SemanticMappingWrapper
 }
