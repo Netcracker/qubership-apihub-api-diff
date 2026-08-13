@@ -17,8 +17,6 @@ import { deepEqual } from 'fast-equals'
 import {
   AdapterContext,
   AdapterResolver,
-  API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE,
-  ApiCompatibilityKind,
   CompareContext,
   CompareResult,
   CompareRule,
@@ -33,11 +31,12 @@ import {
   JsonNode,
   MergeState,
   NodeContext,
-  TraversalPartition,
+  TraversalDimensions,
   ValueTransformer,
 } from '../types'
 import { getObjectValue, isArray, isDiffAdd, isDiffRemove, isDiffReplace, isNumber, isObject, typeOf } from '../utils'
 import { ANY_COMBINER_PATH, DiffAction, JSO_ROOT } from './constants'
+import { EMPTY_DIMENSIONS, resolveDimensions } from './dimensions'
 import { addDiffObjectToContainer, createDiffEntry, diffFactory, NEVER_KEY } from './diff'
 import { arrayMappingResolver, objectMappingResolver } from './mapping'
 
@@ -79,8 +78,7 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     rules,
     compareScope,
     parentContext,
-    apiCompatibilityScope,
-    traversalPartition,
+    dimensions,
   } = data
   return {
     parentContext: parentContext,
@@ -90,8 +88,7 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     mergeKey,
     rules,
     options,
-    apiCompatibilityScope: apiCompatibilityScope,
-    traversalPartition,
+    dimensions,
   }
 }
 
@@ -100,8 +97,7 @@ export const createChildContext = (
   mergedKey: PropertyKey,
   beforeChildKey: PropertyKey | undefined,
   afterChildKey: PropertyKey | undefined,
-  apiCompatibilityScope: ApiCompatibilityKind = ctx.apiCompatibilityScope,
-  traversalPartition: TraversalPartition | undefined = ctx.traversalPartition,
+  dimensions: TraversalDimensions = ctx.dimensions,
 ): CompareContext => {
   const { before, after, rules, options, scope } = ctx
   let beforeContext: NodeContext
@@ -134,7 +130,7 @@ export const createChildContext = (
     parentContext: ctx,
     before: beforeContext,
     after: afterContext,
-    traversalPartition,
+    dimensions,
     mergeKey: mergedKey,
     rules: getNodeRules(
       rules,
@@ -144,7 +140,6 @@ export const createChildContext = (
     ) ?? {},
     options,
     scope: scope,
-    apiCompatibilityScope: apiCompatibilityScope,
   }
 }
 
@@ -173,15 +168,13 @@ export const getOrCreateChildDiffAdd = (diffUniquenessCache: EvaluationCacheServ
     string,
     CompareScope,
     typeof DiffAction.add,
-    ApiCompatibilityKind,
-    TraversalPartition | undefined
+    TraversalDimensions
   ], DiffAdd>([
     childCtx.after.value,
     buildPathsIdentifier(childCtx.after.declarativePaths),
     childCtx.scope,
     DiffAction.add,
-    childCtx.apiCompatibilityScope,
-    childCtx.traversalPartition,
+    childCtx.dimensions,
   ], () => {
     return diffFactory.added(childCtx)
   }, {} as DiffAdd, (result, guard) => {
@@ -198,15 +191,13 @@ export const getOrCreateChildDiffRemove = (diffUniquenessCache: EvaluationCacheS
     string,
     CompareScope,
     typeof DiffAction.remove,
-    ApiCompatibilityKind,
-    TraversalPartition | undefined
+    TraversalDimensions
   ], DiffRemove>([
     childCtx.before.value,
     buildPathsIdentifier(childCtx.before.declarativePaths),
     childCtx.scope,
     DiffAction.remove,
-    childCtx.apiCompatibilityScope,
-    childCtx.traversalPartition,
+    childCtx.dimensions,
   ], () => {
     return diffFactory.removed(childCtx)
   }, {} as DiffRemove, (result, guard) => {
@@ -242,7 +233,11 @@ const adaptValues = (beforeJso: JsonNode, beforeKey: PropertyKey, afterJso: Json
   return [beforeValueAdapted, afterValueAdapted]
 }
 const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions): SyncCrawlHook<MergeState, CompareRule> => {
-  const { metaKey, apiCompatibilityScopeFunction, traversalPartitionFunction } = options
+  const { metaKey } = options
+  const { patchAt, interner } = resolveDimensions(options)
+  // A nested crawl reports the zero-length path for its own root, where an answer meant for the document
+  // would overwrite what the combiner was reached under
+  const rootIsNotTheDocument = options.nestedDimensions !== undefined
   const diffs: Set<Diff> = new Set()
   const addDiff: (diff: Diff) => void = (diff) => {
     const oldSize = diffs.size
@@ -270,8 +265,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       diffUniquenessCache,
       createdMergedJso,
       compareScope,
-      apiCompatibilityScope: parentApiCompatibilityScope,
-      traversalPartition: parentTraversalPartition,
+      dimensions: parentDimensions,
     } = state
 
     if (typeof unsafeKey === 'symbol') {
@@ -311,8 +305,12 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       afterValueAdapted,
     ] = adaptValues(beforeJso, beforeKey, afterJso, afterKey, adapter, options)
 
-    const computedApiCompatibilityScope = apiCompatibilityScopeFunction?.(crawlContext.path, beforeValueAdapted, afterValueAdapted) ?? parentApiCompatibilityScope
-    const computedTraversalPartition = traversalPartitionFunction?.(crawlContext.path, beforeValueAdapted, afterValueAdapted) ?? parentTraversalPartition
+    const computedDimensions = interner.mergeOrReuse(
+      parentDimensions,
+      rootIsNotTheDocument && crawlContext.path.length === 0
+        ? undefined
+        : patchAt?.(crawlContext.path, beforeValueAdapted, afterValueAdapted),
+    )
 
     const ctx = createContext({
       ...state,
@@ -323,8 +321,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       mergeKey,
       rules,
       compareScope: newCompareScope ?? compareScope,
-      apiCompatibilityScope: computedApiCompatibilityScope,
-      traversalPartition: computedTraversalPartition,
+      dimensions: computedDimensions,
     }, options)
 
     const beforeDeclarativePathsId = buildPathsIdentifier(cleanUpRecursive(ctx.before).declarativePaths)
@@ -336,16 +333,14 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       typeof beforeDeclarativePathsId,
       typeof afterDeclarativePathsId,
       CompareScope,
-      ApiCompatibilityKind,
-      TraversalPartition | undefined
+      TraversalDimensions
     ], ReusableMergeResult>([
       ctx.before.value,
       ctx.after.value,
       beforeDeclarativePathsId,
       afterDeclarativePathsId,
       ctx.scope,
-      computedApiCompatibilityScope,
-      computedTraversalPartition,
+      computedDimensions,
     ], ([beforeValue, afterValue]) => {
       if (!ignoreKeyDifference && beforeKey !== afterKey) {
         const diffEntry = createDiffEntry(ctx, diffFactory.renamed(ctx))
@@ -397,18 +392,18 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
 
           keyToRemove.forEach((keyToBefore) => {
             const removalPath = [...crawlContext.path, keyToBefore]
-            const removalBwc = apiCompatibilityScopeFunction?.(removalPath, beforeValue[keyToBefore]) || computedApiCompatibilityScope
-            const removalPartition = traversalPartitionFunction?.(removalPath, beforeValue[keyToBefore]) ?? computedTraversalPartition
-            const childCtx = createChildContext(ctx, keyToBefore, keyToBefore, undefined, removalBwc, removalPartition)
+            const removalDimensions = interner.mergeOrReuse(computedDimensions, patchAt?.(removalPath, beforeValue[keyToBefore]))
+            const childCtx = createChildContext(ctx, keyToBefore, keyToBefore, undefined, removalDimensions)
             jsoDiffEntries.push(getOrCreateChildDiffRemove(diffUniquenessCache, childCtx))
           })
 
           keysToAdd.forEach((keyInAfter) => {
             const additionPath = [...crawlContext.path, keyInAfter]
-            const additionBwc = apiCompatibilityScopeFunction?.(additionPath, undefined, afterValue[keyInAfter]) || computedApiCompatibilityScope
-            const additionPartition = traversalPartitionFunction?.(additionPath, undefined, afterValue[keyInAfter]) ?? computedTraversalPartition
+            // `afterValue[keyInAfter]`, not the container: a dimensions function inspecting an added
+            // value must see the value itself
+            const additionDimensions = interner.mergeOrReuse(computedDimensions, patchAt?.(additionPath, undefined, afterValue[keyInAfter]))
             const keyInMerge = isArray(mergedJsoValue) ? mergedJsoValue.length : keyInAfter
-            const childCtx = createChildContext(ctx, keyInMerge, undefined, keyInAfter, additionBwc, additionPartition)
+            const childCtx = createChildContext(ctx, keyInMerge, undefined, keyInAfter, additionDimensions)
             jsoDiffEntries.push(getOrCreateChildDiffAdd(diffUniquenessCache, childCtx))
             mergedJsoValue[keyInMerge] = afterValue[keyInAfter]
             // add case- cleanup firstReferenceKeyProperty if required
@@ -472,8 +467,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
         afterJso: afterValueAdapted as JsonNode/*safe cause it only happens for object*/,
         mergedJso: mergedValue,
         compareScope: newCompareScope ?? compareScope,
-        apiCompatibilityScope: computedApiCompatibilityScope,
-        traversalPartition: computedTraversalPartition,
+        dimensions: computedDimensions,
       }
       return { value: reuseResult.nextValue, state: childState, exitHook: reuseResult.exitHook }
     } else {
@@ -648,9 +642,19 @@ export const compare = (before: unknown, after: unknown, options: InternalCompar
   }
 }
 
-export const nestedCompare = (before: unknown, after: unknown, options: InternalCompareOptions): CompareResult => {
+/**
+ * Compares a subtree of the document the caller is already traversing, the items of a combiner. The route
+ * context it was reached under is a parameter rather than an option, so it cannot be left out: without it
+ * the crawl would ask the dimensions about its own root and take an answer meant for the document.
+ */
+export const nestedCompare = (
+  before: unknown,
+  after: unknown,
+  reachedUnder: TraversalDimensions,
+  options: InternalCompareOptions,
+): CompareResult => {
   const diffs: Diff[] = []
-  const merged = compareInternal(before, after, (diff) => diffs.push(diff), options)
+  const merged = compareInternal(before, after, (diff) => diffs.push(diff), { ...options, nestedDimensions: reachedUnder })
   return { merged, diffs: diffs, ownerDiffEntry: undefined }
 }
 
@@ -664,8 +668,8 @@ const compareInternal = (before: unknown, after: unknown, onDiff: DiffCallback, 
   const beforeRootJso = root.before
   const afterRootJso = root.after
 
-  const apiCompatibilityScope = options?.apiCompatibilityScopeFunction?.() || API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE
-  const traversalPartition = options.initialTraversalPartition ?? options?.traversalPartitionFunction?.()
+  // The crawl asks about the root as it visits it, so the context starts empty here
+  const dimensions = options.nestedDimensions ?? EMPTY_DIMENSIONS
 
   if (!isObject(beforeRootJso) || !isObject(afterRootJso)) {
     // TODO
@@ -683,8 +687,7 @@ const compareInternal = (before: unknown, after: unknown, onDiff: DiffCallback, 
     diffUniquenessCache: options.diffUniquenessCache,
     createdMergedJso: options.createdMergedJso,
     compareScope: options.compareScope,
-    apiCompatibilityScope: apiCompatibilityScope,
-    traversalPartition: traversalPartition,
+    dimensions,
   }
   syncCrawl<MergeState, CompareRule>(before, [hook], { state: rootState, rules: options.rules })
   return root.merged[JSO_ROOT]

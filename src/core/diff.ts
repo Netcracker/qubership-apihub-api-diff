@@ -4,6 +4,7 @@ import {
   CompareContext,
   Diff,
   DiffAdd,
+  DiffClassificationRule,
   DiffEntry,
   DiffFactory,
   DiffMetaRecord,
@@ -12,9 +13,8 @@ import {
   DiffReplace,
   DiffType,
   NodeContext,
-  API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE,
 } from '../types'
-import { allUnclassified, breaking, DiffAction, risky, unclassified } from './constants'
+import { allUnclassified, DiffAction, unclassified } from './constants'
 import { getKeyValue, isFunc } from '../utils'
 import { calculateDefaultDiffDescription } from './description'
 
@@ -31,13 +31,15 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
     const changeType = classifier[index]
 
     try {
-      const type = isFunc(changeType) ? changeType(ctx) : changeType
-      mutableDiffCopy.type = reclassifyBreakingToRisky(type, ctx)
+      mutableDiffCopy.type = isFunc(changeType) ? changeType(ctx) : changeType
     } catch (error) {
       ctx.options.onCreateDiffError?.(`Unable to find diff type. ${error instanceof Error ? error.message : ''}`, mutableDiffCopy, ctx)
     }
 
-    mutableDiffCopy.type = applyClassificationOverride(mutableDiffCopy, ctx)
+    const classificationRules = ctx.options.classificationRules
+    if (classificationRules?.length) {
+      mutableDiffCopy.type = runClassificationPipeline(classificationRules, mutableDiffCopy, ctx)
+    }
   }
   try {
     mutableDiffCopy.description = ctx.rules.description?.(mutableDiffCopy, ctx) ?? calculateDefaultDiffDescription(mutableDiffCopy)
@@ -47,36 +49,31 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
   return mutableDiffCopy
 }
 
-export const reclassifyBreakingToRisky = (type: DiffType, ctx: CompareContext): DiffType => {
-  return type === breaking && ctx.apiCompatibilityScope === API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE ? risky : type
-}
-
 /**
- * Passes the classified difference to `diffClassificationOverride` and keeps the computed type when
- * the override declines or throws.
- * Declaration paths are taken from the diff being built, not from `ctx`, so the override reads what
- * the diff will carry.
+ * Runs the classification rules in order, keeping the computed type when one declines or throws. Each rule
+ * is guarded on its own, and declaration paths come from the diff being built rather than from `ctx`.
  */
-const applyClassificationOverride = <D extends Diff>(diff: D, ctx: CompareContext): DiffType => {
-  const { diffClassificationOverride } = ctx.options
-  const type = diff.type
-  if (!diffClassificationOverride) {
-    return type
+const runClassificationPipeline = <D extends Diff>(
+  classificationRules: readonly DiffClassificationRule[],
+  diff: D,
+  ctx: CompareContext,
+): DiffType => {
+  // Everything but the verdict is the same for every rule, so it is built once
+  const reached = {
+    action: diff.action,
+    dimensions: ctx.dimensions,
+    beforeDeclarationPaths: 'beforeDeclarationPaths' in diff ? diff.beforeDeclarationPaths as JsonPath[] : [],
+    beforeValue: ctx.before?.value,
   }
-
-  try {
-    const overridden = diffClassificationOverride({
-      action: diff.action,
-      type: type,
-      partition: ctx.traversalPartition,
-      beforeDeclarationPaths: 'beforeDeclarationPaths' in diff ? diff.beforeDeclarationPaths as JsonPath[] : [],
-      beforeValue: ctx.before?.value,
-    })
-    return overridden ?? type
-  } catch (error) {
-    ctx.options.onCreateDiffError?.(`Unable to override diff classification. ${error instanceof Error ? error.message : ''}`, diff, ctx)
-    return type
+  let type = diff.type
+  for (const rule of classificationRules) {
+    try {
+      type = rule({ ...reached, type }) ?? type
+    } catch (error) {
+      ctx.options.onCreateDiffError?.(`Unable to classify diff. ${error instanceof Error ? error.message : ''}`, diff, ctx)
+    }
   }
+  return type
 }
 
 export function createDiffEntry(ctx: CompareContext, diff: Diff): DiffEntry<Diff> {

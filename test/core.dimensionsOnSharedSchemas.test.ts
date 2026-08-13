@@ -1,53 +1,67 @@
-import { ApiCompatibilityScopeFunction, apiDiff, breaking, DiffAction, risky } from '../src'
+import { apiDiff, breaking, DiffAction, DiffClassificationRule, risky, TraversalDimension } from '../src'
 
-import singleMethodResponseBefore from './helper/resources/backward-compatibility/single-method-response/before.json'
-import singleMethodResponseAfter from './helper/resources/backward-compatibility/single-method-response/after.json'
+import singleMethodResponseBefore from './helper/resources/shared-schema-routes/single-method-response/before.json'
+import singleMethodResponseAfter from './helper/resources/shared-schema-routes/single-method-response/after.json'
 
 import singleMethodRequestResponseBefore
-  from './helper/resources/backward-compatibility/single-method-request-response/before.json'
+  from './helper/resources/shared-schema-routes/single-method-request-response/before.json'
 import singleMethodRequestResponseAfter
-  from './helper/resources/backward-compatibility/single-method-request-response/after.json'
+  from './helper/resources/shared-schema-routes/single-method-request-response/after.json'
 
 import multipleMethodsResponseBefore
-  from './helper/resources/backward-compatibility/multiple-methods-response/before.json'
+  from './helper/resources/shared-schema-routes/multiple-methods-response/before.json'
 import multipleMethodsResponseAfter
-  from './helper/resources/backward-compatibility/multiple-methods-response/after.json'
+  from './helper/resources/shared-schema-routes/multiple-methods-response/after.json'
 
 import multipleMethodsResponseRefBefore
-  from './helper/resources/backward-compatibility/multiple-methods-response-ref/before.json'
+  from './helper/resources/shared-schema-routes/multiple-methods-response-ref/before.json'
 import multipleMethodsResponseRefAfter
-  from './helper/resources/backward-compatibility/multiple-methods-response-ref/after.json'
+  from './helper/resources/shared-schema-routes/multiple-methods-response-ref/after.json'
 
 import multipleMethodsRequestResponseRefBefore
-  from './helper/resources/backward-compatibility/multiple-methods-request-response-ref/before.json'
+  from './helper/resources/shared-schema-routes/multiple-methods-request-response-ref/before.json'
 import multipleMethodsRequestResponseRefAfter
-  from './helper/resources/backward-compatibility/multiple-methods-request-response-ref/after.json'
+  from './helper/resources/shared-schema-routes/multiple-methods-request-response-ref/after.json'
 
 import { diffsMatcher } from './helper/matchers'
-import { API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE } from '../src/types'
 
 type PATH_ENTRY = [string, string, string]
 
 const GET_PATH1: PATH_ENTRY = ['paths', '/path1', 'get']
 const POST_PATH1: PATH_ENTRY = ['paths', '/path1', 'post']
 
-function createApiCompatibilityScopeFunction(data: PATH_ENTRY[]): ApiCompatibilityScopeFunction {
+// The policy this suite compares under: some routes are marked, and a marked route softens a breaking
+// change to risky. Nothing of it is known to the library
+const SEASONING = 'seasoning'
+const SEASONED = 'seasoned'
+
+const downgradeSeasoned: DiffClassificationRule = ({ type, dimensions }) => (
+  type === breaking && dimensions[SEASONING] === SEASONED ? risky : undefined
+)
+
+function seasonedAtPaths(data: PATH_ENTRY[]): TraversalDimension['valueAt'] {
   return (path?: PropertyKey[]) => {
     if (path?.length !== 3) {
       return undefined
     }
     return data.some(entry =>
       entry.every((el, i) => path?.[i] === el),
-    ) ? API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE : undefined
+    ) ? SEASONED : undefined
   }
 }
 
-describe('Backward compatibility tests', () => {
-  it('should diff from GET has risky type with not backward compatible', async () => {
+// Dimension splitting on documents that share a schema between operations, which is what the mechanism
+// exists for. Both the dimension and the verdict drawn from it are a caller policy, played here by an
+// invented one: the library carries the value and never reads it
+describe('routes that disagree about a dimension', () => {
+  it('should diff from GET has risky type when every route is marked', async () => {
     const { diffs } = apiDiff(
       singleMethodResponseBefore,
       singleMethodResponseAfter,
-      { apiCompatibilityScopeFunction: () => API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE },
+      {
+        dimensions: [{ name: SEASONING, valueAt: () => SEASONED }],
+        classificationRules: [downgradeSeasoned],
+      },
     )
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -58,11 +72,14 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  it('should mark both request and response as risky for single method with not backward compatible', async () => {
+  it('should mark both request and response as risky for single method when every route is marked', async () => {
     const { diffs } = apiDiff(
       singleMethodRequestResponseBefore,
       singleMethodRequestResponseAfter,
-      { apiCompatibilityScopeFunction: () => API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE },
+      {
+        dimensions: [{ name: SEASONING, valueAt: () => SEASONED }],
+        classificationRules: [downgradeSeasoned],
+      },
     )
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -78,11 +95,14 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  it('should mark GET method as risky and POST as breaking when only GET is in scope', async () => {
+  it('should mark GET method as risky and POST as breaking when only GET is marked', async () => {
     const { diffs } = apiDiff(
       multipleMethodsResponseBefore,
       multipleMethodsResponseAfter,
-      { apiCompatibilityScopeFunction: createApiCompatibilityScopeFunction([GET_PATH1]) })
+      {
+        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1]) }],
+        classificationRules: [downgradeSeasoned],
+      })
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
@@ -101,11 +121,14 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  it('should mark both GET and POST methods as risky when both are in scope', async () => {
+  it('should mark both GET and POST methods as risky when both are marked', async () => {
     const { diffs } = apiDiff(
       multipleMethodsResponseBefore,
       multipleMethodsResponseAfter,
-      { apiCompatibilityScopeFunction: createApiCompatibilityScopeFunction([GET_PATH1, POST_PATH1]) })
+      {
+        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1, POST_PATH1]) }],
+        classificationRules: [downgradeSeasoned],
+      })
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
@@ -124,11 +147,14 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  it('should have two response diffs and one components diff when only GET is in scope with refs', async () => {
+  it('should have two response diffs and one components diff when only GET is marked with refs', async () => {
     const { diffs } = apiDiff(
       multipleMethodsResponseRefBefore,
       multipleMethodsResponseRefAfter,
-      { apiCompatibilityScopeFunction: createApiCompatibilityScopeFunction([GET_PATH1]) })
+      {
+        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1]) }],
+        classificationRules: [downgradeSeasoned],
+      })
     expect(diffs).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
@@ -148,11 +174,14 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  it('should have one response diff and one components diff when both methods are in scope with refs', async () => {
+  it('should have one response diff and one components diff when both methods are marked and share a ref', async () => {
     const { diffs } = apiDiff(
       multipleMethodsResponseRefBefore,
       multipleMethodsResponseRefAfter,
-      { apiCompatibilityScopeFunction: createApiCompatibilityScopeFunction([GET_PATH1, POST_PATH1]) })
+      {
+        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1, POST_PATH1]) }],
+        classificationRules: [downgradeSeasoned],
+      })
     expect(diffs).toEqual(diffsMatcher([
       // get + post
       expect.objectContaining({
@@ -168,11 +197,14 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  it('should mark POST as breaking and GET as risky for both request and response when only GET is in scope with refs', async () => {
+  it('should mark POST as breaking and GET as risky for both request and response when only GET is marked with refs', async () => {
     const { diffs } = apiDiff(
       multipleMethodsRequestResponseRefBefore,
       multipleMethodsRequestResponseRefAfter,
-      { apiCompatibilityScopeFunction: createApiCompatibilityScopeFunction([GET_PATH1]) })
+      {
+        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1]) }],
+        classificationRules: [downgradeSeasoned],
+      })
     expect(diffs).toEqual(diffsMatcher([
       // post
       expect.objectContaining({
@@ -206,11 +238,14 @@ describe('Backward compatibility tests', () => {
     ]))
   })
 
-  it('should mark both request and response as risky when both methods are in scope with refs', async () => {
+  it('should mark both request and response as risky when both methods are marked and share a ref', async () => {
     const { diffs } = apiDiff(
       multipleMethodsRequestResponseRefBefore,
       multipleMethodsRequestResponseRefAfter,
-      { apiCompatibilityScopeFunction: createApiCompatibilityScopeFunction([GET_PATH1, POST_PATH1]) })
+      {
+        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1, POST_PATH1]) }],
+        classificationRules: [downgradeSeasoned],
+      })
     expect(diffs).toEqual(diffsMatcher([
       // get + post
       expect.objectContaining({
@@ -231,4 +266,5 @@ describe('Backward compatibility tests', () => {
       }),
     ]))
   })
+
 })

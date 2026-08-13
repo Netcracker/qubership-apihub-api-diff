@@ -83,34 +83,48 @@ export const COMPARE_MODE_OPERATION = 'operation'
 
 export type CompareMode = typeof COMPARE_MODE_DEFAULT | typeof COMPARE_MODE_OPERATION
 
-export const API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE = 'BACKWARD_COMPATIBLE'
-export const API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE = 'NOT_BACKWARD_COMPATIBLE'
-
-export type ApiCompatibilityKind = typeof API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE
-  | typeof API_COMPATIBILITY_KIND_NOT_BACKWARD_COMPATIBLE
-
-export type ApiCompatibilityScopeFunction = (path?: JsonPath, beforeJso?: unknown, afterJso?: unknown) => ApiCompatibilityKind | undefined
-
-/** Name of a group of traversals that must not share difference instances. */
-export type TraversalPartition = string
-
-export type TraversalPartitionFunction = (path?: JsonPath, beforeJso?: unknown, afterJso?: unknown) => TraversalPartition | undefined
+export type TraversalDimensions = Readonly<Record<string, string | undefined>>
 
 /**
- * State of a difference at the moment it is classified.
- * `type` is the verdict the rules produced, after the api-compatibility downgrade.
- * `partition` is the traversal group the difference was reached through, and the only field
- * that says where it was reached from, so an override can answer per route.
+ * One dimension of the route context, declared by the caller that gives it meaning. Keep a value constant
+ * within a subtree and match on whole paths: a value that varies from node to node disables the reuse that
+ * makes traversal of a cyclic document terminate, and combiner options report paths relative to the option.
+ */
+export interface TraversalDimension {
+  /** Key the merged route context holds this dimension under, and the one a rule reads it back by. */
+  name: string
+  /**
+   * Asked for a node of the document, the zero-length path being the document itself, and for every added
+   * or removed key, which is a node the traversal never enters. Asked more than once for the same node
+   * when a combiner pairs its options, so keep it free of side effects. The root of a nested compare is
+   * not asked, so an answer meant for the document cannot undo what a combiner was reached under.
+   * Returns
+   * a value that holds from this node down.
+   * `undefined` to inherit the one of the enclosing node.
+   */
+  valueAt: (path: JsonPath, beforeJso?: unknown, afterJso?: unknown) => string | undefined
+}
+
+/**
+ * State of a difference at the moment it is classified. `type` is what the preceding rule left, starting
+ * from the verdict the classify rules produced; `dimensions` is the route it was reached through.
  */
 export interface DiffClassificationContext {
   action: ActionType
   type: DiffType
-  partition: TraversalPartition | undefined
+  dimensions: TraversalDimensions
   beforeDeclarationPaths: JsonPath[]
   beforeValue: unknown
 }
 
-export type DiffClassificationOverride = (context: DiffClassificationContext) => DiffType | undefined
+/**
+ * One step of the classification pipeline, run in the order the rules are given. A rule is handed the
+ * verdict the spec rules produced, or the one the rule before it left.
+ * Returns
+ * a diff type to replace that verdict with.
+ * `undefined` to leave it as it stands, which is also what a rule that throws leaves behind.
+ */
+export type DiffClassificationRule = (context: DiffClassificationContext) => DiffType | undefined
 
 export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   mode?: CompareMode
@@ -122,39 +136,22 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   beforeValueNormalizedProperty?: symbol
   afterValueNormalizedProperty?: symbol
   /**
-   * Function that marks specific paths/values as backward compatible
-   * or non-backward compatible. Use it to mark a specific path or object,
-   * so diffs under it are treated as risky when needed.
-   * Returns
-   * `NOT_BACKWARD_COMPATIBLE` when any change under the matched path must be considered risky.
-   * `BACKWARD_COMPATIBLE` when it should inherit/allow backward-compatible way.
-   * `undefined` to inherit the parent scope.
+   * Route context the traversal carries, inherited down to the leaves and into `oneOf`, `anyOf` and
+   * `allOf`. Routes that disagree about a dimension get separate difference instances, and every extra
+   * value repeats the traversal of the subtree those routes share: declare a dimension for what routes
+   * must be able to disagree about, not for everything a rule would like to know.
+   * A dimension can be stated and restated from a node down, never unstated.
    */
-  apiCompatibilityScopeFunction?: ApiCompatibilityScopeFunction
+  dimensions?: readonly TraversalDimension[]
   /**
-   * Last word on how a single difference is classified. Use it when the verdict depends on
-   * knowledge the library does not have, such as publication history. Unlike
-   * `apiCompatibilityScopeFunction`, which marks a whole subtree, this is called once per
-   * difference, while it is created.
+   * Classification pipeline, consulted in order after the spec rules produced a verdict, for a verdict
+   * that depends on knowledge the library does not have. A rule has to be pure; one that throws leaves
+   * the verdict where the rule before it left it and does not stop the rules after it.
    * Returns
    * a diff type to use instead of the computed one.
-   * `undefined` to keep the computed one, which is also what happens if the function throws.
+   * `undefined` to leave the verdict to the next rule, which is also what happens if a rule throws.
    */
-  diffClassificationOverride?: DiffClassificationOverride
-  /**
-   * Function that names the route a node is reached through, so two routes to the same node yield
-   * separate difference instances instead of one shared. It changes no verdict by itself:
-   * `diffClassificationOverride` reads the name and decides.
-   * Returns
-   * a partition name for the matched path.
-   * `undefined` to inherit the parent partition.
-   *
-   * The name joins the reuse footprint, so keep it constant within a subtree and match on whole
-   * paths. A name that varies from node to node disables the reuse that makes traversal of a cyclic
-   * document terminate, and combiner options report paths relative to the option. Every extra
-   * partition repeats the traversal it shares with the others.
-   */
-  traversalPartitionFunction?: TraversalPartitionFunction
+  classificationRules?: readonly DiffClassificationRule[]
   /**
    * For OpenAPI specs:
    * If a whole PathItem is removed, generate separate diffs for each HTTP operation (get/post/...)
@@ -188,11 +185,10 @@ export interface StrictCompareOptions extends Omit<CompareOptions, 'defaultsFlag
 export interface InternalCompareOptions extends StrictCompareOptions {
   rules: CompareRules
   /**
-   * Traversal partition the nested compare starts from. A nested compare (combiner items) begins
-   * its own crawl and would otherwise fall back to what `traversalPartitionFunction` answers for
-   * the root, losing the partition it was reached under.
+   * Route context a nested compare (the items of a combiner) was reached under. Present only for one,
+   * which is how the crawl knows the zero-length path of its own root is not the document.
    */
-  initialTraversalPartition?: TraversalPartition
+  nestedDimensions?: TraversalDimensions
 }
 
 export type CompareEngine = (before: unknown, after: unknown, options: StrictCompareOptions) => CompareResult
@@ -215,8 +211,7 @@ export interface MergeState<T extends PropertyKey = string> {
   diffUniquenessCache: EvaluationCacheService,
   createdMergedJso: Set<JsonNode>,
   compareScope: CompareScope
-  apiCompatibilityScope: ApiCompatibilityKind
-  traversalPartition: TraversalPartition | undefined
+  dimensions: TraversalDimensions
 }
 
 export type JsonNode<Key extends PropertyKey = string> = Key extends (string | symbol) ? Record<string | symbol, unknown> : Record<number, unknown> | Array<unknown>

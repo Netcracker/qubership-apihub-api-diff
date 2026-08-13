@@ -1,5 +1,5 @@
 import 'jest-extended'
-import { apiDiff, breaking, risky } from '../src'
+import { apiDiff, breaking, nonBreaking, risky } from '../src'
 import type { DiffClassificationContext } from '../src'
 import { DiffAction } from '../src/core'
 
@@ -33,45 +33,74 @@ const isDeprecatedRemoval = ({ action, type, beforeValue }: DiffClassificationCo
   typeof beforeValue === 'object' &&
   'deprecated' in beforeValue
 
-describe('diffClassificationOverride', () => {
-  it('should replace the classification of the difference it claims', () => {
+describe('classificationRules', () => {
+  it('should replace the classification of the difference a rule claims', () => {
     const { diffs } = apiDiff(before, after, {
-      diffClassificationOverride: (context) => (isDeprecatedRemoval(context) ? risky : undefined),
+      classificationRules: [(context) => (isDeprecatedRemoval(context) ? risky : undefined)],
     })
 
     expect(diffs.filter(diff => diff.type === breaking)).toHaveLength(0)
     expect(diffs.filter(diff => diff.type === risky).length).toBeGreaterThan(0)
   })
 
-  it('should keep the computed classification when the override declines', () => {
-    const { diffs: overridden } = apiDiff(before, after, { diffClassificationOverride: () => undefined })
+  it('should keep the computed classification when every rule declines', () => {
+    const { diffs: offered } = apiDiff(before, after, { classificationRules: [() => undefined] })
     const { diffs: untouched } = apiDiff(before, after, {})
 
-    expect(overridden.map(({ type, scope }) => ({ type, scope })))
+    expect(offered.map(({ type, scope }) => ({ type, scope })))
       .toIncludeSameMembers(untouched.map(({ type, scope }) => ({ type, scope })))
   })
 
-  it('should keep the computed classification when the override throws', () => {
+  it('should keep the computed classification when a rule throws', () => {
     const errors: string[] = []
     const { diffs: survived } = apiDiff(before, after, {
-      diffClassificationOverride: () => { throw new Error('rule is broken') },
+      classificationRules: [() => { throw new Error('rule is broken') }],
       onCreateDiffError: (message) => { errors.push(message) },
     })
     const { diffs: untouched } = apiDiff(before, after, {})
 
-    // Sharing one assignment with the rules would leave every difference `unclassified` instead
+    // Sharing one assignment with the spec rules would leave every difference `unclassified` instead
     expect(survived.map(({ type, scope }) => ({ type, scope })))
       .toIncludeSameMembers(untouched.map(({ type, scope }) => ({ type, scope })))
     expect(errors.join('\n')).toContain('rule is broken')
   })
 
+  it('should guard each rule on its own, keeping the verdict a throwing one interrupted', () => {
+    const errors: string[] = []
+    const { diffs } = apiDiff(before, after, {
+      classificationRules: [
+        (context) => (isDeprecatedRemoval(context) ? risky : undefined),
+        () => { throw new Error('rule is broken') },
+        (context) => (context.type === risky ? nonBreaking : undefined),
+      ],
+      onCreateDiffError: (message) => { errors.push(message) },
+    })
+
+    // One guard around the whole loop would lose the first verdict and skip every rule after the throw
+    expect(diffs.filter(diff => diff.type === nonBreaking).length).toBeGreaterThan(0)
+    expect(diffs.filter(diff => diff.type === risky)).toHaveLength(0)
+    expect(errors.join('\n')).toContain('rule is broken')
+  })
+
+  it('should consult the rules in the order they are given', () => {
+    const { diffs } = apiDiff(before, after, {
+      classificationRules: [
+        (context) => (isDeprecatedRemoval(context) ? risky : undefined),
+        (context) => (context.type === risky ? breaking : undefined),
+      ],
+    })
+
+    // The second rule sees what the first left, so the last word on a claimed difference is its own
+    expect(diffs.filter(diff => diff.type === risky)).toHaveLength(0)
+  })
+
   it('should receive the declaration paths and value of the difference', () => {
     const contexts: DiffClassificationContext[] = []
     apiDiff(before, after, {
-      diffClassificationOverride: (context) => {
+      classificationRules: [(context) => {
         contexts.push(context)
         return undefined
-      },
+      }],
     })
 
     const removal = contexts.find(context => isDeprecatedRemoval(context))
@@ -81,23 +110,23 @@ describe('diffClassificationOverride', () => {
   })
 
   it('should decide once for a difference shared by several operations', () => {
-    const seen: (string | undefined)[] = []
+    const seen: DiffClassificationContext['dimensions'][] = []
     const { diffs } = apiDiff(before, after, {
-      diffClassificationOverride: (context) => {
+      classificationRules: [(context) => {
         if (isDeprecatedRemoval(context)) {
-          seen.push(context.partition)
+          seen.push(context.dimensions)
         }
         return undefined
-      },
+      }],
     })
 
-    // Both operations reach `Shared` through the same $ref and no partition tells them apart, so the
+    // Both operations reach `Shared` through the same $ref and no dimension tells them apart, so the
     // removal is classified once per scope rather than once per operation.
     const removals = diffs.filter(diff =>
       'beforeDeclarationPaths' in diff &&
       diff.beforeDeclarationPaths.some(jsonPath => jsonPath.join('.') === 'components.schemas.Shared.properties.gone'),
     )
     expect(removals).toHaveLength(seen.length)
-    expect(seen.every(partition => partition === undefined)).toBe(true)
+    expect(seen.every(dimensions => Object.keys(dimensions).length === 0)).toBe(true)
   })
 })
