@@ -1,10 +1,11 @@
 import 'jest-extended'
 import { apiDiff, breaking, risky } from '../src'
-import type { CompareOptions, Diff, DiffType } from '../src'
+import type { ActionType, CompareOptions, Diff, DiffType } from '../src'
 import type { InternalCompareOptions } from '../src/types'
 import { createEvaluationCacheService, EvaluationCacheService } from '@netcracker/qubership-apihub-api-unifier'
 import { createDimensionsInterner, DiffAction, EMPTY_DIMENSIONS, resolveDimensions } from '../src/core'
 import { COMPARE_SCOPE_REQUEST } from '../src/openapi/openapi3.const'
+import { sharedSchemaSpec } from './helper/sharedSchemaSpec'
 
 const GONE = 'gone'
 const SEASONED_PATH = '/seasoned'
@@ -15,25 +16,7 @@ const UNSEASONED = 'unseasoned'
 const createSpec = (
   properties: Record<string, unknown>,
   shared: (schema: unknown) => unknown = (schema) => schema,
-): unknown => ({
-  openapi: '3.0.0',
-  info: { title: 'Test API', version: '1.0.0' },
-  paths: {
-    [SEASONED_PATH]: {
-      post: {
-        requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/Shared' } } } },
-        responses: { '200': { description: 'OK' } },
-      },
-    },
-    '/newcomer': {
-      post: {
-        requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/Shared' } } } },
-        responses: { '200': { description: 'OK' } },
-      },
-    },
-  },
-  components: { schemas: { Shared: shared({ type: 'object', properties: properties }) } },
-})
+): unknown => sharedSchemaSpec([SEASONED_PATH, '/newcomer'], properties, shared)
 
 const before = createSpec({
   keep: { type: 'string' },
@@ -41,6 +24,19 @@ const before = createSpec({
   [GONE]: { type: 'string', deprecated: true },
 })
 const after = createSpec({ keep: { type: 'string' } })
+
+/** The shared schema wrapped in a combiner, so a nested compare runs over it. */
+const withCombiner = (properties: Record<string, unknown>): unknown =>
+  createSpec(properties, (schema) => ({ oneOf: [schema, { type: 'string' }] }))
+
+/** A path item whose methods differ between the two documents. */
+const withMethods = (methods: string[]): unknown => ({
+  openapi: '3.0.0',
+  info: { title: 'Test API', version: '1.0.0' },
+  paths: {
+    '/thing': Object.fromEntries(methods.map(method => [method, { responses: { '200': { description: 'OK' } } }])),
+  },
+})
 
 const isSeasonedOperationNode = (path?: readonly unknown[]): boolean =>
   path?.[0] === 'paths' && path?.[1] === SEASONED_PATH && path?.length === 3
@@ -124,9 +120,6 @@ describe('a declared dimension splits difference instances', () => {
   })
 
   it('should carry the route context into a combiner, and keep splitting there', () => {
-    const withCombiner = (properties: Record<string, unknown>): unknown =>
-      createSpec(properties, (schema) => ({ oneOf: [schema, { type: 'string' }] }))
-
     const seenInsideCombiner: (string | undefined)[] = []
     const { diffs } = apiDiff(
       withCombiner({ keep: { type: 'string' }, [GONE]: { type: 'string', deprecated: true } }),
@@ -206,9 +199,6 @@ describe('one interner for the whole comparison', () => {
 
 describe('a dimension answered for the document root', () => {
   it('should keep a mark made below it, inside a combiner too', () => {
-    const withCombiner = (properties: Record<string, unknown>): unknown =>
-      createSpec(properties, (schema) => ({ oneOf: [schema, { type: 'string' }] }))
-
     const { diffs } = apiDiff(
       withCombiner({ keep: { type: 'string' }, [GONE]: { type: 'string', deprecated: true } }),
       withCombiner({ keep: { type: 'string' } }),
@@ -256,64 +246,41 @@ describe('what a dimension splits, and what it costs', () => {
     expect(operationRemovalsOf(diffs, GONE)).toEqual([breaking])
   })
 
-  it('should answer for a node that is itself removed', () => {
-    const withMethods = (methods: string[]): unknown => ({
-      openapi: '3.0.0',
-      info: { title: 'Test API', version: '1.0.0' },
-      paths: {
-        '/thing': Object.fromEntries(methods.map(method => [method, { responses: { '200': { description: 'OK' } } }])),
-      },
-    })
-
-    const seen: (string | undefined)[] = []
-    apiDiff(withMethods(['get', 'post']), withMethods(['get']), {
+  // Both branches of the exit hook ask about a node the traversal never enters, and both must hand the
+  // node itself rather than the container it sits in — a dimension keyed on the value would otherwise
+  // answer for the whole path item.
+  it.each<{ action: ActionType, before: string[], after: string[] }>([
+    { action: DiffAction.remove, before: ['get', 'post'], after: ['get'] },
+    { action: DiffAction.add, before: ['get'], after: ['get', 'post'] },
+  ])('should answer for a node that is itself $action, seeing that node', ({ action, before, after }) => {
+    const seenValues: (string | undefined)[] = []
+    const nodesSeen: unknown[] = []
+    apiDiff(withMethods(before), withMethods(after), {
       dimensions: [{
         name: SEASONING,
-        valueAt: (path) => (
-          path?.[0] === 'paths' && path?.[1] === '/thing' && path?.[2] === 'post' ? SEASONED : undefined
-        ),
+        valueAt: (path, beforeJso, afterJso) => {
+          if (path?.[2] !== 'post') {
+            return undefined
+          }
+          // The side that does not exist is `undefined`, the other one is the node being added or removed
+          nodesSeen.push(beforeJso ?? afterJso)
+          return SEASONED
+        },
       }],
-      classificationRules: [({ action, dimensions }) => {
-        if (action === DiffAction.remove) {
-          seen.push(dimensions[SEASONING])
+      classificationRules: [(context) => {
+        if (context.action === action) {
+          seenValues.push(context.dimensions[SEASONING])
         }
         return undefined
       }],
     })
 
-    // The operation's own removal is created while its parent is traversed. Without asking for the child
-    // path, a dimension anchored at the operation could never apply to the operation itself
-    expect(seen).toContain(SEASONED)
-  })
-
-  it('should answer for a node that is itself added, seeing the added value', () => {
-    const withMethods = (methods: string[]): unknown => ({
-      openapi: '3.0.0',
-      info: { title: 'Test API', version: '1.0.0' },
-      paths: {
-        '/thing': Object.fromEntries(methods.map(method => [method, { responses: { '200': { description: 'OK' } } }])),
-      },
-    })
-
-    const seen: (string | undefined)[] = []
-    apiDiff(withMethods(['get']), withMethods(['get', 'post']), {
-      dimensions: [{
-        name: SEASONING,
-        // Keyed on the value, not only the path: an addition is asked with `undefined` for the side that
-        // does not exist and the added node itself as the other one
-        valueAt: (path, beforeJso, afterJso) => (
-          path?.[2] === 'post' && beforeJso === undefined && !!afterJso ? SEASONED : undefined
-        ),
-      }],
-      classificationRules: [({ action, dimensions }) => {
-        if (action === DiffAction.add) {
-          seen.push(dimensions[SEASONING])
-        }
-        return undefined
-      }],
-    })
-
-    expect(seen).toContain(SEASONED)
+    // A dimension anchored at the operation applies to the operation's own difference, which is created
+    // while the parent path item is traversed
+    expect(seenValues).toContain(SEASONED)
+    // And it is asked about the operation, not about the path item holding it
+    expect(nodesSeen).not.toBeEmpty()
+    expect(nodesSeen).toSatisfyAll(node => !!node && typeof node === 'object' && 'responses' in node && !('get' in node))
   })
 
   it('should let a failing dimension abort the comparison', () => {
@@ -378,6 +345,30 @@ describe('what the rules are handed', () => {
     expect(operationRemovalsOf(diffs, GONE)).toHaveLength(2)
     expect(seen).toContain(`${SEASONED}|undefined`)
     expect(seen).toContain(`undefined|${GARNISHED}`)
+  })
+
+  it('should split on the one dimension that differs while the other agrees', () => {
+    const seen: string[] = []
+    const { diffs } = apiDiff(before, after, {
+      dimensions: [
+        // Both routes are told the same thing here, so this one cannot be what splits them
+        { name: SEASONING, valueAt: (path) => (path?.[0] === 'paths' && path?.length === 3 ? SEASONED : undefined) },
+        { name: GARNISH, valueAt: (path) => (isSeasonedOperationNode(path) ? GARNISHED : undefined) },
+      ],
+      classificationRules: [({ action, dimensions }) => {
+        if (action === DiffAction.remove) {
+          // Sorted, because the record's own identity is order-independent by design
+          seen.push(Object.entries(dimensions).sort().map(([name, value]) => `${name}=${value}`).join(','))
+        }
+        return undefined
+      }],
+    })
+
+    // One route carries two stated dimensions and the other only one, which is the multi-key record the
+    // interner has to tell apart by content
+    expect(operationRemovalsOf(diffs, GONE)).toHaveLength(2)
+    expect(seen).toContain(`${GARNISH}=${GARNISHED},${SEASONING}=${SEASONED}`)
+    expect(seen).toContain(`${SEASONING}=${SEASONED}`)
   })
 
   it('should read a dimension nobody declared as undefined', () => {

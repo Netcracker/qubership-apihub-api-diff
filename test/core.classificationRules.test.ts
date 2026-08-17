@@ -2,26 +2,10 @@ import 'jest-extended'
 import { apiDiff, breaking, nonBreaking, risky } from '../src'
 import type { DiffClassificationContext } from '../src'
 import { DiffAction } from '../src/core'
+import { sharedSchemaSpec } from './helper/sharedSchemaSpec'
 
-const createSpec = (properties: Record<string, unknown>): unknown => ({
-  openapi: '3.0.0',
-  info: { title: 'Test API', version: '1.0.0' },
-  paths: {
-    '/first': {
-      post: {
-        requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/Shared' } } } },
-        responses: { '200': { description: 'OK' } },
-      },
-    },
-    '/second': {
-      post: {
-        requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/Shared' } } } },
-        responses: { '200': { description: 'OK' } },
-      },
-    },
-  },
-  components: { schemas: { Shared: { type: 'object', properties: properties } } },
-})
+const createSpec = (properties: Record<string, unknown>): unknown =>
+  sharedSchemaSpec(['/first', '/second'], properties)
 
 const before = createSpec({ keep: { type: 'string' }, gone: { type: 'string', deprecated: true } })
 const after = createSpec({ keep: { type: 'string' } })
@@ -126,7 +110,9 @@ describe('classificationRules', () => {
       'beforeDeclarationPaths' in diff &&
       diff.beforeDeclarationPaths.some(jsonPath => jsonPath.join('.') === 'components.schemas.Shared.properties.gone'),
     )
-    expect(removals).toHaveLength(seen.length)
+    // Two: the request projection and the walk of the declaration site, not one per operation
+    expect(removals).toHaveLength(2)
+    expect(seen).not.toBeEmpty()
     expect(seen.every(dimensions => Object.keys(dimensions).length === 0)).toBe(true)
   })
 })

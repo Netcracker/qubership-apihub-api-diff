@@ -1,4 +1,5 @@
-import { apiDiff, breaking, DiffAction, DiffClassificationRule, risky, TraversalDimension } from '../src'
+import { apiDiff, breaking, DiffAction, DiffClassificationRule, risky } from '../src'
+import type { Diff, DiffType, TraversalDimension } from '../src'
 
 import singleMethodResponseBefore from './helper/resources/shared-schema-routes/single-method-response/before.json'
 import singleMethodResponseAfter from './helper/resources/shared-schema-routes/single-method-response/after.json'
@@ -24,6 +25,7 @@ import multipleMethodsRequestResponseRefAfter
   from './helper/resources/shared-schema-routes/multiple-methods-request-response-ref/after.json'
 
 import { diffsMatcher } from './helper/matchers'
+import type { RecursiveMatcher } from './helper/matchers'
 
 type PATH_ENTRY = [string, string, string]
 
@@ -50,221 +52,124 @@ function seasonedAtPaths(data: PATH_ENTRY[]): TraversalDimension['valueAt'] {
   }
 }
 
-// Dimension splitting on documents that share a schema between operations, which is what the mechanism
-// exists for. Both the dimension and the verdict drawn from it are a caller policy, played here by an
-// invented one: the library carries the value and never reads it
+const RESPONSE_SCHEMA_TYPE = ['responses', '200', 'content', 'application/json', 'schema', 'type']
+
+/** One expected difference. `declaredAt` pins which operation it was reached through, where that matters. */
+function replacedIn(scope: string, type: DiffType, declaredAt?: PATH_ENTRY): RecursiveMatcher<Diff> {
+  const paths = declaredAt ? [[...declaredAt, ...RESPONSE_SCHEMA_TYPE]] : undefined
+  return expect.objectContaining({
+    action: DiffAction.replace,
+    scope: scope,
+    type: type,
+    ...paths ? { beforeDeclarationPaths: paths, afterDeclarationPaths: paths } : {},
+  })
+}
+
+function diffsOf(before: unknown, after: unknown, marked: PATH_ENTRY[]): Diff[] {
+  const { diffs } = apiDiff(before, after, {
+    dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths(marked) }],
+    classificationRules: [downgradeSeasoned],
+  })
+  return diffs
+}
+
+/**
+ * Dimension splitting on documents that share a schema between operations, which is what the mechanism
+ * exists for. Both the dimension and the verdict drawn from it are a caller policy, played here by an
+ * invented one: the library carries the value and never reads it.
+ * Every case is the same comparison under a different set of marked routes, so the table is the spec: what
+ * the mark is on, and which differences come out of it.
+ */
 describe('routes that disagree about a dimension', () => {
-  it('should diff from GET has risky type when every route is marked', async () => {
-    const { diffs } = apiDiff(
-      singleMethodResponseBefore,
-      singleMethodResponseAfter,
-      {
-        dimensions: [{ name: SEASONING, valueAt: () => SEASONED }],
-        classificationRules: [downgradeSeasoned],
-      },
-    )
-    expect(diffs).toEqual(diffsMatcher([
-      expect.objectContaining({
-        scope: 'response',
-        action: DiffAction.replace,
-        type: risky,
-      }),
-    ]))
+  it.each<{ desc: string, before: unknown, after: unknown, marked: PATH_ENTRY[], expected: RecursiveMatcher<Diff>[] }>([
+    // A schema written out per operation: marking one route softens only its own difference
+    {
+      desc: 'softens the marked method and leaves the other breaking',
+      before: multipleMethodsResponseBefore, after: multipleMethodsResponseAfter,
+      marked: [GET_PATH1],
+      expected: [
+        replacedIn('response', risky, GET_PATH1),
+        replacedIn('response', breaking, POST_PATH1),
+      ],
+    },
+    {
+      desc: 'softens both methods when both are marked',
+      before: multipleMethodsResponseBefore, after: multipleMethodsResponseAfter,
+      marked: [GET_PATH1, POST_PATH1],
+      expected: [
+        replacedIn('response', risky, GET_PATH1),
+        replacedIn('response', risky, POST_PATH1),
+      ],
+    },
+    // One schema behind a $ref: the routes split it, and the walk of the declaration site adds its own
+    {
+      desc: 'splits a shared response schema, and the declaration site keeps the rules verdict',
+      before: multipleMethodsResponseRefBefore, after: multipleMethodsResponseRefAfter,
+      marked: [GET_PATH1],
+      expected: [
+        replacedIn('response', risky),
+        replacedIn('response', breaking),
+        replacedIn('components', breaking),
+      ],
+    },
+    {
+      desc: 'keeps one shared response instance when both routes agree',
+      before: multipleMethodsResponseRefBefore, after: multipleMethodsResponseRefAfter,
+      marked: [GET_PATH1, POST_PATH1],
+      expected: [
+        replacedIn('response', risky),
+        replacedIn('components', breaking),
+      ],
+    },
+    // The same $ref reached from request and response alike, so each scope splits on its own
+    {
+      desc: 'splits request and response separately when one route is marked',
+      before: multipleMethodsRequestResponseRefBefore, after: multipleMethodsRequestResponseRefAfter,
+      marked: [GET_PATH1],
+      expected: [
+        replacedIn('request', risky),
+        replacedIn('request', breaking),
+        replacedIn('response', risky),
+        replacedIn('response', breaking),
+        replacedIn('components', breaking),
+      ],
+    },
+    {
+      desc: 'keeps one instance per scope when both routes agree',
+      before: multipleMethodsRequestResponseRefBefore, after: multipleMethodsRequestResponseRefAfter,
+      marked: [GET_PATH1, POST_PATH1],
+      expected: [
+        replacedIn('request', risky),
+        replacedIn('response', risky),
+        replacedIn('components', breaking),
+      ],
+    },
+  ])('$desc', ({ before, after, marked, expected }) => {
+    expect(diffsOf(before, after, marked)).toEqual(diffsMatcher(expected))
   })
+})
 
-  it('should mark both request and response as risky for single method when every route is marked', async () => {
-    const { diffs } = apiDiff(
-      singleMethodRequestResponseBefore,
-      singleMethodRequestResponseAfter,
-      {
-        dimensions: [{ name: SEASONING, valueAt: () => SEASONED }],
-        classificationRules: [downgradeSeasoned],
-      },
-    )
-    expect(diffs).toEqual(diffsMatcher([
-      expect.objectContaining({
-        scope: 'response',
-        action: DiffAction.replace,
-        type: risky,
-      }),
-      expect.objectContaining({
-        scope: 'request',
-        action: DiffAction.replace,
-        type: risky,
-      }),
-    ]))
+/**
+ * Nothing disagrees here — every route carries the same value — so these pin the other half: a rule reads
+ * the dimension and softens what it finds, on a document where no splitting can be involved.
+ */
+describe('a dimension every route agrees about', () => {
+  it.each<{ desc: string, before: unknown, after: unknown, expected: RecursiveMatcher<Diff>[] }>([
+    {
+      desc: 'softens a response change',
+      before: singleMethodResponseBefore, after: singleMethodResponseAfter,
+      expected: [replacedIn('response', risky)],
+    },
+    {
+      desc: 'softens a request and a response change alike',
+      before: singleMethodRequestResponseBefore, after: singleMethodRequestResponseAfter,
+      expected: [replacedIn('response', risky), replacedIn('request', risky)],
+    },
+  ])('$desc', ({ before, after, expected }) => {
+    const { diffs } = apiDiff(before, after, {
+      dimensions: [{ name: SEASONING, valueAt: () => SEASONED }],
+      classificationRules: [downgradeSeasoned],
+    })
+    expect(diffs).toEqual(diffsMatcher(expected))
   })
-
-  it('should mark GET method as risky and POST as breaking when only GET is marked', async () => {
-    const { diffs } = apiDiff(
-      multipleMethodsResponseBefore,
-      multipleMethodsResponseAfter,
-      {
-        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1]) }],
-        classificationRules: [downgradeSeasoned],
-      })
-    expect(diffs).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.replace,
-        afterDeclarationPaths: [[...GET_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-        beforeDeclarationPaths: [[...GET_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-        scope: 'response',
-        type: risky,
-      }),
-      expect.objectContaining({
-        action: DiffAction.replace,
-        afterDeclarationPaths: [[...POST_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-        beforeDeclarationPaths: [[...POST_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-        scope: 'response',
-        type: breaking,
-      }),
-    ]))
-  })
-
-  it('should mark both GET and POST methods as risky when both are marked', async () => {
-    const { diffs } = apiDiff(
-      multipleMethodsResponseBefore,
-      multipleMethodsResponseAfter,
-      {
-        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1, POST_PATH1]) }],
-        classificationRules: [downgradeSeasoned],
-      })
-    expect(diffs).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.replace,
-        afterDeclarationPaths: [[...POST_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-        beforeDeclarationPaths: [[...POST_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-        scope: 'response',
-        type: risky,
-      }),
-      expect.objectContaining({
-        action: DiffAction.replace,
-        afterDeclarationPaths: [[...GET_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-        beforeDeclarationPaths: [[...GET_PATH1, 'responses', '200', 'content', 'application/json', 'schema', 'type']],
-        scope: 'response',
-        type: risky,
-      }),
-    ]))
-  })
-
-  it('should have two response diffs and one components diff when only GET is marked with refs', async () => {
-    const { diffs } = apiDiff(
-      multipleMethodsResponseRefBefore,
-      multipleMethodsResponseRefAfter,
-      {
-        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1]) }],
-        classificationRules: [downgradeSeasoned],
-      })
-    expect(diffs).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.replace,
-        scope: 'response',
-        type: breaking,
-      }),
-      expect.objectContaining({
-        action: DiffAction.replace,
-        scope: 'response',
-        type: risky,
-      }),
-      expect.objectContaining({
-        action: DiffAction.replace,
-        scope: 'components',
-        type: breaking,
-      }),
-    ]))
-  })
-
-  it('should have one response diff and one components diff when both methods are marked and share a ref', async () => {
-    const { diffs } = apiDiff(
-      multipleMethodsResponseRefBefore,
-      multipleMethodsResponseRefAfter,
-      {
-        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1, POST_PATH1]) }],
-        classificationRules: [downgradeSeasoned],
-      })
-    expect(diffs).toEqual(diffsMatcher([
-      // get + post
-      expect.objectContaining({
-        action: DiffAction.replace,
-        scope: 'response',
-        type: risky,
-      }),
-      expect.objectContaining({
-        action: DiffAction.replace,
-        scope: 'components',
-        type: breaking,
-      }),
-    ]))
-  })
-
-  it('should mark POST as breaking and GET as risky for both request and response when only GET is marked with refs', async () => {
-    const { diffs } = apiDiff(
-      multipleMethodsRequestResponseRefBefore,
-      multipleMethodsRequestResponseRefAfter,
-      {
-        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1]) }],
-        classificationRules: [downgradeSeasoned],
-      })
-    expect(diffs).toEqual(diffsMatcher([
-      // post
-      expect.objectContaining({
-        action: DiffAction.replace,
-        scope: 'request',
-        type: breaking,
-      }),
-      // post
-      expect.objectContaining({
-        action: DiffAction.replace,
-        scope: 'response',
-        type: breaking,
-      }),
-      // get
-      expect.objectContaining({
-        action: DiffAction.replace,
-        scope: 'request',
-        type: risky,
-      }),
-      // get
-      expect.objectContaining({
-        action: DiffAction.replace,
-        scope: 'response',
-        type: risky,
-      }),
-      expect.objectContaining({
-        action: DiffAction.replace,
-        scope: 'components',
-        type: breaking,
-      }),
-    ]))
-  })
-
-  it('should mark both request and response as risky when both methods are marked and share a ref', async () => {
-    const { diffs } = apiDiff(
-      multipleMethodsRequestResponseRefBefore,
-      multipleMethodsRequestResponseRefAfter,
-      {
-        dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths([GET_PATH1, POST_PATH1]) }],
-        classificationRules: [downgradeSeasoned],
-      })
-    expect(diffs).toEqual(diffsMatcher([
-      // get + post
-      expect.objectContaining({
-        scope: 'request',
-        action: DiffAction.replace,
-        type: risky,
-      }),
-      // get + post
-      expect.objectContaining({
-        scope: 'response',
-        action: DiffAction.replace,
-        type: risky,
-      }),
-      expect.objectContaining({
-        scope: 'components',
-        action: DiffAction.replace,
-        type: breaking,
-      }),
-    ]))
-  })
-
 })
