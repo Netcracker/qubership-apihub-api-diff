@@ -1,21 +1,23 @@
-import { compareFiles } from '../utils'
-import { diffsMatcher } from '../../helper/matchers'
-import { annotation, breaking, DiffAction, nonBreaking } from '../../../src'
 import { TEST_SPEC_TYPE_DDL_API } from '@netcracker/qubership-apihub-compatibility-suites'
+import { annotation, breaking, DiffAction, nonBreaking } from '../../../src'
+import { diffsMatcher } from '../../helper/matchers'
+import { compareFiles } from '../utils'
 
 const SUITE_ID = 'table'
+
+const TABLE_PATH = ['schemas', 0, 'tables', 0]
+const ADDED_TABLE_PATH = ['schemas', 0, 'tables', 1]
+const TABLE_COMMENT_PATH = [...TABLE_PATH, 'attrs', 0]
 
 describe('DDLApi Table: ', () => {
   test('add-table', async () => {
     const testId = 'add-table'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
-    // console.log(result)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [['schemas', 0, 'tables', 1]],
+        afterDeclarationPaths: [ADDED_TABLE_PATH],
         type: nonBreaking,
-        // scope: COMPARE_SCOPE_ROOT
       }),
     ]))
   })
@@ -26,8 +28,25 @@ describe('DDLApi Table: ', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [['schemas', 0, 'tables', 1]],
-        type: breaking
+        beforeDeclarationPaths: [ADDED_TABLE_PATH],
+        type: breaking,
+      }),
+    ]))
+  })
+
+  test('rename-table', async () => {
+    const testId = 'rename-table'
+    const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
+    expect(result).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.remove,
+        beforeDeclarationPaths: [TABLE_PATH],
+        type: breaking,
+      }),
+      expect.objectContaining({
+        action: DiffAction.add,
+        afterDeclarationPaths: [TABLE_PATH],
+        type: nonBreaking,
       }),
     ]))
   })
@@ -38,8 +57,8 @@ describe('DDLApi Table: ', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'attrs', 0]],
-        type: annotation
+        afterDeclarationPaths: [TABLE_COMMENT_PATH],
+        type: annotation,
       }),
     ]))
   })
@@ -50,9 +69,9 @@ describe('DDLApi Table: ', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'attrs', 0, 'text']],
-        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'attrs', 0, 'text']],
-        type: annotation
+        beforeDeclarationPaths: [[...TABLE_COMMENT_PATH, 'text']],
+        afterDeclarationPaths: [[...TABLE_COMMENT_PATH, 'text']],
+        type: annotation,
       }),
     ]))
   })
@@ -63,20 +82,8 @@ describe('DDLApi Table: ', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [['schemas', 0, 'tables', 0, 'attrs', 0]],
-        type: annotation
-      }),
-    ]))
-  })
-
-  test('add-table-non-default-schema', async () => {
-    const testId = 'add-table-non-default-schema'
-    const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
-    expect(result).toEqual(diffsMatcher([
-      expect.objectContaining({
-        action: DiffAction.add,
-        afterDeclarationPaths: [['schemas', 0, 'tables', 1]],
-        type: nonBreaking
+        beforeDeclarationPaths: [TABLE_COMMENT_PATH],
+        type: annotation,
       }),
     ]))
   })
