@@ -6,7 +6,7 @@ import { compareFiles } from '../utils'
 const SUITE_ID = 'column'
 
 const COLUMN_PATH = ['schemas', 0, 'tables', 0, 'columns', 0]
-const ADDED_COLUMN_PATH = ['schemas', 0, 'tables', 0, 'columns', 1]
+const SECOND_COLUMN_PATH = ['schemas', 0, 'tables', 0, 'columns', 1]
 const COLUMN_COMMENT_PATH = [...COLUMN_PATH, 'attrs', 0]
 
 describe('DDLApi Column: ', () => {
@@ -16,7 +16,7 @@ describe('DDLApi Column: ', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [ADDED_COLUMN_PATH],
+        afterDeclarationPaths: [SECOND_COLUMN_PATH],
         type: nonBreaking,
       }),
     ]))
@@ -28,12 +28,12 @@ describe('DDLApi Column: ', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [ADDED_COLUMN_PATH],
+        beforeDeclarationPaths: [SECOND_COLUMN_PATH],
         type: breaking,
       }),
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [ADDED_COLUMN_PATH],
+        afterDeclarationPaths: [SECOND_COLUMN_PATH],
         type: nonBreaking,
       }),
     ]))
@@ -45,7 +45,7 @@ describe('DDLApi Column: ', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [ADDED_COLUMN_PATH],
+        beforeDeclarationPaths: [SECOND_COLUMN_PATH],
         type: breaking,
       }),
     ]))

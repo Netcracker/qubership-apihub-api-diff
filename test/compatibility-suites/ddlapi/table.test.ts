@@ -6,7 +6,7 @@ import { compareFiles } from '../utils'
 const SUITE_ID = 'table'
 
 const TABLE_PATH = ['schemas', 0, 'tables', 0]
-const ADDED_TABLE_PATH = ['schemas', 0, 'tables', 1]
+const SECOND_TABLE_PATH = ['schemas', 0, 'tables', 1]
 const TABLE_COMMENT_PATH = [...TABLE_PATH, 'attrs', 0]
 
 describe('DDLApi Table: ', () => {
@@ -16,7 +16,7 @@ describe('DDLApi Table: ', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.add,
-        afterDeclarationPaths: [ADDED_TABLE_PATH],
+        afterDeclarationPaths: [SECOND_TABLE_PATH],
         type: nonBreaking,
       }),
     ]))
@@ -28,7 +28,7 @@ describe('DDLApi Table: ', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [ADDED_TABLE_PATH],
+        beforeDeclarationPaths: [SECOND_TABLE_PATH],
         type: breaking,
       }),
     ]))
