@@ -31,7 +31,7 @@
     "@netcracker/qubership-apihub-api-unifier": "bugfix-update-infrastructure",
     "@netcracker/qubership-apihub-ddlapi": "bugfix-update-infrastructure",
     "@netcracker/qubership-apihub-json-crawl": "bugfix-update-infrastructure",
-    "fast-equals": "6.0.0"
+    "fast-equals": "^6.0.2"
   },
   "devDependencies": {
     "@asyncapi/parser": "3.6.0",
