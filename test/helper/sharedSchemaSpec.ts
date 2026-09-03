@@ -1,5 +1,5 @@
 /**
- * The smallest document the dimensions mechanism is about: two operations reaching one schema through a
+ * The smallest document the custom scope mechanism is about: two operations reaching one schema through a
  * `$ref`, so a difference inside that schema is reached by two routes. What the routes are called differs
  * per suite, hence the operation paths are given by the caller.
  */

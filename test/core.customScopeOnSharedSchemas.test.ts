@@ -1,5 +1,5 @@
-import { apiDiff, breaking, DiffAction, DiffClassificationRule, risky } from '../src'
-import type { Diff, DiffType, TraversalDimension } from '../src'
+import { apiDiff, breaking, DiffAction, ReclassificationRule, risky } from '../src'
+import type { Diff, DiffType, CustomScopeElementProvider } from '../src'
 
 import singleMethodResponseBefore from './helper/resources/shared-schema-routes/single-method-response/before.json'
 import singleMethodResponseAfter from './helper/resources/shared-schema-routes/single-method-response/after.json'
@@ -37,17 +37,17 @@ const POST_PATH1: PATH_ENTRY = ['paths', '/path1', 'post']
 const SEASONING = 'seasoning'
 const SEASONED = 'seasoned'
 
-const downgradeSeasoned: DiffClassificationRule = ({ type, dimensions }) => (
-  type === breaking && dimensions[SEASONING] === SEASONED ? risky : undefined
+const downgradeSeasoned: ReclassificationRule = ({ type, customScope }) => (
+  type === breaking && customScope?.[SEASONING] === SEASONED ? risky : undefined
 )
 
-function seasonedAtPaths(data: PATH_ENTRY[]): TraversalDimension['valueAt'] {
-  return (path?: PropertyKey[]) => {
-    if (path?.length !== 3) {
+function seasonedAtPaths(data: PATH_ENTRY[]): CustomScopeElementProvider['valueAt'] {
+  return ({ path }) => {
+    if (path.length !== 3) {
       return undefined
     }
     return data.some(entry =>
-      entry.every((el, i) => path?.[i] === el),
+      entry.every((el, i) => path[i] === el),
     ) ? SEASONED : undefined
   }
 }
@@ -65,22 +65,47 @@ function replacedIn(scope: string, type: DiffType, declaredAt?: PATH_ENTRY): Rec
   })
 }
 
+/**
+ * A difference on a schema two routes share. Both instances point at the same declaration paths, so the
+ * custom scope each route was reached under is the only thing that tells them apart: pass the value the
+ * route carried, or `undefined` for a route that carried none.
+ * Written by hand rather than with `expect.objectContaining`, which requires the key to be present and so
+ * cannot express the absence an unmarked route produces. Absence is asserted as absence, not as a lookup
+ * that reads `undefined`, so a comparison that stamped an empty record on every difference would fail here.
+ */
+function replacedUnder(scope: string, type: DiffType, seasoning: string | undefined): RecursiveMatcher<Diff> {
+  return {
+    $$typeof: Symbol.for('jest.asymmetricMatcher'),
+    asymmetricMatch: (diff: Diff) =>
+      diff.action === DiffAction.replace &&
+      diff.scope === scope &&
+      diff.type === type &&
+      (seasoning === undefined
+        ? !('customScope' in diff)
+        : diff.customScope?.[SEASONING] === seasoning),
+    toString: () => `replacedUnder(${scope}, ${type}, ${seasoning ?? 'no scope'})`,
+    // `diffsMatcher` prints its members through this hook and falls back to `JSON.stringify`, which drops
+    // a symbol and two functions and would report every row of the table as `{}`
+    toAsymmetricMatcher: () => `replacedUnder(${scope}, ${type}, ${seasoning ?? 'no scope'})`,
+  } as unknown as RecursiveMatcher<Diff>
+}
+
 function diffsOf(before: unknown, after: unknown, marked: PATH_ENTRY[]): Diff[] {
   const { diffs } = apiDiff(before, after, {
-    dimensions: [{ name: SEASONING, valueAt: seasonedAtPaths(marked) }],
-    classificationRules: [downgradeSeasoned],
+    customScopeElementProviders: [{ name: SEASONING, valueAt: seasonedAtPaths(marked) }],
+    reclassificationRules: [downgradeSeasoned],
   })
   return diffs
 }
 
 /**
- * Dimension splitting on documents that share a schema between operations, which is what the mechanism
- * exists for. Both the dimension and the verdict drawn from it are a caller policy, played here by an
+ * Custom scope splitting on documents that share a schema between operations, which is what the mechanism
+ * exists for. Both the scope element and the verdict drawn from it are a caller policy, played here by an
  * invented one: the library carries the value and never reads it.
  * Every case is the same comparison under a different set of marked routes, so the table is the spec: what
  * the mark is on, and which differences come out of it.
  */
-describe('routes that disagree about a dimension', () => {
+describe('routes that disagree about a scope element', () => {
   it.each<{ desc: string, before: unknown, after: unknown, marked: PATH_ENTRY[], expected: RecursiveMatcher<Diff>[] }>([
     // A schema written out per operation: marking one route softens only its own difference
     {
@@ -107,9 +132,9 @@ describe('routes that disagree about a dimension', () => {
       before: multipleMethodsResponseRefBefore, after: multipleMethodsResponseRefAfter,
       marked: [GET_PATH1],
       expected: [
-        replacedIn('response', risky),
-        replacedIn('response', breaking),
-        replacedIn('components', breaking),
+        replacedUnder('response', risky, SEASONED),
+        replacedUnder('response', breaking, undefined),
+        replacedUnder('components', breaking, undefined),
       ],
     },
     {
@@ -117,8 +142,8 @@ describe('routes that disagree about a dimension', () => {
       before: multipleMethodsResponseRefBefore, after: multipleMethodsResponseRefAfter,
       marked: [GET_PATH1, POST_PATH1],
       expected: [
-        replacedIn('response', risky),
-        replacedIn('components', breaking),
+        replacedUnder('response', risky, SEASONED),
+        replacedUnder('components', breaking, undefined),
       ],
     },
     // The same $ref reached from request and response alike, so each scope splits on its own
@@ -127,11 +152,11 @@ describe('routes that disagree about a dimension', () => {
       before: multipleMethodsRequestResponseRefBefore, after: multipleMethodsRequestResponseRefAfter,
       marked: [GET_PATH1],
       expected: [
-        replacedIn('request', risky),
-        replacedIn('request', breaking),
-        replacedIn('response', risky),
-        replacedIn('response', breaking),
-        replacedIn('components', breaking),
+        replacedUnder('request', risky, SEASONED),
+        replacedUnder('request', breaking, undefined),
+        replacedUnder('response', risky, SEASONED),
+        replacedUnder('response', breaking, undefined),
+        replacedUnder('components', breaking, undefined),
       ],
     },
     {
@@ -139,9 +164,9 @@ describe('routes that disagree about a dimension', () => {
       before: multipleMethodsRequestResponseRefBefore, after: multipleMethodsRequestResponseRefAfter,
       marked: [GET_PATH1, POST_PATH1],
       expected: [
-        replacedIn('request', risky),
-        replacedIn('response', risky),
-        replacedIn('components', breaking),
+        replacedUnder('request', risky, SEASONED),
+        replacedUnder('response', risky, SEASONED),
+        replacedUnder('components', breaking, undefined),
       ],
     },
   ])('$desc', ({ before, after, marked, expected }) => {
@@ -151,9 +176,9 @@ describe('routes that disagree about a dimension', () => {
 
 /**
  * Nothing disagrees here — every route carries the same value — so these pin the other half: a rule reads
- * the dimension and softens what it finds, on a document where no splitting can be involved.
+ * the scope element and softens what it finds, on a document where no splitting can be involved.
  */
-describe('a dimension every route agrees about', () => {
+describe('a scope element every route agrees about', () => {
   it.each<{ desc: string, before: unknown, after: unknown, expected: RecursiveMatcher<Diff>[] }>([
     {
       desc: 'softens a response change',
@@ -167,8 +192,8 @@ describe('a dimension every route agrees about', () => {
     },
   ])('$desc', ({ before, after, expected }) => {
     const { diffs } = apiDiff(before, after, {
-      dimensions: [{ name: SEASONING, valueAt: () => SEASONED }],
-      classificationRules: [downgradeSeasoned],
+      customScopeElementProviders: [{ name: SEASONING, valueAt: () => SEASONED }],
+      reclassificationRules: [downgradeSeasoned],
     })
     expect(diffs).toEqual(diffsMatcher(expected))
   })

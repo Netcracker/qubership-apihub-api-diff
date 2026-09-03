@@ -4,7 +4,6 @@ import {
   CompareContext,
   Diff,
   DiffAdd,
-  DiffClassificationRule,
   DiffEntry,
   DiffFactory,
   DiffMetaRecord,
@@ -13,8 +12,10 @@ import {
   DiffReplace,
   DiffType,
   NodeContext,
+  ReclassificationRule,
 } from '../types'
 import { allUnclassified, DiffAction, unclassified } from './constants'
+import { EMPTY_CUSTOM_SCOPE } from './customScope'
 import { getKeyValue, isFunc } from '../utils'
 import { calculateDefaultDiffDescription } from './description'
 
@@ -23,6 +24,10 @@ export const NEVER_KEY = Symbol('never-key')
 export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareContext): D => {
   const classifierRule = ctx.rules?.$ ?? {}//todo. rules should be evaluated, like in json-crawl
   const mutableDiffCopy = { ...diff, type: unclassified } as D
+  // Identity comparison: the interner never mints an empty record, so anything else has elements to carry
+  if (ctx.customScope !== EMPTY_CUSTOM_SCOPE) {
+    mutableDiffCopy.customScope = ctx.customScope
+  }
 
   if (classifierRule) {
     const classifier = Array.isArray(classifierRule) ? classifierRule : allUnclassified
@@ -36,9 +41,9 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
       ctx.options.onCreateDiffError?.(`Unable to find diff type. ${error instanceof Error ? error.message : ''}`, mutableDiffCopy, ctx)
     }
 
-    const classificationRules = ctx.options.classificationRules
-    if (classificationRules?.length) {
-      mutableDiffCopy.type = runClassificationPipeline(classificationRules, mutableDiffCopy, ctx)
+    const reclassificationRules = ctx.options.reclassificationRules
+    if (reclassificationRules?.length) {
+      mutableDiffCopy.type = runReclassificationPipeline(reclassificationRules, mutableDiffCopy, ctx)
     }
   }
   try {
@@ -50,25 +55,21 @@ export const createDiff = <D extends Diff>(diff: Omit<D, 'type'>, ctx: CompareCo
 }
 
 /**
- * Runs the classification rules in order, keeping the computed type when one declines or throws. Each rule
- * is guarded on its own, and declaration paths come from the diff being built rather than from `ctx`.
+ * Runs the reclassification rules in order, keeping the computed type when one declines or throws. Each
+ * rule is guarded on its own, and each is handed its own copy of the difference carrying the verdict so
+ * far, so no rule can reassign a field of the difference under construction or of the next rule's input.
+ * The copy is shallow: `beforeValue`, `afterValue` and the declaration path arrays are the objects the
+ * merged document itself holds, which is why a rule has to be pure rather than merely careful.
  */
-const runClassificationPipeline = <D extends Diff>(
-  classificationRules: readonly DiffClassificationRule[],
+const runReclassificationPipeline = <D extends Diff>(
+  reclassificationRules: readonly ReclassificationRule[],
   diff: D,
   ctx: CompareContext,
 ): DiffType => {
-  // Everything but the verdict is the same for every rule, so it is built once
-  const reached = {
-    action: diff.action,
-    dimensions: ctx.dimensions,
-    beforeDeclarationPaths: 'beforeDeclarationPaths' in diff ? diff.beforeDeclarationPaths as JsonPath[] : [],
-    beforeValue: ctx.before?.value,
-  }
   let type = diff.type
-  for (const rule of classificationRules) {
+  for (const rule of reclassificationRules) {
     try {
-      type = rule({ ...reached, type }) ?? type
+      type = rule({ ...diff, type } as Diff) ?? type
     } catch (error) {
       ctx.options.onCreateDiffError?.(`Unable to classify diff. ${error instanceof Error ? error.message : ''}`, diff, ctx)
     }

@@ -1,21 +1,86 @@
 import { JsonPath } from '@netcracker/qubership-apihub-json-crawl'
 
-import { CompareContext, CompareRules } from './rules'
+import { CompareContext, CompareRules, ReclassificationRule } from './rules'
 import { ClassifierType, DiffAction, JSO_ROOT } from '../core'
 import { EvaluationCacheService, NormalizeOptions } from '@netcracker/qubership-apihub-api-unifier'
 
 export type ActionType = keyof typeof DiffAction
 export type DiffType = typeof ClassifierType[keyof typeof ClassifierType]
+/**
+ * Region of the document a node was reached in, named by the specification rules: `request` / `response`
+ * for OpenAPI, `send` / `receive` for AsyncAPI, `args` / `output` for GraphQL. It exists because the same
+ * structural change carries the opposite meaning on either side of a contract, so classify rules read it
+ * back, and the AsyncAPI engine goes as far as swapping breaking and non-breaking on the receive side.
+ * A rule opens a new scope at a node with `START_NEW_COMPARE_SCOPE_RULE`, and it holds from there down.
+ * For scope the caller declares and gives meaning to, see `CustomScope` below.
+ */
 export type CompareScope = string
 
+/** The scope a comparison starts in, before any rule opens one. */
 export const COMPARE_SCOPE_ROOT: CompareScope = 'root'
 
 /**
- * Diff should be unique by [type, beforeDeclarationPaths, afterDeclarationPaths, scope]
+ * Scope elements the caller adds to a comparison, merged along the route the traversal took: a record of
+ * element name to the value in effect at the node reached. `scope` above is decided by the specification
+ * rules and names a region of the document; every element here is declared by the caller through
+ * `CompareOptions.customScopeElementProviders` and carries meaning only the caller gives it.
+ * The custom scope is part of the reuse footprint (`mergedJsoCache` in `core/compare.ts`), so a subtree
+ * reached under two different records is traversed once per record instead of reused, and routes that
+ * disagree about an element reach separate difference instances. Reclassification rules read it back to
+ * decide what each of those instances is.
+ */
+export type CustomScope = Readonly<Record<string, string | undefined>>
+
+/**
+ * The node a custom scope element is asked about. One instance is built per node and handed to every
+ * provider of that node in turn, so treat it as read-only: writing to it changes what the providers after
+ * you are asked about.
+ */
+export interface CustomScopeElementContext {
+  /** Path of the node inside the document being traversed. Zero length is the document itself. */
+  path: JsonPath
+  /** The node as the before document declares it, `undefined` where that side does not have it. */
+  beforeJso?: unknown
+  /** The node as the after document declares it, `undefined` where that side does not have it. */
+  afterJso?: unknown
+}
+
+/**
+ * Declares one element of the custom scope and computes its value per node. Keep a value constant within a
+ * subtree and match on whole paths: a value that varies from node to node disables the reuse that makes
+ * traversal of a cyclic document terminate, and combiner options report paths relative to the option.
+ */
+export interface CustomScopeElementProvider {
+  /** Key the custom scope holds this element under, and the one a reclassification rule reads it back by. */
+  name: string
+  /**
+   * Asked for a node of the document, and for every added or removed key, which is a node the traversal
+   * never enters. Asked more than once for the same node when a combiner pairs its options, so keep it
+   * free of side effects. The root of a nested compare is not asked, so an answer meant for the document
+   * cannot undo what a combiner was reached under.
+   * Returns
+   * a value that holds from this node down.
+   * `undefined` to inherit the value of the enclosing node.
+   */
+  valueAt: (context: CustomScopeElementContext) => string | undefined
+}
+
+/**
+ * Diff should be unique by [type, beforeDeclarationPaths, afterDeclarationPaths, scope, custom scope]
+ * For an added or removed node that is enforced by `diffUniquenessCache` in `core/compare.ts`, which keys
+ * on the value, its declaration paths, the scope, the action and the custom scope: the last member is what
+ * lets two routes disagreeing about an element hold two verdicts instead of sharing one.
  */
 interface DiffBase<T> {
   type: T
   scope: CompareScope
+  /**
+   * Custom scope of the route this difference was reached through, absent where no element is in effect:
+   * because none is declared, or because none answered along that route. Two routes that disagree about an
+   * element reach two differences, each carrying the record its own route merged, which is what a
+   * `ReclassificationRule` reads to answer for one of them.
+   */
+  customScope?: CustomScope
   description?: string
 }
 
@@ -83,49 +148,6 @@ export const COMPARE_MODE_OPERATION = 'operation'
 
 export type CompareMode = typeof COMPARE_MODE_DEFAULT | typeof COMPARE_MODE_OPERATION
 
-export type TraversalDimensions = Readonly<Record<string, string | undefined>>
-
-/**
- * One dimension of the route context, declared by the caller that gives it meaning. Keep a value constant
- * within a subtree and match on whole paths: a value that varies from node to node disables the reuse that
- * makes traversal of a cyclic document terminate, and combiner options report paths relative to the option.
- */
-export interface TraversalDimension {
-  /** Key the merged route context holds this dimension under, and the one a rule reads it back by. */
-  name: string
-  /**
-   * Asked for a node of the document, the zero-length path being the document itself, and for every added
-   * or removed key, which is a node the traversal never enters. Asked more than once for the same node
-   * when a combiner pairs its options, so keep it free of side effects. The root of a nested compare is
-   * not asked, so an answer meant for the document cannot undo what a combiner was reached under.
-   * Returns
-   * a value that holds from this node down.
-   * `undefined` to inherit the one of the enclosing node.
-   */
-  valueAt: (path: JsonPath, beforeJso?: unknown, afterJso?: unknown) => string | undefined
-}
-
-/**
- * State of a difference at the moment it is classified. `type` is what the preceding rule left, starting
- * from the verdict the classify rules produced; `dimensions` is the route it was reached through.
- */
-export interface DiffClassificationContext {
-  action: ActionType
-  type: DiffType
-  dimensions: TraversalDimensions
-  beforeDeclarationPaths: JsonPath[]
-  beforeValue: unknown
-}
-
-/**
- * One step of the classification pipeline, run in the order the rules are given. A rule is handed the
- * verdict the spec rules produced, or the one the rule before it left.
- * Returns
- * a diff type to replace that verdict with.
- * `undefined` to leave it as it stands, which is also what a rule that throws leaves behind.
- */
-export type DiffClassificationRule = (context: DiffClassificationContext) => DiffType | undefined
-
 export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   mode?: CompareMode
   normalizedResult?: boolean
@@ -136,22 +158,21 @@ export interface CompareOptions extends Omit<NormalizeOptions, 'source'> {
   beforeValueNormalizedProperty?: symbol
   afterValueNormalizedProperty?: symbol
   /**
-   * Route context the traversal carries, inherited down to the leaves and into `oneOf`, `anyOf` and
-   * `allOf`. Routes that disagree about a dimension get separate difference instances, and every extra
-   * value repeats the traversal of the subtree those routes share: declare a dimension for what routes
-   * must be able to disagree about, not for everything a rule would like to know.
-   * A dimension can be stated and restated from a node down, never unstated.
+   * Custom scope elements this comparison carries, each declared by name and computed per node. A value is
+   * inherited down to the leaves and into `oneOf`, `anyOf` and `allOf`, and can be restated from a node
+   * down but never unstated.
+   * Routes that disagree about an element get separate difference instances, and every extra value repeats
+   * the traversal of the subtree those routes share. Declare an element for what routes must be able to
+   * disagree about, not for everything a rule would like to know.
+   * Two providers declaring the same name throw at entry, before either document is normalized.
    */
-  dimensions?: readonly TraversalDimension[]
+  customScopeElementProviders?: readonly CustomScopeElementProvider[]
   /**
-   * Classification pipeline, consulted in order after the spec rules produced a verdict, for a verdict
-   * that depends on knowledge the library does not have. A rule has to be pure; one that throws leaves
-   * the verdict where the rule before it left it and does not stop the rules after it.
-   * Returns
-   * a diff type to use instead of the computed one.
-   * `undefined` to leave the verdict to the next rule, which is also what happens if a rule throws.
+   * Reclassification pipeline, consulted in order once the spec rules have produced a verdict, for a
+   * verdict that depends on knowledge the library does not have. A rule has to be pure; one that throws
+   * leaves the verdict where the rule before it left it and does not stop the rules after it.
    */
-  classificationRules?: readonly DiffClassificationRule[]
+  reclassificationRules?: readonly ReclassificationRule[]
   /**
    * For OpenAPI specs:
    * If a whole PathItem is removed, generate separate diffs for each HTTP operation (get/post/...)
@@ -185,10 +206,10 @@ export interface StrictCompareOptions extends Omit<CompareOptions, 'defaultsFlag
 export interface InternalCompareOptions extends StrictCompareOptions {
   rules: CompareRules
   /**
-   * Route context a nested compare (the items of a combiner) was reached under. Present only for one,
+   * Custom scope a nested compare (the items of a combiner) was reached under. Present only for one,
    * which is how the crawl knows the zero-length path of its own root is not the document.
    */
-  nestedDimensions?: TraversalDimensions
+  nestedCustomScope?: CustomScope
 }
 
 export type CompareEngine = (before: unknown, after: unknown, options: StrictCompareOptions) => CompareResult
@@ -211,7 +232,7 @@ export interface MergeState<T extends PropertyKey = string> {
   diffUniquenessCache: EvaluationCacheService,
   createdMergedJso: Set<JsonNode>,
   compareScope: CompareScope
-  dimensions: TraversalDimensions
+  customScope: CustomScope
 }
 
 export type JsonNode<Key extends PropertyKey = string> = Key extends (string | symbol) ? Record<string | symbol, unknown> : Record<number, unknown> | Array<unknown>

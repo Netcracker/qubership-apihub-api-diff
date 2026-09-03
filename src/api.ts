@@ -19,7 +19,7 @@ import {
   OpenApiSpecVersion,
 } from '@netcracker/qubership-apihub-api-unifier'
 import {
-  assertDistinctDimensionNames,
+  assertDistinctCustomScopeElementNames,
   DEFAULT_NORMALIZED_RESULT,
   DEFAULT_OPTION_DEFAULTS_META_KEY,
   DEFAULT_OPTION_ORIGINS_META_KEY,
@@ -78,7 +78,7 @@ export function apiDiff(before: unknown, after: unknown, options: CompareOptions
   if (!engine) {
     throw new Error(`No compare engine registered for specification type ${engineSpecType}`)
   }
-  assertDistinctDimensionNames(options.dimensions ?? [])
+  assertDistinctCustomScopeElementNames(options.customScopeElementProviders ?? [])
   return engine(before, after, {
     mode: COMPARE_MODE_DEFAULT,
     normalizedResult: DEFAULT_NORMALIZED_RESULT,
