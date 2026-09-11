@@ -41,13 +41,13 @@ const downgradeSeasoned: ReclassificationRule = ({ type, customScope }) => (
   type === breaking && customScope?.[SEASONING] === SEASONED ? risky : undefined
 )
 
-function seasonedAtPaths(data: PATH_ENTRY[]): CustomScopeElementProvider['valueAt'] {
+function seasonedAtPaths(markedOperations: PATH_ENTRY[]): CustomScopeElementProvider['valueAt'] {
   return ({ path }) => {
     if (path.length !== 3) {
       return undefined
     }
-    return data.some(entry =>
-      entry.every((el, i) => path[i] === el),
+    return markedOperations.some(operation =>
+      operation.every((segment, index) => path[index] === segment),
     ) ? SEASONED : undefined
   }
 }

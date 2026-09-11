@@ -47,6 +47,17 @@ describe('the custom scope interner', () => {
     expect(seasonedThenGarnished).toBe(garnishedThenSeasoned)
   })
 
+  it('should ignore undefined values in a patch', () => {
+    const interner = createCustomScopeInterner()
+    const stated = interner.mergeOrReuse(EMPTY_CUSTOM_SCOPE, { [SEASONING]: SEASONED })
+
+    expect(interner.mergeOrReuse(EMPTY_CUSTOM_SCOPE, { [SEASONING]: undefined })).toBe(EMPTY_CUSTOM_SCOPE)
+    // The one that matters: `undefined` says nothing, so it must not clear what was inherited
+    expect(interner.mergeOrReuse(stated, { [SEASONING]: undefined })).toBe(stated)
+  })
+})
+
+describe('resolving the custom scope providers', () => {
   it('should be resolved per comparison, so nothing outlives one apiDiff call', () => {
     const optionsOf = (mergedJsoCache: EvaluationCacheService): InternalCompareOptions =>
       ({ mergedJsoCache } as unknown as InternalCompareOptions)
@@ -58,13 +69,5 @@ describe('the custom scope interner', () => {
       .toBe(resolveCustomScopeProviders(optionsOf(ofOneComparison)).interner)
     expect(resolveCustomScopeProviders(optionsOf(ofOneComparison)).interner)
       .not.toBe(resolveCustomScopeProviders(optionsOf(ofAnother)).interner)
-  })
-  it('should ignore undefined values in a patch', () => {
-    const interner = createCustomScopeInterner()
-    const stated = interner.mergeOrReuse(EMPTY_CUSTOM_SCOPE, { [SEASONING]: SEASONED })
-
-    expect(interner.mergeOrReuse(EMPTY_CUSTOM_SCOPE, { [SEASONING]: undefined })).toBe(EMPTY_CUSTOM_SCOPE)
-    // The one that matters: `undefined` says nothing, so it must not clear what was inherited
-    expect(interner.mergeOrReuse(stated, { [SEASONING]: undefined })).toBe(stated)
   })
 })

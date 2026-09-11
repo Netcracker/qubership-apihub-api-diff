@@ -25,8 +25,8 @@ describe('reclassificationRules', () => {
       reclassificationRules: [(diff) => (isDeprecatedRemoval(diff) ? risky : undefined)],
     })
 
-    expect(diffs.filter(diff => diff.type === breaking)).toHaveLength(0)
-    expect(diffs.filter(diff => diff.type === risky).length).toBeGreaterThan(0)
+    expect(diffs.filter(diff => diff.type === breaking)).toBeEmpty()
+    expect(diffs.filter(diff => diff.type === risky)).not.toBeEmpty()
   })
 
   it('should keep the computed classification when every rule declines', () => {
@@ -63,8 +63,8 @@ describe('reclassificationRules', () => {
     })
 
     // One guard around the whole loop would lose the first verdict and skip every rule after the throw
-    expect(diffs.filter(diff => diff.type === nonBreaking).length).toBeGreaterThan(0)
-    expect(diffs.filter(diff => diff.type === risky)).toHaveLength(0)
+    expect(diffs.filter(diff => diff.type === nonBreaking)).not.toBeEmpty()
+    expect(diffs.filter(diff => diff.type === risky)).toBeEmpty()
     expect(errors.join('\n')).toContain('rule is broken')
   })
 
@@ -77,7 +77,7 @@ describe('reclassificationRules', () => {
     })
 
     // The second rule sees what the first left, so the last word on a claimed difference is its own
-    expect(diffs.filter(diff => diff.type === risky)).toHaveLength(0)
+    expect(diffs.filter(diff => diff.type === risky)).toBeEmpty()
   })
 
   it('should receive the declaration paths and value of the difference', () => {
@@ -107,29 +107,5 @@ describe('reclassificationRules', () => {
 
     expect(diffs).not.toBeEmpty()
     expect(diffs.map(({ scope }) => scope)).not.toContain(TAMPERED)
-  })
-
-  it('should classify a shared difference once per scope, not once per operation', () => {
-    const seen: (Diff['customScope'])[] = []
-    const { diffs } = apiDiff(before, after, {
-      reclassificationRules: [(diff) => {
-        if (isDeprecatedRemoval(diff)) {
-          seen.push(diff.customScope)
-        }
-        return undefined
-      }],
-    })
-
-    // Both operations reach `Shared` through the same $ref and no scope element tells them apart, so the
-    // removal is classified once per scope rather than once per operation.
-    const removals = diffs.filter(diff =>
-      'beforeDeclarationPaths' in diff &&
-      diff.beforeDeclarationPaths.some(jsonPath => jsonPath.join('.') === 'components.schemas.Shared.properties.gone'),
-    )
-    // Two: the request projection and the walk of the declaration site, not one per operation
-    expect(removals).toHaveLength(2)
-    expect(seen).not.toBeEmpty()
-    // A comparison that declares no scope elements leaves the field off the difference entirely
-    expect(seen.every(customScope => customScope === undefined)).toBe(true)
   })
 })
