@@ -17,13 +17,12 @@ import { deepEqual } from 'fast-equals'
 import {
   AdapterContext,
   AdapterResolver,
-  API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE,
-  ApiCompatibilityKind,
   CompareContext,
   CompareResult,
   CompareRule,
   CompareScope,
   ContextInput,
+  CustomScope,
   Diff,
   DiffAdd,
   DiffCallback,
@@ -38,6 +37,7 @@ import {
 } from '../types'
 import { getObjectValue, isArray, isDiffAdd, isDiffRemove, isDiffReplace, isNumber, isObject, typeOf } from '../utils'
 import { ANY_COMBINER_PATH, DiffAction, JSO_ROOT } from './constants'
+import { EMPTY_CUSTOM_SCOPE, resolveCustomScopeProviders } from './customScope'
 import { addDiffObjectToContainer, createDiffEntry, diffFactory, NEVER_KEY } from './diff'
 import { arrayMappingResolver, objectMappingResolver } from './mapping'
 
@@ -79,7 +79,8 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     rules,
     compareScope,
     parentContext,
-    apiCompatibilityScope,
+    customScope,
+    path,
   } = data
   return {
     parentContext: parentContext,
@@ -89,7 +90,8 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     mergeKey,
     rules,
     options,
-    apiCompatibilityScope: apiCompatibilityScope,
+    customScope,
+    path,
   }
 }
 
@@ -98,9 +100,10 @@ export const createChildContext = (
   mergedKey: PropertyKey,
   beforeChildKey: PropertyKey | undefined,
   afterChildKey: PropertyKey | undefined,
-  apiCompatibilityScope: ApiCompatibilityKind = ctx.apiCompatibilityScope,
+  customScope: CustomScope = ctx.customScope,
 ): CompareContext => {
-  const { before, after, rules, options, scope } = ctx
+  const { before, after, rules, options, scope, path } = ctx
+  const childKey = beforeChildKey ?? afterChildKey
   let beforeContext: NodeContext
   if (beforeChildKey !== undefined && isObject(before.value)) {
     beforeContext = createNodeContext(before, before.value, beforeChildKey, before.value[beforeChildKey], options, before.root)
@@ -131,6 +134,8 @@ export const createChildContext = (
     parentContext: ctx,
     before: beforeContext,
     after: afterContext,
+    customScope,
+    path: childKey === undefined ? path : [...path, childKey],
     mergeKey: mergedKey,
     rules: getNodeRules(
       rules,
@@ -140,7 +145,6 @@ export const createChildContext = (
     ) ?? {},
     options,
     scope: scope,
-    apiCompatibilityScope: apiCompatibilityScope,
   }
 }
 
@@ -169,13 +173,13 @@ export const getOrCreateChildDiffAdd = (diffUniquenessCache: EvaluationCacheServ
     string,
     CompareScope,
     typeof DiffAction.add,
-    ApiCompatibilityKind
+    CustomScope
   ], DiffAdd>([
     childCtx.after.value,
     buildPathsIdentifier(childCtx.after.declarativePaths),
     childCtx.scope,
     DiffAction.add,
-    childCtx.apiCompatibilityScope,
+    childCtx.customScope,
   ], () => {
     return diffFactory.added(childCtx)
   }, {} as DiffAdd, (result, guard) => {
@@ -192,13 +196,13 @@ export const getOrCreateChildDiffRemove = (diffUniquenessCache: EvaluationCacheS
     string,
     CompareScope,
     typeof DiffAction.remove,
-    ApiCompatibilityKind
+    CustomScope
   ], DiffRemove>([
     childCtx.before.value,
     buildPathsIdentifier(childCtx.before.declarativePaths),
     childCtx.scope,
     DiffAction.remove,
-    childCtx.apiCompatibilityScope,
+    childCtx.customScope,
   ], () => {
     return diffFactory.removed(childCtx)
   }, {} as DiffRemove, (result, guard) => {
@@ -234,7 +238,11 @@ const adaptValues = (beforeJso: JsonNode, beforeKey: PropertyKey, afterJso: Json
   return [beforeValueAdapted, afterValueAdapted]
 }
 const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions): SyncCrawlHook<MergeState, CompareRule> => {
-  const { metaKey, apiCompatibilityScopeFunction } = options
+  const { metaKey } = options
+  const { patchAt, interner } = resolveCustomScopeProviders(options)
+  // A nested crawl reports the zero-length path for its own root, where an answer meant for the document
+  // would overwrite what the combiner was reached under
+  const rootIsNotTheDocument = options.nestedCustomScope !== undefined
   const diffs: Set<Diff> = new Set()
   const addDiff: (diff: Diff) => void = (diff) => {
     const oldSize = diffs.size
@@ -262,7 +270,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       diffUniquenessCache,
       createdMergedJso,
       compareScope,
-      apiCompatibilityScope: parentApiCompatibilityScope,
+      customScope: parentCustomScope,
     } = state
 
     if (typeof unsafeKey === 'symbol') {
@@ -302,7 +310,12 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       afterValueAdapted,
     ] = adaptValues(beforeJso, beforeKey, afterJso, afterKey, adapter, options)
 
-    const computedApiCompatibilityScope = apiCompatibilityScopeFunction?.(crawlContext.path, beforeValueAdapted, afterValueAdapted) ?? parentApiCompatibilityScope
+    const computedCustomScope = interner.mergeOrReuse(
+      parentCustomScope,
+      rootIsNotTheDocument && crawlContext.path.length === 0
+        ? undefined
+        : patchAt?.({ path: crawlContext.path, beforeJso: beforeValueAdapted, afterJso: afterValueAdapted }),
+    )
 
     const ctx = createContext({
       ...state,
@@ -313,7 +326,8 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       mergeKey,
       rules,
       compareScope: newCompareScope ?? compareScope,
-      apiCompatibilityScope: computedApiCompatibilityScope,
+      customScope: computedCustomScope,
+      path: crawlContext.path,
     }, options)
 
     const beforeDeclarativePathsId = buildPathsIdentifier(cleanUpRecursive(ctx.before).declarativePaths)
@@ -325,14 +339,14 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       typeof beforeDeclarativePathsId,
       typeof afterDeclarativePathsId,
       CompareScope,
-      ApiCompatibilityKind
+      CustomScope
     ], ReusableMergeResult>([
       ctx.before.value,
       ctx.after.value,
       beforeDeclarativePathsId,
       afterDeclarativePathsId,
       ctx.scope,
-      computedApiCompatibilityScope,
+      computedCustomScope,
     ], ([beforeValue, afterValue]) => {
       if (!ignoreKeyDifference && beforeKey !== afterKey) {
         const diffEntry = createDiffEntry(ctx, diffFactory.renamed(ctx))
@@ -385,17 +399,21 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
           // ignoreAddRemove on the child rule drops the diff only. A removed child is still
           // merged by the crawl (the removed-node branch of the hook), an added one below.
           keyToRemove.forEach((keyToBefore) => {
-            const removalBwc = apiCompatibilityScopeFunction?.([...crawlContext.path, keyToBefore], beforeValue[keyToBefore]) || computedApiCompatibilityScope
-            const childCtx = createChildContext(ctx, keyToBefore, keyToBefore, undefined, removalBwc)
+            const removalPath = [...crawlContext.path, keyToBefore]
+            const removalCustomScope = interner.mergeOrReuse(computedCustomScope, patchAt?.({ path: removalPath, beforeJso: beforeValue[keyToBefore] }))
+            const childCtx = createChildContext(ctx, keyToBefore, keyToBefore, undefined, removalCustomScope)
             if (!childCtx.rules[IGNORE_ADD_REMOVE_RULE]) {
               jsoDiffEntries.push(getOrCreateChildDiffRemove(diffUniquenessCache, childCtx))
             }
           })
 
           keysToAdd.forEach((keyInAfter) => {
-            const additionBwc = apiCompatibilityScopeFunction?.([...crawlContext.path, keyInAfter], undefined, afterJso[keyInAfter]) || computedApiCompatibilityScope
+            const additionPath = [...crawlContext.path, keyInAfter]
+            // `afterValue[keyInAfter]`, not the container: a provider inspecting an added value must
+            // see the value itself
+            const additionCustomScope = interner.mergeOrReuse(computedCustomScope, patchAt?.({ path: additionPath, afterJso: afterValue[keyInAfter] }))
             const keyInMerge = isArray(mergedJsoValue) ? mergedJsoValue.length : keyInAfter
-            const childCtx = createChildContext(ctx, keyInMerge, undefined, keyInAfter, additionBwc)
+            const childCtx = createChildContext(ctx, keyInMerge, undefined, keyInAfter, additionCustomScope)
             if (!childCtx.rules[IGNORE_ADD_REMOVE_RULE]) {
               jsoDiffEntries.push(getOrCreateChildDiffAdd(diffUniquenessCache, childCtx))
             }
@@ -461,7 +479,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
         afterJso: afterValueAdapted as JsonNode/*safe cause it only happens for object*/,
         mergedJso: mergedValue,
         compareScope: newCompareScope ?? compareScope,
-        apiCompatibilityScope: computedApiCompatibilityScope,
+        customScope: computedCustomScope,
       }
       return { value: reuseResult.nextValue, state: childState, exitHook: reuseResult.exitHook }
     } else {
@@ -636,9 +654,19 @@ export const compare = (before: unknown, after: unknown, options: InternalCompar
   }
 }
 
-export const nestedCompare = (before: unknown, after: unknown, options: InternalCompareOptions): CompareResult => {
+/**
+ * Compares a subtree of the document the caller is already traversing, the items of a combiner. The custom
+ * scope it was reached under is a parameter rather than an option, so it cannot be left out: without it
+ * the crawl would ask the providers about its own root and take an answer meant for the document.
+ */
+export const nestedCompare = (
+  before: unknown,
+  after: unknown,
+  reachedUnder: CustomScope,
+  options: InternalCompareOptions,
+): CompareResult => {
   const diffs: Diff[] = []
-  const merged = compareInternal(before, after, (diff) => diffs.push(diff), options)
+  const merged = compareInternal(before, after, (diff) => diffs.push(diff), { ...options, nestedCustomScope: reachedUnder })
   return { merged, diffs: diffs, ownerDiffEntry: undefined }
 }
 
@@ -652,7 +680,8 @@ const compareInternal = (before: unknown, after: unknown, onDiff: DiffCallback, 
   const beforeRootJso = root.before
   const afterRootJso = root.after
 
-  const apiCompatibilityScope = options?.apiCompatibilityScopeFunction?.() || API_COMPATIBILITY_KIND_BACKWARD_COMPATIBLE
+  // The crawl asks about the root as it visits it, so the context starts empty here
+  const customScope = options.nestedCustomScope ?? EMPTY_CUSTOM_SCOPE
 
   if (!isObject(beforeRootJso) || !isObject(afterRootJso)) {
     // TODO
@@ -670,7 +699,7 @@ const compareInternal = (before: unknown, after: unknown, onDiff: DiffCallback, 
     diffUniquenessCache: options.diffUniquenessCache,
     createdMergedJso: options.createdMergedJso,
     compareScope: options.compareScope,
-    apiCompatibilityScope: apiCompatibilityScope,
+    customScope,
   }
   syncCrawl<MergeState, CompareRule>(before, [hook], { state: rootState, rules: options.rules })
   return root.merged[JSO_ROOT]
