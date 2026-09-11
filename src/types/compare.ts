@@ -54,10 +54,10 @@ export interface CustomScopeElementProvider {
   /** Key the custom scope holds this element under, and the one a reclassification rule reads it back by. */
   name: string
   /**
-   * Asked for a node of the document, and for every added or removed key, which is a node the traversal
-   * never enters. Asked more than once for the same node when a combiner pairs its options, so keep it
-   * free of side effects. The root of a nested compare is not asked, so an answer meant for the document
-   * cannot undo what a combiner was reached under.
+   * Asked for a node of the document, and for every added or removed key or combiner option, which is a
+   * node the traversal never enters. Asked more than once for the same node when a combiner pairs its
+   * options, so keep it free of side effects. The root of a nested compare is not asked, so an answer meant
+   * for the document cannot undo what a combiner was reached under.
    * Returns
    * a value that holds from this node down.
    * `undefined` to inherit the value of the enclosing node.
@@ -256,4 +256,5 @@ export interface ContextInput extends MergeState {
   beforeKey: PropertyKey
   mergeKey: PropertyKey
   rules: CompareRules
+  path: JsonPath
 }

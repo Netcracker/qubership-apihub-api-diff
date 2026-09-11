@@ -3,7 +3,7 @@ import { apiDiff, breaking, risky } from '../src'
 import type { ActionType, CompareOptions, Diff, DiffType } from '../src'
 import { DiffAction } from '../src/core'
 import { COMPARE_SCOPE_REQUEST } from '../src/openapi/openapi3.const'
-import { sharedSchemaSpec } from './helper/sharedSchemaSpec'
+import { customScopeSpec } from './helper/customScope'
 
 const GONE = 'gone'
 const SEASONED_PATH = '/seasoned'
@@ -14,7 +14,7 @@ const UNSEASONED = 'unseasoned'
 const createSpec = (
   properties: Record<string, unknown>,
   shared: (schema: unknown) => unknown = (schema) => schema,
-): unknown => sharedSchemaSpec([SEASONED_PATH, '/newcomer'], properties, shared)
+): unknown => customScopeSpec([SEASONED_PATH, '/newcomer'], properties, shared)
 
 const before = createSpec({
   keep: { type: 'string' },
@@ -67,7 +67,7 @@ const operationRemovalsOf = (diffs: Diff[], propertyName: string): DiffType[] =>
   operationRemovalDiffsOf(diffs, propertyName).map(({ type }) => type)
 
 describe('a declared scope element splits difference instances', () => {
-  it('should let routes that disagree about it reach their own verdicts', () => {
+  it('should give routes that answer a scope element differently their own verdicts', () => {
     const { diffs } = apiDiff(before, after, {
       customScopeElementProviders: seasoningOfOperation,
       reclassificationRules: downgradeSeasonedRemoval,
@@ -218,7 +218,7 @@ describe('inside a combiner', () => {
     expect(removals.map(({ scope }) => scope)).toIncludeSameMembers([COMPARE_SCOPE_REQUEST, 'components'])
   })
 
-  it('should keep a mark made below it, inside a combiner too', () => {
+  it('should keep a mark made on an operation when a combiner answers for the document root', () => {
     const { diffs } = apiDiff(
       withCombiner({ keep: { type: 'string' }, [GONE]: { type: 'string', deprecated: true } }),
       withCombiner({ keep: { type: 'string' } }),
@@ -245,6 +245,68 @@ describe('inside a combiner', () => {
       'beforeDeclarationPaths' in diff &&
       diff.beforeDeclarationPaths.some(jsonPath => jsonPath.join('.') === `components.schemas.Shared.oneOf.0.properties.${GONE}`))
     expect(removals.map(({ type }) => type)).toIncludeSameMembers([risky, breaking])
+  })
+
+  const DEPRECATION = 'deprecation'
+  const DEPRECATED = 'deprecated'
+  const OPTION = 'option'
+  const ADDED_OR_REMOVED_OPTION = 'components.schemas.Shared.oneOf.2'
+
+  /** The shared schema as a combiner of itself, a string, and the options given. */
+  const combinerOf = (moreOptions: unknown[]): unknown =>
+    createSpec({ keep: { type: 'string' } }, (schema) => ({ oneOf: [schema, { type: 'string' }, ...moreOptions] }))
+
+  it('should ask about a removed combiner option', () => {
+    const { diffs } = apiDiff(
+      combinerOf([{ type: 'integer', deprecated: true }]),
+      combinerOf([]),
+      {
+        customScopeElementProviders: [{
+          name: DEPRECATION,
+          valueAt: ({ beforeJso }) => (!!beforeJso && typeof beforeJso === 'object' && 'deprecated' in beforeJso ? DEPRECATED : undefined),
+        }],
+      },
+    )
+
+    // The option is compared by no crawl, so only the combiner can ask the provider about it
+    const removals = diffs.filter(diff => diff.action === DiffAction.remove &&
+      diff.beforeDeclarationPaths.some(jsonPath => jsonPath.join('.') === ADDED_OR_REMOVED_OPTION))
+    expect(removals).not.toBeEmpty()
+    expect(removals.map(({ customScope }) => customScope?.[DEPRECATION])).toSatisfyAll(value => value === DEPRECATED)
+  })
+
+  /** Answers for a combiner option with the index the provider is asked about it at. */
+  const optionIndexProviders: CompareOptions['customScopeElementProviders'] = [{
+    name: OPTION,
+    valueAt: ({ path }) => (path[path.length - 2] === 'oneOf' ? String(path[path.length - 1]) : undefined),
+  }]
+
+  it('should ask about an added combiner option at its index under the combiner', () => {
+    const { diffs } = apiDiff(
+      combinerOf([]),
+      combinerOf([{ type: 'integer' }]),
+      { customScopeElementProviders: optionIndexProviders },
+    )
+
+    const additions = diffs.filter(diff => diff.action === DiffAction.add &&
+      diff.afterDeclarationPaths.some(jsonPath => jsonPath.join('.') === ADDED_OR_REMOVED_OPTION))
+    expect(additions).not.toBeEmpty()
+    expect(additions.map(({ customScope }) => customScope?.[OPTION])).toSatisfyAll(value => value === '2')
+  })
+
+  it('should ask about a removed combiner option at its index in the before document', () => {
+    // The boolean option pairs with index 2 of the after document, so the removed integer option takes
+    // index 3 of the merged array while the before document declares it under index 2
+    const { diffs } = apiDiff(
+      combinerOf([{ type: 'integer' }, { type: 'boolean' }]),
+      combinerOf([{ type: 'boolean' }]),
+      { customScopeElementProviders: optionIndexProviders },
+    )
+
+    const removals = diffs.filter(diff => diff.action === DiffAction.remove &&
+      diff.beforeDeclarationPaths.some(jsonPath => jsonPath.join('.') === ADDED_OR_REMOVED_OPTION))
+    expect(removals).not.toBeEmpty()
+    expect(removals.map(({ customScope }) => customScope?.[OPTION])).toSatisfyAll(value => value === '2')
   })
 })
 
@@ -303,7 +365,7 @@ describe('what a scope element splits', () => {
     expect(nodesSeen).toSatisfyAll(node => !!node && typeof node === 'object' && 'responses' in node && !('get' in node))
   })
 
-  it('should still compare correctly when the value changes inside a subtree', () => {
+  it('should produce the same differences when a scope element answers per node', () => {
     // Naming every node separately is the pathological case the option warns about: results stay correct,
     // but nothing is reused. The fixture is acyclic, where that only costs time
     const { diffs: perNode } = apiDiff(before, after, {

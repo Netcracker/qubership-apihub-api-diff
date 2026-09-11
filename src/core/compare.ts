@@ -79,6 +79,7 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     compareScope,
     parentContext,
     customScope,
+    path,
   } = data
   return {
     parentContext: parentContext,
@@ -89,6 +90,7 @@ export const createContext = (data: ContextInput, options: InternalCompareOption
     rules,
     options,
     customScope,
+    path,
   }
 }
 
@@ -99,7 +101,8 @@ export const createChildContext = (
   afterChildKey: PropertyKey | undefined,
   customScope: CustomScope = ctx.customScope,
 ): CompareContext => {
-  const { before, after, rules, options, scope } = ctx
+  const { before, after, rules, options, scope, path } = ctx
+  const childKey = beforeChildKey ?? afterChildKey
   let beforeContext: NodeContext
   if (beforeChildKey !== undefined && isObject(before.value)) {
     beforeContext = createNodeContext(before, before.value, beforeChildKey, before.value[beforeChildKey], options, before.root)
@@ -131,6 +134,7 @@ export const createChildContext = (
     before: beforeContext,
     after: afterContext,
     customScope,
+    path: childKey === undefined ? path : [...path, childKey],
     mergeKey: mergedKey,
     rules: getNodeRules(
       rules,
@@ -322,6 +326,7 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
       rules,
       compareScope: newCompareScope ?? compareScope,
       customScope: computedCustomScope,
+      path: crawlContext.path,
     }, options)
 
     const beforeDeclarativePathsId = buildPathsIdentifier(cleanUpRecursive(ctx.before).declarativePaths)

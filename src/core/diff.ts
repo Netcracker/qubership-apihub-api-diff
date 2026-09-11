@@ -71,7 +71,7 @@ const runReclassificationPipeline = <D extends Diff>(
     try {
       type = rule({ ...diff, type } as Diff) ?? type
     } catch (error) {
-      ctx.options.onCreateDiffError?.(`Unable to classify diff. ${error instanceof Error ? error.message : ''}`, diff, ctx)
+      ctx.options.onCreateDiffError?.(`Unable to reclassify diff. ${error instanceof Error ? error.message : ''}`, diff, ctx)
     }
   }
   return type

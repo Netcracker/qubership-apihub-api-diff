@@ -2,10 +2,10 @@ import 'jest-extended'
 import { apiDiff, breaking, nonBreaking, risky } from '../src'
 import type { Diff, DiffRemove } from '../src'
 import { DiffAction } from '../src/core'
-import { sharedSchemaSpec } from './helper/sharedSchemaSpec'
+import { customScopeSpec } from './helper/customScope'
 
 const createSpec = (properties: Record<string, unknown>): unknown =>
-  sharedSchemaSpec(['/first', '/second'], properties)
+  customScopeSpec(['/first', '/second'], properties)
 
 const before = createSpec({ keep: { type: 'string' }, gone: { type: 'string', deprecated: true } })
 const after = createSpec({ keep: { type: 'string' } })
@@ -109,7 +109,7 @@ describe('reclassificationRules', () => {
     expect(diffs.map(({ scope }) => scope)).not.toContain(TAMPERED)
   })
 
-  it('should decide once for a difference shared by several operations', () => {
+  it('should classify a shared difference once per scope, not once per operation', () => {
     const seen: (Diff['customScope'])[] = []
     const { diffs } = apiDiff(before, after, {
       reclassificationRules: [(diff) => {

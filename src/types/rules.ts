@@ -71,6 +71,14 @@ export interface CompareContext {
   rules: CompareRules
   options: InternalCompareOptions
   customScope: CustomScope
+  /**
+   * Path of the node in the document being traversed, in the form `CustomScopeElementContext.path` hands a
+   * provider. Kept on the context so that a resolver can ask the providers about a node no crawl enters: an
+   * added or removed combiner option. A child is keyed by the before key where the before document has the
+   * node and by the after key otherwise, never by `mergeKey`. Inside a combiner option it is relative to the
+   * option.
+   */
+  path: JsonPath
 }
 
 export interface AdapterContext<T> {
