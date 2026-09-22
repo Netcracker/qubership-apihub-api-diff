@@ -1,5 +1,5 @@
 import { TEST_SPEC_TYPE_DDL_API } from '@netcracker/qubership-apihub-compatibility-suites'
-import { breaking, DiffAction, nonBreaking, risky, unclassified } from '../../../src'
+import { breaking, DiffAction, nonBreaking, unclassified } from '../../../src'
 import { diffsMatcher } from '../../helper/matchers'
 import { compareFiles } from '../utils'
 
@@ -65,8 +65,8 @@ describe('DDLApi Column Type: ', () => {
     ]))
   })
 
-  test('widen-float-to-double', async () => {
-    const testId = 'widen-float-to-double'
+  test('widen-real-to-double', async () => {
+    const testId = 'widen-real-to-double'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -78,38 +78,28 @@ describe('DDLApi Column Type: ', () => {
     ]))
   })
 
-  test('float-to-decimal', async () => {
-    const testId = 'float-to-decimal'
+  test('real-to-numeric', async () => {
+    const testId = 'real-to-numeric'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
         beforeDeclarationPaths: [TYPE_PATH],
         afterDeclarationPaths: [TYPE_PATH],
-        type: nonBreaking,
-      }),
-      expect.objectContaining({
-        action: DiffAction.add,
-        afterDeclarationPaths: [PRECISION_PATH],
-        type: nonBreaking,
-      }),
-      expect.objectContaining({
-        action: DiffAction.add,
-        afterDeclarationPaths: [SCALE_PATH],
         type: nonBreaking,
       }),
     ]))
   })
 
-  test('numeric-to-float', async () => {
-    const testId = 'numeric-to-float'
+  test('numeric-to-real', async () => {
+    const testId = 'numeric-to-real'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
         beforeDeclarationPaths: [TYPE_PATH],
         afterDeclarationPaths: [TYPE_PATH],
-        type: breaking,
+        type: nonBreaking,
       }),
       expect.objectContaining({
         action: DiffAction.remove,
@@ -204,7 +194,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [TYPE_PATH],
         afterDeclarationPaths: [TYPE_PATH],
-        type: risky,
+        type: nonBreaking,
       }),
       expect.objectContaining({
         action: DiffAction.add,
@@ -253,7 +243,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [SIZE_PATH],
         afterDeclarationPaths: [SIZE_PATH],
-        type: risky,
+        type: nonBreaking,
       }),
     ]))
   })
@@ -279,7 +269,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [PRECISION_PATH],
         afterDeclarationPaths: [PRECISION_PATH],
-        type: breaking,
+        type: nonBreaking,
       }),
     ]))
   })
@@ -290,9 +280,15 @@ describe('DDLApi Column Type: ', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
+        beforeDeclarationPaths: [PRECISION_PATH],
+        afterDeclarationPaths: [PRECISION_PATH],
+        type: nonBreaking,
+      }),
+      expect.objectContaining({
+        action: DiffAction.replace,
         beforeDeclarationPaths: [SCALE_PATH],
         afterDeclarationPaths: [SCALE_PATH],
-        type: risky,
+        type: nonBreaking,
       }),
     ]))
   })
@@ -305,7 +301,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [SCALE_PATH],
         afterDeclarationPaths: [SCALE_PATH],
-        type: breaking,
+        type: nonBreaking,
       }),
     ]))
   })
@@ -331,7 +327,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [TYPE_PATH],
         afterDeclarationPaths: [TYPE_PATH],
-        type: nonBreaking,
+        type: breaking,
       }),
     ]))
   })
@@ -344,7 +340,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [TYPE_PATH],
         afterDeclarationPaths: [TYPE_PATH],
-        type: risky,
+        type: breaking,
       }),
     ]))
   })
@@ -370,7 +366,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [TYPE_PATH],
         afterDeclarationPaths: [TYPE_PATH],
-        type: risky,
+        type: nonBreaking,
       }),
     ]))
   })
@@ -383,7 +379,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [TYPE_PATH],
         afterDeclarationPaths: [TYPE_PATH],
-        type: risky,
+        type: nonBreaking,
       }),
     ]))
   })
@@ -396,7 +392,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [TYPE_PATH],
         afterDeclarationPaths: [TYPE_PATH],
-        type: risky,
+        type: breaking,
       }),
     ]))
   })
@@ -414,8 +410,8 @@ describe('DDLApi Column Type: ', () => {
     ]))
   })
 
-  test('bool-to-int', async () => {
-    const testId = 'bool-to-int'
+  test('boolean-to-integer', async () => {
+    const testId = 'boolean-to-integer'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -427,8 +423,8 @@ describe('DDLApi Column Type: ', () => {
     ]))
   })
 
-  test('int-to-bool', async () => {
-    const testId = 'int-to-bool'
+  test('integer-to-boolean', async () => {
+    const testId = 'integer-to-boolean'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -448,7 +444,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [[...ENUM_PATH, 'type']],
         afterDeclarationPaths: [TYPE_PATH],
-        type: risky,
+        type: breaking,
       }),
       expect.objectContaining({
         action: DiffAction.remove,
@@ -486,8 +482,8 @@ describe('DDLApi Column Type: ', () => {
     ]))
   })
 
-  test('binary-to-text', async () => {
-    const testId = 'binary-to-text'
+  test('bytea-to-text', async () => {
+    const testId = 'bytea-to-text'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -499,8 +495,8 @@ describe('DDLApi Column Type: ', () => {
     ]))
   })
 
-  test('text-to-binary', async () => {
-    const testId = 'text-to-binary'
+  test('text-to-bytea', async () => {
+    const testId = 'text-to-bytea'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -512,8 +508,8 @@ describe('DDLApi Column Type: ', () => {
     ]))
   })
 
-  test('narrow-cross-family-to-text', async () => {
-    const testId = 'narrow-cross-family-to-text'
+  test('integer-to-text', async () => {
+    const testId = 'integer-to-text'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -533,7 +529,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [TYPE_PATH],
         afterDeclarationPaths: [TYPE_PATH],
-        type: risky,
+        type: nonBreaking,
       }),
     ]))
   })
@@ -546,7 +542,7 @@ describe('DDLApi Column Type: ', () => {
         action: DiffAction.replace,
         beforeDeclarationPaths: [TYPE_PATH],
         afterDeclarationPaths: [TYPE_PATH],
-        type: risky,
+        type: nonBreaking,
       }),
     ]))
   })

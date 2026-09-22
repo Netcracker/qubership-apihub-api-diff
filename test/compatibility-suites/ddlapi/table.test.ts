@@ -51,8 +51,8 @@ describe('DDLApi Table: ', () => {
     ]))
   })
 
-  test('add-table-description', async () => {
-    const testId = 'add-table-description'
+  test('add-table-comment', async () => {
+    const testId = 'add-table-comment'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -63,8 +63,8 @@ describe('DDLApi Table: ', () => {
     ]))
   })
 
-  test('update-table-description', async () => {
-    const testId = 'update-table-description'
+  test('update-table-comment', async () => {
+    const testId = 'update-table-comment'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
@@ -76,8 +76,8 @@ describe('DDLApi Table: ', () => {
     ]))
   })
 
-  test('remove-table-description', async () => {
-    const testId = 'remove-table-description'
+  test('remove-table-comment', async () => {
+    const testId = 'remove-table-comment'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
