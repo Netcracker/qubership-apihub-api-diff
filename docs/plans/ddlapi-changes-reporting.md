@@ -308,7 +308,7 @@ identity-based resolvers in `ddl.mapping.ts`:
 | `schemas[]` | `name` | |
 | `tables[]` | `name` | enables "added/deleted table" at element granularity |
 | `columns[]` | `name` | enables column add/remove and per-column field diffs |
-| `indexes[]`, `foreignKeys[]` | `name` / `symbol` | phase 3 |
+| `indexes[]`, `foreignKeys[]` | `name` / `symbol` | phase 3. An index parsed from an inline `UNIQUE` column constraint has **no** name, so `indexes[]` falls back to the columns the index covers — otherwise an unchanged table reports every unnamed index as removed and re-added |
 | `attrs[]` | composite `kind` (+ `name` for named attrs like Check) | a Comment attr is a singleton-per-owner → key on `kind` alone; this is what powers description add/remove/change (cases 11–13) |
 | `EnumType.values[]` | the value string itself (set semantics) | use `deepEqualsUniqueItemsArrayMappingResolver` + `ignoreKeyDifference`; powers E1/E2 |
 
@@ -745,7 +745,8 @@ New fixtures live in `test/ddl.constraints.test.ts`. Each task classifies + desc
 #### T5.1 — Indexes + primary key + unique: mapping, classify, describe  ·  M
 - **Depends:** T2.1, T3.1 · **Files:** `ddl.mapping.ts`, `ddl.classify.ts`, `ddl.rules.ts`,
   `ddl.description.ts`, `test/ddl.constraints.test.ts`
-- **Do:** `table.indexes[]` name-keyed resolver; `index.parts[]` keyed by **referenced column
+- **Do:** `table.indexes[]` keyed by `name`, falling back to the covered columns for an index
+  that has none (an inline `UNIQUE` column constraint); `index.parts[]` keyed by **referenced column
   name** so that adding/removing a column is a clean element diff (and the two parts of a swap map
   to themselves). `table.primaryKey` is a **single** `Index` node (present/absent → add/remove);
   `index.unique` is a boolean. Classify index add/remove, PK add/remove, unique flip, part

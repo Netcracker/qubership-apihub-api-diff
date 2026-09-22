@@ -30,6 +30,7 @@ import {
 import {
   attrsMappingResolver,
   enumValuesMappingResolver,
+  indexMappingResolver,
   indexPartMappingResolver,
   nameMappingResolver,
   symbolMappingResolver,
@@ -370,7 +371,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
     description: tableDescription,
     '/kind': SUPPRESS,
     '/columns': { mapping: nameMappingResolver, '/*': asElement(columnRules) },
-    '/indexes': { mapping: nameMappingResolver, '/*': asElement(indexRules) },
+    '/indexes': { mapping: indexMappingResolver, '/*': asElement(indexRules) },
     '/primaryKey': indexRules,
     '/foreignKeys': { mapping: symbolMappingResolver, '/*': asElement(foreignKeyRules) },
     '/attrs': attrsArrayRule,
