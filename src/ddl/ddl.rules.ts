@@ -305,6 +305,11 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   }
 
   // --- ForeignKey ---
+  // TODO: ddlapi plans to reference FK targets by name (`refTable: { schema, name }`,
+  // `refColumns: string[]`). Then `refTable` becomes a rule on two string fields, the compare
+  // resolver compares names, and ddl.description.ts drops `schemaNameOfTableNode` and the
+  // crawl-route fallback for `refTable`.
+  //
   // FK add/remove and onUpdate/onDelete changes are write-time constraints invisible to a
   // reader → non-breaking. So is moving a key onto different columns or a different table: it
   // changes which rows the database accepts on write, while nothing a reader selects stops
