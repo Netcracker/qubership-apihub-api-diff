@@ -106,6 +106,36 @@ describe('column nullability', () => {
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Changed] constraint for column 'id' of table 't' from 'NULL' to 'NOT NULL'")
   })
+
+  // Neither side writes the nullability, so the values are materialized from defaults and the
+  // only declaration path is the synthetic `#defaults` origin. The description has to resolve the
+  // column from the crawl route instead, or it degrades to printing that origin.
+  it('implied by a primary key that gains a column', async () => {
+    const beforeSql = 'create table t(id int, tenant_id int, constraint pk primary key (id));'
+    const afterSql = 'create table t(id int, tenant_id int, constraint pk primary key (id, tenant_id));'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs.map(d => d.description)).toEqual(expect.arrayContaining([
+      "[Changed] constraint for column 'tenant_id' of table 't' from 'NULL' to 'NOT NULL'",
+    ]))
+  })
+
+  it('implied by a primary key that loses a column', async () => {
+    const beforeSql = 'create table t(id int, tenant_id int, constraint pk primary key (id, tenant_id));'
+    const afterSql = 'create table t(id int, tenant_id int, constraint pk primary key (id));'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs.map(d => d.description)).toEqual(expect.arrayContaining([
+      "[Changed] constraint for column 'tenant_id' of table 't' from 'NOT NULL' to 'NULL'",
+    ]))
+  })
+
+  it('implied by adding a primary key', async () => {
+    const beforeSql = 'create table t(id int);'
+    const afterSql = 'create table t(id int, constraint pk primary key (id));'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs.map(d => d.description)).toEqual(expect.arrayContaining([
+      "[Changed] constraint for column 'id' of table 't' from 'NULL' to 'NOT NULL'",
+    ]))
+  })
 })
 
 describe('column default', () => {
@@ -438,6 +468,29 @@ describe('indexes and primary keys', () => {
     expect(onlyDescription(diffs)).toBe("[Deleted] expression 'lower(b::text)' from index 'idx' of table 't'")
   })
 
+  it('unnamed unique index names its kind, not a primary key', async () => {
+    // An inline UNIQUE column constraint has no name, so the description cannot quote one —
+    // it must still say what the index is rather than falling back to the primary-key wording.
+    const beforeSql = 'create table t(id int, code int);'
+    const afterSql = 'create table t(id int unique, code int);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs.map(d => d.description)).toContain("[Added] unique index on column 'id' of table 't'")
+  })
+
+  it('added key column to an existing primary key', async () => {
+    const beforeSql = 'create table t(id int not null, tenant_id int not null, primary key (id));'
+    const afterSql = 'create table t(id int not null, tenant_id int not null, primary key (id, tenant_id));'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Added] column 'tenant_id' to primary key of table 't'")
+  })
+
+  it('removed key column from an existing primary key', async () => {
+    const beforeSql = 'create table t(id int not null, tenant_id int not null, primary key (id, tenant_id));'
+    const afterSql = 'create table t(id int not null, tenant_id int not null, primary key (id));'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Deleted] column 'tenant_id' from primary key of table 't'")
+  })
+
   it('column reorder ⇒ one position description per moved part', async () => {
     const beforeSql = `
       create table t(a int, b int);
@@ -521,6 +574,75 @@ describe('foreign keys', () => {
     `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Changed] on-delete action of foreign key 'fk_u' on table 'u' from 'NO ACTION' to 'CASCADE'")
+  })
+
+  // A key's columns, referenced columns and referenced table point at entities declared
+  // elsewhere. Each change is reported on the key and names the part of the key that changed.
+  it('changed key columns', async () => {
+    const beforeSql = `
+      create table parent(id int primary key);
+      create table child(a int, b int, constraint fk_c foreign key (a) references parent (id));
+    `
+    const afterSql = `
+      create table parent(id int primary key);
+      create table child(a int, b int, constraint fk_c foreign key (b) references parent (id));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] columns of foreign key 'fk_c' on table 'child' from 'a' to 'b'")
+  })
+
+  it('changed key columns of a composite key lists them all', async () => {
+    const beforeSql = `
+      create table parent(x int, y int, primary key (x, y));
+      create table child(a int, b int, c int, constraint fk_c foreign key (a, b) references parent (x, y));
+    `
+    const afterSql = `
+      create table parent(x int, y int, primary key (x, y));
+      create table child(a int, b int, c int, constraint fk_c foreign key (a, c) references parent (x, y));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] columns of foreign key 'fk_c' on table 'child' from 'a, b' to 'a, c'")
+  })
+
+  it('changed referenced columns', async () => {
+    const beforeSql = `
+      create table t(id int unique, code int unique);
+      create table u(ref int, constraint fk_u_t foreign key (ref) references t (id));
+    `
+    const afterSql = `
+      create table t(id int unique, code int unique);
+      create table u(ref int, constraint fk_u_t foreign key (ref) references t (code));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] referenced columns of foreign key 'fk_u_t' on table 'u' from 'id' to 'code'")
+  })
+
+  it('changed referenced table renders from/to', async () => {
+    const beforeSql = `
+      create table legacy(id int primary key);
+      create table target(id int primary key);
+      create table u(ref int, constraint fk_u_ref foreign key (ref) references legacy (id));
+    `
+    const afterSql = `
+      create table legacy(id int primary key);
+      create table target(id int primary key);
+      create table u(ref int, constraint fk_u_ref foreign key (ref) references target (id));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] referenced table of foreign key 'fk_u_ref' on table 'u' from 'legacy' to 'target'")
+  })
+
+  it('changed key columns in a non-default schema names that schema', async () => {
+    const beforeSql = `
+      create table s.parent(id int primary key);
+      create table s.child(a int, b int, constraint fk_c foreign key (a) references s.parent (id));
+    `
+    const afterSql = `
+      create table s.parent(id int primary key);
+      create table s.child(a int, b int, constraint fk_c foreign key (b) references s.parent (id));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] columns of foreign key 'fk_c' on table 'child' in schema 's' from 'a' to 'b'")
   })
 
   it('changed on-update action', async () => {

@@ -109,6 +109,39 @@ describe('shared-instance / merged-document contract', () => {
     expect(diffAt(fkRefColumn.type!.type, 'type')).toBe(typeChangeDiff)
   })
 
+  it('a foreign key’s own column: type change ⇒ one shared diff at the table and the key', async () => {
+    const beforeSql = `
+      create table t(id int, primary key (id));
+      create table u(ref int, constraint fk_u foreign key (ref) references t(id));
+    `
+    const afterSql = `
+      create table t(id int, primary key (id));
+      create table u(ref bigint, constraint fk_u foreign key (ref) references t(id));
+    `
+    const { diffs, merged } = await diffSql(beforeSql, afterSql)
+
+    // The FK's `/columns` edge classifies its own add/remove non-breaking, but it must not hide
+    // a change to the column it points at: that stays one diff, declared at the table column.
+    expect(diffs).toHaveLength(1) // the single shared column /type-name replace
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.replace,
+        type: nonBreaking,
+        beforeValue: 'integer',
+        afterValue: 'bigint',
+        beforeDeclarationPaths: [['schemas', 0, 'tables', 1, 'columns', 0, 'type', 'type', 'type']],
+        afterDeclarationPaths: [['schemas', 0, 'tables', 1, 'columns', 0, 'type', 'type', 'type']],
+      }),
+    ]))
+
+    const u = findTable(merged, 'u')
+    const refColumn = findColumn(u, 'ref')
+    const fkColumn = u.foreignKeys![0].columns![0]
+
+    expect(fkColumn).toBe(refColumn)
+    expect(diffAt(fkColumn.type!.type, 'type')).toBe(diffs[0])
+  })
+
   it('a change reached via fk.refTable is the same Diff (appears once)', async () => {
     const beforeSql = `
       create table t(id int, primary key (id));

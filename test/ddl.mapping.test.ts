@@ -63,6 +63,55 @@ describe('name-keyed resolvers', () => {
   })
 })
 
+// An inline `UNIQUE` column constraint parses to an index with no name, so `indexes[]` falls
+// back to keying an element by the columns it covers.
+describe('unnamed indexes', () => {
+  it('an unchanged table with unnamed unique indexes ⇒ no diffs', async () => {
+    const sql = 'create table t(id int unique, code int unique);'
+    const { diffs } = await diffSql(sql, sql)
+    expect(diffs).toBeEmpty()
+  })
+
+  it('reordering unnamed unique indexes ⇒ no diffs', async () => {
+    const beforeSql = 'create table t(id int unique, code int unique);'
+    const afterSql = 'create table t(code int unique, id int unique);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toBeEmpty()
+  })
+
+  it('adding one unnamed unique index ⇒ exactly one element-level diff', async () => {
+    const beforeSql = 'create table t(id int unique, code int);'
+    const afterSql = 'create table t(id int unique, code int unique);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toHaveLength(1) // only the added index
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({
+        action: DiffAction.add,
+        type: nonBreaking,
+        afterDeclarationPaths: [['schemas', 0, 'tables', 0, 'indexes', 1]],
+      }),
+    ]))
+  })
+
+  it('a named index never collides with an unnamed one on the same column', async () => {
+    // The named index is called `id`, the unnamed one covers column `id`: the two key spaces
+    // are kept apart, so renaming the named index does not map it onto the unnamed one.
+    const beforeSql = `
+      create table t(id int unique);
+      create index id on t(id);
+    `
+    const afterSql = `
+      create table t(id int unique);
+      create index renamed on t(id);
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toEqual(diffsMatcher([
+      expect.objectContaining({ action: DiffAction.remove, type: nonBreaking }),
+      expect.objectContaining({ action: DiffAction.add, type: nonBreaking }),
+    ]))
+  })
+})
+
 describe('attrs composite-key + enum values set', () => {
   it('a Comment text change ⇒ exactly one diff (attr keyed by kind)', async () => {
     const beforeSql = `

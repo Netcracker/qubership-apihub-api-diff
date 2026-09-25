@@ -73,7 +73,12 @@ export const DESCRIPTION_VALUE_MAX_LENGTH = 40
 export const TypeConsumptionFamily = {
   Numeric: 'numeric',
   Textual: 'textual',
-  Temporal: 'temporal',
+  // Temporal types are each their own family: a DATE, a TIME and a TIMESTAMP carry different
+  // components, so swapping one for another changes what a reader gets back rather than
+  // widening it. The agreed DDL catalog classifies every such swap as breaking.
+  Date: 'date',
+  Time: 'time',
+  Timestamp: 'timestamp',
   Boolean: 'boolean',
   Binary: 'binary',
   Uuid: 'uuid',

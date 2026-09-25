@@ -241,8 +241,8 @@ in terms of **reader consumption families** rather than raw SQL type names.
 Define:
 
 ```ts
-type TypeConsumptionFamily = 'numeric' | 'textual' | 'temporal' | 'boolean'
-                           | 'binary' | 'uuid' | 'json' | 'enum' | 'opaque'
+type TypeConsumptionFamily = 'numeric' | 'textual' | 'date' | 'time' | 'timestamp'
+                           | 'boolean' | 'binary' | 'uuid' | 'json' | 'enum' | 'opaque'
 
 // maps a SchemaType to how a dashboard consumes its values
 function consumptionFamily(t: SchemaType, dialect): TypeConsumptionFamily
@@ -250,10 +250,9 @@ function consumptionFamily(t: SchemaType, dialect): TypeConsumptionFamily
 
 Classification of `old → new` on `column.type.type`, under the "query still runs" contract (§1):
 - **Same family** → `non-breaking`: every operation that was type-valid on the old type is still
-  type-valid on the new one (smallint→integer→bigint, varchar(50)→varchar(200), float→decimal,
-  timestamp→date all keep `numeric`/`textual`/`temporal` operations valid). **Within-family
-  precision/size changes — including narrowing/loss — are `non-breaking`** (O1): the query still
-  executes; the fact that a value may be truncated or rounded is a *result* change, which is
+  type-valid on the new one (smallint→integer→bigint, varchar(50)→varchar(200), float→decimal all
+  keep `numeric`/`textual` operations valid). **Within-family precision/size changes — including
+  narrowing/loss — are `non-breaking`** (O1): the query still executes; the fact that a value may be truncated or rounded is a *result* change, which is
   outside the contract. (An optional data-quality signal — §13 — can surface these for callers
   who want them.)
 - **Cross-family** → `breaking`: an operation that was type-valid is no longer valid — `SUM` /
@@ -269,16 +268,21 @@ false-positive-resistant: `int`/`integer`/`int4` all map to `IntegerType('intege
 collapses timezone**). So two syntactically different but semantically equal DDLs produce equal
 `SchemaType`s → no diff. (`varchar` vs `varchar(255)` *do* differ in `size` and *should* — that
 is a real semantic difference, not a false positive.) Because the model already collapses
-timezone and serial-ness, the coarse family model is aligned with what the model can even
-distinguish — splitting temporal by tz is not possible without the escape hatch, reinforcing the
-coarse-families-in-v1 choice.
+timezone and serial-ness, the family model is aligned with what the model can even distinguish —
+splitting temporal by tz is not possible without the escape hatch.
+
+**Temporal is not one family.** Each SQL temporal type — `date`, `time`, `timestamp` — is its
+own family, so every swap between them is `breaking`. This is the one place where the agreed
+DDL catalog overrides the pure "query still runs" reading of §1: `timestamp`→`date` executes,
+but the reviewers ruled that silently dropping the time component is not something a dashboard
+maintainer should meet as a non-breaking change. Timezone stays collapsed, as above: `timetz`
+and `time` share the `time` family, `timestamptz` and `timestamp` share `timestamp`.
 
 **Result-drift (out of the breaking/non-breaking contract):** within-family changes that the
 model *can* see and that keep every query executing but may change *values* — `float`↔`decimal`
-(exactness), decimal precision/scale narrowing, `timestamp`→`date` (time component loss), and
-nullability not-null→nullable (NULLs appear). These are `non-breaking` by definition (§1). If
-callers need them flagged, the right vehicle is a **separate, optional "data-quality"/result-drift
-signal** (a new classification axis or a `risky` annotation) — *not* a reclassification to
+(exactness), decimal precision/scale narrowing, and nullability not-null→nullable (NULLs appear).
+These are `non-breaking` by definition (§1). If callers need them flagged, the right vehicle is a
+**separate, optional "data-quality"/result-drift signal** (a new classification axis or a `risky` annotation) — *not* a reclassification to
 breaking, which would re-introduce the inconsistency the contract was chosen to remove. Out of
 scope for v1; noted in §13.
 
@@ -304,7 +308,7 @@ identity-based resolvers in `ddl.mapping.ts`:
 | `schemas[]` | `name` | |
 | `tables[]` | `name` | enables "added/deleted table" at element granularity |
 | `columns[]` | `name` | enables column add/remove and per-column field diffs |
-| `indexes[]`, `foreignKeys[]` | `name` / `symbol` | phase 3 |
+| `indexes[]`, `foreignKeys[]` | `name` / `symbol` | phase 3. An index parsed from an inline `UNIQUE` column constraint has **no** name, so `indexes[]` falls back to the columns the index covers — otherwise an unchanged table reports every unnamed index as removed and re-added |
 | `attrs[]` | composite `kind` (+ `name` for named attrs like Check) | a Comment attr is a singleton-per-owner → key on `kind` alone; this is what powers description add/remove/change (cases 11–13) |
 | `EnumType.values[]` | the value string itself (set semantics) | use `deepEqualsUniqueItemsArrayMappingResolver` + `ignoreKeyDifference`; powers E1/E2 |
 
@@ -741,7 +745,8 @@ New fixtures live in `test/ddl.constraints.test.ts`. Each task classifies + desc
 #### T5.1 — Indexes + primary key + unique: mapping, classify, describe  ·  M
 - **Depends:** T2.1, T3.1 · **Files:** `ddl.mapping.ts`, `ddl.classify.ts`, `ddl.rules.ts`,
   `ddl.description.ts`, `test/ddl.constraints.test.ts`
-- **Do:** `table.indexes[]` name-keyed resolver; `index.parts[]` keyed by **referenced column
+- **Do:** `table.indexes[]` keyed by `name`, falling back to the covered columns for an index
+  that has none (an inline `UNIQUE` column constraint); `index.parts[]` keyed by **referenced column
   name** so that adding/removing a column is a clean element diff (and the two parts of a swap map
   to themselves). `table.primaryKey` is a **single** `Index` node (present/absent → add/remove);
   `index.unique` is a boolean. Classify index add/remove, PK add/remove, unique flip, part
