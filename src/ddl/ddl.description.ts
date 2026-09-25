@@ -236,7 +236,7 @@ const columnNoun = (count: number): string => (count === 1 ? 'column' : 'columns
 
 // Bare label of one index part: a column name, or (expression part) its expression text.
 const partLabel = (part: unknown): PrimitiveType | undefined => {
-  const columnName = nameOf(isObject(part) ? part[DdlapiProperties.Column] : undefined)
+  const columnName = nameOf(part, DdlapiProperties.Column)
   return columnName ?? renderExprText(isObject(part) ? part[DdlapiProperties.Expr] : undefined)
 }
 
@@ -250,36 +250,23 @@ const renderColumnsClause = (indexNode: unknown): string | undefined => {
 
 // `column 'b'` / `expression 'lower(a)'` for a single part add / remove / reorder.
 const renderPartClause = (part: unknown): string | undefined => {
-  const columnName = nameOf(isObject(part) ? part[DdlapiProperties.Column] : undefined)
+  const columnName = nameOf(part, DdlapiProperties.Column)
   if (columnName !== undefined) { return `column '${columnName}'` }
   const expr = renderExprText(isObject(part) ? part[DdlapiProperties.Expr] : undefined)
   return expr === undefined ? undefined : `expression '${expr}'`
 }
 
+// Column names held in `property` of a foreign key node.
+const columnNames = (node: unknown, property: PropertyKey): PrimitiveType[] => {
+  const columns = isObject(node) ? node[property] : undefined
+  return isArray(columns) ? columns.map(checkPrimitiveType).filter((name): name is PrimitiveType => name !== undefined) : []
+}
+
 // `a` / `a, b` for a foreign key's column list, whose diff carries the array itself.
 const joinNames = (value: unknown): PrimitiveType | undefined => {
   if (!isArray(value)) { return undefined }
-  const names = value.map(column => nameOf(column)).filter((name): name is PrimitiveType => name !== undefined)
+  const names = value.map(checkPrimitiveType).filter((name): name is PrimitiveType => name !== undefined)
   return names.length === 0 ? undefined : names.join(', ')
-}
-
-const columnNames = (node: unknown, property: PropertyKey): PrimitiveType[] => {
-  const columns = isObject(node) ? node[property] : undefined
-  return isArray(columns) ? columns.map(column => nameOf(column)).filter((name): name is PrimitiveType => name !== undefined) : []
-}
-
-// A Table node has no back-reference to its schema; locate the owning schema by identity. After a
-// build/normalization `foreignKey.refTable` is the exact `Table` instance held in `schema.tables`
-// (the shared-instance contract), so an `===` scan resolves the referenced table's schema name.
-const schemaNameOfTableNode = (root: unknown, tableNode: unknown): PrimitiveType | undefined => {
-  if (!isObject(tableNode)) { return undefined }
-  const schemas = getKeyValue(root, DdlapiProperties.Schemas)
-  if (!isArray(schemas)) { return undefined }
-  for (const schema of schemas) {
-    const tables = isObject(schema) ? schema[DdlapiProperties.Tables] : undefined
-    if (isArray(tables) && tables.some(table => table === tableNode)) { return nameOf(schema) }
-  }
-  return undefined
 }
 
 // `beforeValue`/`afterValue` live on specific Diff union members; read them safely.
@@ -342,8 +329,8 @@ interface DdlParamContext {
   nodeAt(path: JsonPath, depth: number): unknown
   /** Owning schema name for a declaration path, dropped when it is the default schema. */
   schemaOf(path: JsonPath): PrimitiveType | undefined
-  /** Owning schema name for a Table node (located by identity), dropped when default. */
-  schemaOfTable(tableNode: unknown): PrimitiveType | undefined
+  /** The given schema name, dropped when it is the default schema. */
+  nonDefaultSchema(name: PrimitiveType | undefined): PrimitiveType | undefined
 }
 
 const buildParamContext = (dialect: DdlDiffDialect, diff: Diff, ctx: CompareContext): DdlParamContext | undefined => {
@@ -357,10 +344,9 @@ const buildParamContext = (dialect: DdlDiffDialect, diff: Diff, ctx: CompareCont
   //
   // The crawl route is appended as a last-resort candidate. `pathWhere` returns the first match,
   // so a declaration path always wins and the shared-node behaviour above is untouched; the route
-  // is consulted only where no declaration path leads to the changed node. Two cases reach it: a
-  // value materialized from a default, whose only origin is the synthetic `#defaults`, and a
-  // foreign key's `/refTable`, which api-unifier originates at the target table. Both would
-  // otherwise fall back to printing that origin as a raw path.
+  // is consulted only where no declaration path leads to the changed node. One case reaches it: a
+  // value materialized from a default, whose only origin is the synthetic `#defaults`, and which
+  // would otherwise fall back to printing that origin as a raw path.
   const side = isDiffRemove(diff) ? ctx.before : ctx.after
   const root = side.root
   const sidePaths = [...orderedDeclarationPaths(diff), crawlPath(side)]
@@ -375,7 +361,7 @@ const buildParamContext = (dialect: DdlDiffDialect, diff: Diff, ctx: CompareCont
     pathWhere: predicate => sidePaths.find(predicate),
     nodeAt: (path, depth) => getKeyValue(root, ...path.slice(0, depth)),
     schemaOf: path => dropDefaultSchema(nameOf(getKeyValue(root, ...path.slice(0, SCHEMA_DEPTH)))),
-    schemaOfTable: tableNode => dropDefaultSchema(schemaNameOfTableNode(root, tableNode)),
+    nonDefaultSchema: dropDefaultSchema,
   }
 }
 
@@ -544,7 +530,13 @@ const indexParams: DdlParamHandler = (pc, diff) => {
 // of the key names that part and renders from/to. The part is read off the path tail, so the
 // branches below cover the key's columns, its referenced columns, its referenced table and its
 // referential actions alike.
-const foreignKeyParams: DdlParamHandler = (pc, diff) => {
+const foreignKeyParams: DdlParamHandler = (pc, diff, ctx) => {
+  // `users`, or `sales.users` outside the default schema.
+  const renderTableRef = (tableRef: unknown): PrimitiveType | undefined => {
+    const name = nameOf(tableRef)
+    const schema = pc.nonDefaultSchema(nameOf(tableRef, DdlapiProperties.Schema))
+    return name === undefined || schema === undefined ? name : `${schema}.${name}`
+  }
   const fkPath = pc.pathWhere(p => p.includes(DdlapiProperties.ForeignKeys))
   if (!fkPath) { return undefined }
   const fkIdx = fkPath.indexOf(DdlapiProperties.ForeignKeys)
@@ -575,16 +567,20 @@ const foreignKeyParams: DdlParamHandler = (pc, diff) => {
       joinNames(afterValueOf(diff)),
     )
   }
-  // The referenced table, reached through `/refTable`, whose own origin is the target table.
+  // The referenced table: its `/name` or `/schema` changed, rendered from the whole reference.
   if (fkPath[fkIdx + 2] === DdlapiProperties.RefTable) {
-    return partOfKey('referenced table', checkPrimitiveType(beforeValueOf(diff)), checkPrimitiveType(afterValueOf(diff)))
+    return partOfKey(
+      'referenced table',
+      renderTableRef(ctx.before.parentContext?.value),
+      renderTableRef(ctx.after.parentContext?.value),
+    )
   }
   const localColumns = columnNames(fkNode, DdlapiProperties.Columns)
   const localTable = nameOf(pc.nodeAt(fkPath, TABLE_DEPTH))
   const localSchema = pc.schemaOf(fkPath)
   const refTable = isObject(fkNode) ? fkNode[DdlapiProperties.RefTable] : undefined
   const refColumns = columnNames(fkNode, DdlapiProperties.RefColumns)
-  const refSchema = pc.schemaOfTable(refTable)
+  const refSchema = pc.nonDefaultSchema(nameOf(refTable, DdlapiProperties.Schema))
   return {
     ...pc.base,
     [TEMPLATE_PARAM_FK_NAME]: fkName,

@@ -27,13 +27,11 @@ const attrIdentityKey = (item: unknown): string | undefined => {
   return isString(id) ? `${kind}:${id}` : kind
 }
 
-/** Referenced column name of an index part (`part.column.name`), or `undefined`. */
+/** Column name of an index part (`part.column`), or `undefined` for an expression part. */
 const indexPartColumnName = (part: unknown): string | undefined => {
   if (!isObject(part)) { return undefined }
   const column = part[DdlapiProperties.Column]
-  if (!isObject(column)) { return undefined }
-  const name = column[DdlapiProperties.Name]
-  return isString(name) ? name : undefined
+  return isString(column) ? column : undefined
 }
 
 /**
@@ -72,7 +70,7 @@ export const attrsMappingResolver: MappingArrayResolver = createKeyMappingResolv
 export const enumValuesMappingResolver: MappingArrayResolver = deepEqualsUniqueItemsArrayMappingResolver
 
 /**
- * index.parts[] — keyed by the referenced column name so that adding or removing a column is a
+ * index.parts[] — keyed by the column name so that adding or removing a column is a
  * clean element diff and the two parts of a column-order swap map to themselves (the swap then
  * surfaces as `seqNo` replace diffs, not add/remove churn).
  */

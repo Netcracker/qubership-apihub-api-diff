@@ -1050,3 +1050,22 @@ out of that audit:
   is a **MySQL-ism, out of scope** — not emitted by the PG parser — so it is intentionally not
   handled (no rule, no dispatcher case, no facet); a `Charset` attr would fall through to the
   `unclassified` catch-all. `collation`/`generated expression` facet constants live in `ddl.const`.
+
+### 17.14 — ddlapi 2.0.0 references foreign key targets and index columns by name
+
+`ForeignKey.refTable` is a `TableRef` (`{ schema, name }`), and `ForeignKey.columns`,
+`ForeignKey.refColumns`, and `IndexPart.column` are column names. The shared-instance contract
+(§8A) now covers only named types (enum and domain); the `fk.refTable` edge of §8A and T5.2 no
+longer exists. Consequences for the rule tree:
+
+- `/refTable` is a rule on its two string fields. Repointing a key declares its diff at
+  `…foreignKeys/<i>/refTable/name` (or `/schema`), on the key, instead of at the referenced
+  tables; the description renders the reference as `name`, or `schema.name` outside the default
+  schema.
+- The key-columns compare resolver compares the name lists, and `/columns` / `/refColumns` no
+  longer descend into table columns.
+- `indexPartRules` has no `/column` edge, and the part mapping keys on the name itself.
+- A column's own change (such as a type change) is reported only under `table.columns`; index
+  parts and key column lists carry no copy of its diff.
+- `ddl.description.ts` reads names directly. `schemaNameOfTableNode` is removed, and the
+  crawl-route fallback serves only values materialized from defaults.

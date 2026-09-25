@@ -1,7 +1,7 @@
 import { CrawlRulesContext } from '@netcracker/qubership-apihub-json-crawl'
 import { createDiffEntry, diffFactory } from '../core'
 import { CompareResolver } from '../types'
-import { isArray, isObject } from '../utils'
+import { isArray } from '../utils'
 import { allAnnotation, allNonBreaking, allUnclassified } from '../core'
 import {
   CompareMode,
@@ -12,7 +12,6 @@ import {
 } from '../types'
 import {
   AttrKind,
-  DdlapiProperties,
   DdlApiSpecVersion,
   ExprKind,
   ObjectKind,
@@ -68,9 +67,8 @@ const SUPPRESS: CompareRule = { [IGNORE_DIFFERENCE_RULE]: true }
 // on the element suppresses it.
 //
 // It returns a shallow copy carrying the flag rather than setting it on the rule object directly,
-// because the same rule objects (columnRules, tableRules, indexRules) are reused both as
-// keyed-array elements *and* as plain single-reference edges (`/primaryKey`, `/refTable`,
-// `/column`), where the flag is meaningless. Keeping it a per-use-site copy leaves the shared
+// because the same rule object (indexRules) is reused both as a keyed-array element *and* as the
+// plain single edge `/primaryKey`, where the flag is meaningless. Keeping it a per-use-site copy leaves the shared
 // base object clean for those other uses. (An element rule that is defined inline and used once —
 // e.g. enum `/values/*` — just sets the flag directly; this wrapper is for the shared, reused
 // rules so the spread is not hand-repeated at every mapped `/*`.)
@@ -283,14 +281,14 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
 
   // --- Index / IndexPart ---
   // Indexes are performance-only and primary key/unique alter grain, not query validity →
-  // all non-breaking. Parts are keyed by referenced column name so a
-  // column-order swap surfaces as `seqNo` replace diffs (non-breaking), not add/remove churn.
+  // all non-breaking. Parts are keyed by column name so a column-order swap surfaces as
+  // `seqNo` replace diffs (non-breaking), not add/remove churn. A part names its column, so a
+  // change to the column itself is reported only under `table.columns`.
   const indexPartRules: CompareRules = {
     $: allNonBreaking,
     description: indexDescription,
     '/seqNo': { $: allNonBreaking, description: indexDescription },
     '/expr': exprRules,
-    '/column': columnRules, // reference edge to a table column (same instance)
     '/attrs': attrsArrayRule,
   }
   const indexRules: CompareRules = {
@@ -305,28 +303,20 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   }
 
   // --- ForeignKey ---
-  // TODO: ddlapi plans to reference FK targets by name (`refTable: { schema, name }`,
-  // `refColumns: string[]`). Then `refTable` becomes a rule on two string fields, the compare
-  // resolver compares names, and ddl.description.ts drops `schemaNameOfTableNode` and the
-  // crawl-route fallback for `refTable`.
-  //
   // FK add/remove and onUpdate/onDelete changes are write-time constraints invisible to a
   // reader → non-breaking. So is moving a key onto different columns or a different table: it
   // changes which rows the database accepts on write, while nothing a reader selects stops
   // resolving. Dropping the same column at its declaration site stays breaking.
   //
-  // `/columns`, `/refColumns` and `/refTable` are *reference* edges, pointing at columns and
-  // tables declared — and diffed — elsewhere in the tree (the shared-instance contract; the
-  // target is never cloned). api-unifier records this on the origins: the `/columns` slot
-  // originates at `…foreignKeys.[fk].columns`, while each element originates at the column's
-  // own declaration. Comparing the list as one value at the slot therefore reports the change
-  // where it belongs, on the key. Descent still happens for an unchanged list, so a column
-  // reached through the key keeps the diff its table reports.
-  const coveredColumnNames = (value: unknown): string => (isArray(value)
-    ? value.map(column => (isObject(column) ? String(column[DdlapiProperties.Name]) : '')).join(',')
-    : '')
+  // `/columns` and `/refColumns` are lists of column names, and `/refTable` is a
+  // `{ schema, name }` reference; the columns and tables they name are diffed where they are
+  // declared. A column list is compared as one value at its slot, so a change reports one diff
+  // on the key rather than an element diff per name.
+  const sameNames = (before: unknown, after: unknown): boolean =>
+    isArray(before) && isArray(after) && before.length === after.length &&
+    before.every((name, index) => name === after[index])
   const foreignKeyColumnsCompare: CompareResolver = (ctx) => {
-    if (coveredColumnNames(ctx.before.value) === coveredColumnNames(ctx.after.value)) { return undefined }
+    if (sameNames(ctx.before.value, ctx.after.value)) { return undefined }
     const diffEntry = createDiffEntry(ctx, diffFactory.replaced(ctx))
     return { diffs: [diffEntry.diff], ownerDiffEntry: diffEntry, merged: ctx.after.value }
   }
@@ -335,26 +325,14 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
     compare: foreignKeyColumnsCompare,
     $: allNonBreaking,
     description: foreignKeyDescription,
-    mapping: nameMappingResolver,
-    '/*': asElement(columnRules),
   }
-  // The referenced table has no slot origin of its own — api-unifier originates `/refTable` at
-  // the target table — so repointing a key surfaces as the target's name changing under the
-  // edge. The rest of the referenced table is suppressed key by key, mirroring `tableRules`,
-  // because a nested `/**` also swallows `/name`.
+  // Repointing a key changes `/name`, `/schema`, or both under `/refTable`.
   const foreignKeyRefTableRules: CompareRules = {
     descriptionParamCalculator: foreignKeyParams,
     $: allNonBreaking,
     description: foreignKeyDescription,
+    '/schema': { $: allNonBreaking, description: foreignKeyDescription },
     '/name': { $: allNonBreaking, description: foreignKeyDescription },
-    '/kind': SUPPRESS,
-    '/columns': SUPPRESS,
-    '/indexes': SUPPRESS,
-    '/primaryKey': SUPPRESS,
-    '/foreignKeys': SUPPRESS,
-    '/attrs': SUPPRESS,
-    '/objects': SUPPRESS,
-    '/deps': SUPPRESS,
   }
   const foreignKeyRules: CompareRules = {
     descriptionParamCalculator: foreignKeyParams,
