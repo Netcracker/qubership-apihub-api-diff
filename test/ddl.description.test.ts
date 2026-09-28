@@ -647,6 +647,21 @@ describe('foreign keys', () => {
     expect(onlyDescription(diffs)).toBe("[Changed] referenced table of foreign key 'fk_u_ref' on table 'u' from 'a.t' to 't'")
   })
 
+  it('changed schema and name of the referenced table render as one from/to', async () => {
+    const beforeSql = `
+      create table a.users(id int primary key);
+      create table b.orders(id int primary key);
+      create table u(ref int, constraint fk_u_ref foreign key (ref) references a.users (id));
+    `
+    const afterSql = `
+      create table a.users(id int primary key);
+      create table b.orders(id int primary key);
+      create table u(ref int, constraint fk_u_ref foreign key (ref) references b.orders (id));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] referenced table of foreign key 'fk_u_ref' on table 'u' from 'a.users' to 'b.orders'")
+  })
+
   it('changed key columns in a non-default schema names that schema', async () => {
     const beforeSql = `
       create table s.parent(id int primary key);

@@ -1,7 +1,7 @@
 import { CrawlRulesContext } from '@netcracker/qubership-apihub-json-crawl'
 import { createDiffEntry, diffFactory } from '../core'
 import { CompareResolver } from '../types'
-import { isArray } from '../utils'
+import { isArray, isObject } from '../utils'
 import { allAnnotation, allNonBreaking, allUnclassified } from '../core'
 import {
   CompareMode,
@@ -12,6 +12,7 @@ import {
 } from '../types'
 import {
   AttrKind,
+  DdlapiProperties,
   DdlApiSpecVersion,
   ExprKind,
   ObjectKind,
@@ -310,29 +311,32 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   //
   // `/columns` and `/refColumns` are lists of column names, and `/refTable` is a
   // `{ schema, name }` reference; the columns and tables they name are diffed where they are
-  // declared. A column list is compared as one value at its slot, so a change reports one diff
-  // on the key rather than an element diff per name.
+  // declared. Each is compared as one value at its slot, so a change reports one diff on the
+  // key: a repoint that changes both the schema and the name of the target is one diff, not one
+  // per field.
   const sameNames = (before: unknown, after: unknown): boolean =>
     isArray(before) && isArray(after) && before.length === after.length &&
     before.every((name, index) => name === after[index])
-  const foreignKeyColumnsCompare: CompareResolver = (ctx) => {
-    if (sameNames(ctx.before.value, ctx.after.value)) { return undefined }
+  const sameTableRef = (before: unknown, after: unknown): boolean =>
+    isObject(before) && isObject(after) &&
+    before[DdlapiProperties.Schema] === after[DdlapiProperties.Schema] &&
+    before[DdlapiProperties.Name] === after[DdlapiProperties.Name]
+  const compareAsOneValue = (same: (before: unknown, after: unknown) => boolean): CompareResolver => (ctx) => {
+    if (same(ctx.before.value, ctx.after.value)) { return undefined }
     const diffEntry = createDiffEntry(ctx, diffFactory.replaced(ctx))
     return { diffs: [diffEntry.diff], ownerDiffEntry: diffEntry, merged: ctx.after.value }
   }
   const foreignKeyColumnsRules: CompareRules = {
     descriptionParamCalculator: foreignKeyParams,
-    compare: foreignKeyColumnsCompare,
+    compare: compareAsOneValue(sameNames),
     $: allNonBreaking,
     description: foreignKeyDescription,
   }
-  // Repointing a key changes `/name`, `/schema`, or both under `/refTable`.
   const foreignKeyRefTableRules: CompareRules = {
     descriptionParamCalculator: foreignKeyParams,
+    compare: compareAsOneValue(sameTableRef),
     $: allNonBreaking,
     description: foreignKeyDescription,
-    '/schema': { $: allNonBreaking, description: foreignKeyDescription },
-    '/name': { $: allNonBreaking, description: foreignKeyDescription },
   }
   const foreignKeyRules: CompareRules = {
     descriptionParamCalculator: foreignKeyParams,

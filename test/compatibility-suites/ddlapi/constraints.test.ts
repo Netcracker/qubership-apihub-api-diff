@@ -155,16 +155,16 @@ describe('DDLApi Constraints: ', () => {
     ]))
   })
 
-  // Repointing the key at another table surfaces as the name in the key's `refTable` changing.
+  // Repointing the key at another table surfaces as the key's `refTable` changing.
   test('change-referenced-table', async () => {
     const testId = 'change-referenced-table'
     const result = await compareFiles(SUITE_ID, testId, TEST_SPEC_TYPE_DDL_API)
-    const refTableNamePath = ['schemas', 0, 'tables', 2, 'foreignKeys', 0, 'refTable', 'name']
+    const refTablePath = ['schemas', 0, 'tables', 2, 'foreignKeys', 0, 'refTable']
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [refTableNamePath],
-        afterDeclarationPaths: [refTableNamePath],
+        beforeDeclarationPaths: [refTablePath],
+        afterDeclarationPaths: [refTablePath],
         type: nonBreaking,
       }),
     ]))

@@ -1058,10 +1058,10 @@ out of that audit:
 (§8A) now covers only named types (enum and domain); the `fk.refTable` edge of §8A and T5.2 no
 longer exists. Consequences for the rule tree:
 
-- `/refTable` is a rule on its two string fields. Repointing a key declares its diff at
-  `…foreignKeys/<i>/refTable/name` (or `/schema`), on the key, instead of at the referenced
-  tables; the description renders the reference as `name`, or `schema.name` outside the default
-  schema.
+- `/refTable` is compared as one value. Repointing a key declares one diff at
+  `…foreignKeys/<i>/refTable`, on the key, instead of at the referenced tables, even when both
+  the schema and the name change; the description renders the reference as `name`, or
+  `schema.name` outside the default schema.
 - The key-columns compare resolver compares the name lists, and `/columns` / `/refColumns` no
   longer descend into table columns.
 - `indexPartRules` has no `/column` edge, and the part mapping keys on the name itself.

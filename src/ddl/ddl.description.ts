@@ -530,7 +530,7 @@ const indexParams: DdlParamHandler = (pc, diff) => {
 // of the key names that part and renders from/to. The part is read off the path tail, so the
 // branches below cover the key's columns, its referenced columns, its referenced table and its
 // referential actions alike.
-const foreignKeyParams: DdlParamHandler = (pc, diff, ctx) => {
+const foreignKeyParams: DdlParamHandler = (pc, diff) => {
   // `users`, or `sales.users` outside the default schema.
   const renderTableRef = (tableRef: unknown): PrimitiveType | undefined => {
     const name = nameOf(tableRef)
@@ -567,13 +567,9 @@ const foreignKeyParams: DdlParamHandler = (pc, diff, ctx) => {
       joinNames(afterValueOf(diff)),
     )
   }
-  // The referenced table: its `/name` or `/schema` changed, rendered from the whole reference.
-  if (fkPath[fkIdx + 2] === DdlapiProperties.RefTable) {
-    return partOfKey(
-      'referenced table',
-      renderTableRef(ctx.before.parentContext?.value),
-      renderTableRef(ctx.after.parentContext?.value),
-    )
+  // The referenced table, compared as one value at the slot, like the column lists above.
+  if (last === DdlapiProperties.RefTable) {
+    return partOfKey('referenced table', renderTableRef(beforeValueOf(diff)), renderTableRef(afterValueOf(diff)))
   }
   const localColumns = columnNames(fkNode, DdlapiProperties.Columns)
   const localTable = nameOf(pc.nodeAt(fkPath, TABLE_DEPTH))
