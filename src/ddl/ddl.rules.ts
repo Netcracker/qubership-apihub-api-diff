@@ -33,7 +33,7 @@ import {
   indexMappingResolver,
   indexPartMappingResolver,
   nameMappingResolver,
-  symbolMappingResolver,
+  foreignKeyMappingResolver,
 } from './ddl.mapping'
 import {
   checkDescription,
@@ -360,7 +360,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
     '/columns': { mapping: nameMappingResolver, '/*': asElement(columnRules) },
     '/indexes': { mapping: indexMappingResolver, '/*': asElement(indexRules) },
     '/primaryKey': indexRules,
-    '/foreignKeys': { mapping: symbolMappingResolver, '/*': asElement(foreignKeyRules) },
+    '/foreignKeys': { mapping: foreignKeyMappingResolver, '/*': asElement(foreignKeyRules) },
     '/attrs': attrsArrayRule,
     '/objects': objectsArrayRule,
   }

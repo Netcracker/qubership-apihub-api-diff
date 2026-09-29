@@ -10,8 +10,25 @@ import { DdlapiProperties } from './ddl.const'
 /** schemas[] / tables[] / columns[] — keyed by `name`. */
 export const nameMappingResolver: MappingArrayResolver = createPropertyMappingResolver(DdlapiProperties.Name)
 
-/** foreignKeys[] — keyed by `symbol`. */
-export const symbolMappingResolver: MappingArrayResolver = createPropertyMappingResolver(DdlapiProperties.Symbol)
+/**
+ * foreignKeys[] identity — the constraint name, or, for a key that has none, the columns it
+ * covers. An inline `REFERENCES` clause parses to a key with no `symbol`, and a key-less element
+ * is left unmatched by the resolver: without the fallback, a key that only changes its referenced
+ * table or columns reports the whole key as removed and re-added. The `columns:` prefix keeps the
+ * two key spaces apart so a named key can never collide with an unnamed one.
+ */
+const foreignKeyIdentityKey = (item: unknown): string | undefined => {
+  if (!isObject(item)) { return undefined }
+  const symbol = item[DdlapiProperties.Symbol]
+  if (isString(symbol)) { return symbol }
+  const columns = item[DdlapiProperties.Columns]
+  return isArray(columns) && columns.length > 0 && columns.every(isString)
+    ? `columns:${columns.join(',')}`
+    : undefined
+}
+
+/** foreignKeys[] — keyed by `symbol`, falling back to the covered columns for an unnamed key. */
+export const foreignKeyMappingResolver: MappingArrayResolver = createKeyMappingResolver(foreignKeyIdentityKey)
 
 /**
  * Builds a composite identity key for an attr/object element: `kind` for singletons
