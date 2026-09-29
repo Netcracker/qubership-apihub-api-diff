@@ -138,6 +138,9 @@ export const INDEX_TEMPLATES = [
   // unique flag flip (name only + from/to)
   "[{{action}}] index '{{indexName}}' on table '{{tableName}}' from '{{oldValue}}' to '{{newValue}}'",
   "[{{action}}] index '{{indexName}}' on table '{{tableName}}' in schema '{{schemaName}}' from '{{oldValue}}' to '{{newValue}}'",
+  // unique flag flip of an unnamed index, identified by its key columns
+  "[{{action}}] index on {{columnsClause}} of table '{{tableName}}' from '{{oldValue}}' to '{{newValue}}'",
+  "[{{action}}] index on {{columnsClause}} of table '{{tableName}}' in schema '{{schemaName}}' from '{{oldValue}}' to '{{newValue}}'",
   // a key part (column / expression) added to or removed from an existing index
   "[{{action}}] {{partClause}} {{preposition}} index '{{indexName}}' of table '{{tableName}}'",
   "[{{action}}] {{partClause}} {{preposition}} index '{{indexName}}' of table '{{tableName}}' in schema '{{schemaName}}'",
@@ -508,8 +511,13 @@ const indexParams: DdlParamHandler = (pc, diff) => {
     }
   }
   if (last === DdlapiProperties.Unique) {
+    // An unnamed index has no name to quote, so its key columns identify it. A named index
+    // gets no columns clause, which keeps it on the row that quotes its name.
     return {
       ...common,
+      ...(common[TEMPLATE_PARAM_INDEX_NAME] === undefined && {
+        [TEMPLATE_PARAM_COLUMNS_CLAUSE]: renderColumnsClause(indexNode),
+      }),
       [TEMPLATE_PARAM_OLD_VALUE]: renderUnique(beforeValueOf(diff)),
       [TEMPLATE_PARAM_NEW_VALUE]: renderUnique(afterValueOf(diff)),
     }

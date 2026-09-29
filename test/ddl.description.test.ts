@@ -416,6 +416,32 @@ describe('indexes and primary keys', () => {
     expect(onlyDescription(diffs)).toBe("[Changed] index 'u' on table 't' from 'UNIQUE' to 'NON-UNIQUE'")
   })
 
+  it('unique flip of an unnamed index names its columns, not a primary key', async () => {
+    const beforeSql = `
+      create table t(id int, c1 int);
+      create index on t(c1);
+    `
+    const afterSql = `
+      create table t(id int, c1 int);
+      create unique index on t(c1);
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] index on column 'c1' of table 't' from 'NON-UNIQUE' to 'UNIQUE'")
+  })
+
+  it('unique flip of an unnamed index in a non-default schema names that schema', async () => {
+    const beforeSql = `
+      create table s.t(a int, b int);
+      create unique index on s.t(a, b);
+    `
+    const afterSql = `
+      create table s.t(a int, b int);
+      create index on s.t(a, b);
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] index on columns 'a', 'b' of table 't' in schema 's' from 'UNIQUE' to 'NON-UNIQUE'")
+  })
+
   it('added column key part to an index', async () => {
     const beforeSql = `
       create table t(a int, b int);
