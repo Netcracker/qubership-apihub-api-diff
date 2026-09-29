@@ -713,6 +713,77 @@ describe('foreign keys', () => {
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Changed] on-update action of foreign key 'fk_u' on table 'u' from 'NO ACTION' to 'CASCADE'")
   })
+
+  // An inline `REFERENCES` clause gives the key no name, so its columns identify it.
+  it('added unnamed foreign key names its columns', async () => {
+    const beforeSql = `
+      create table p(id int primary key);
+      create table t(r int);
+    `
+    const afterSql = `
+      create table p(id int primary key);
+      create table t(r int references p(id));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Added] foreign key on column 'r' of table 't' referencing column 'id' of table 'p'")
+  })
+
+  it('a named key replaced by an unnamed one on the same column', async () => {
+    const beforeSql = `
+      create table p(id int primary key);
+      create table t(a int, constraint fk_t_p foreign key (a) references p(id));
+    `
+    const afterSql = `
+      create table p(id int primary key);
+      create table t(a int references p(id));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs.map(diff => diff.description)).toEqual([
+      "[Deleted] foreign key 'fk_t_p' on column 'a' of table 't' referencing column 'id' of table 'p'",
+      "[Added] foreign key on column 'a' of table 't' referencing column 'id' of table 'p'",
+    ])
+  })
+
+  it('changed referenced table of an unnamed foreign key', async () => {
+    const beforeSql = `
+      create table a(id int primary key);
+      create table b(id int primary key);
+      create table t(r int references a(id));
+    `
+    const afterSql = `
+      create table a(id int primary key);
+      create table b(id int primary key);
+      create table t(r int references b(id));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] referenced table of foreign key on column 'r' of table 't' from 'a' to 'b'")
+  })
+
+  it('changed referenced columns of an unnamed foreign key in a non-default schema', async () => {
+    const beforeSql = `
+      create table s.p(id int unique, code int unique);
+      create table s.t(r int references s.p(id));
+    `
+    const afterSql = `
+      create table s.p(id int unique, code int unique);
+      create table s.t(r int references s.p(code));
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] referenced columns of foreign key on column 'r' of table 't' in schema 's' from 'id' to 'code'")
+  })
+
+  it('changed on-delete action of an unnamed foreign key', async () => {
+    const beforeSql = `
+      create table p(id int primary key);
+      create table t(r int references p(id) on delete no action);
+    `
+    const afterSql = `
+      create table p(id int primary key);
+      create table t(r int references p(id) on delete cascade);
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] on-delete action of foreign key on column 'r' of table 't' from 'NO ACTION' to 'CASCADE'")
+  })
 })
 
 describe('check constraints', () => {

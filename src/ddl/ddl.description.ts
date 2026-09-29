@@ -152,9 +152,13 @@ export const INDEX_TEMPLATES = [
 // Add/remove carry the full identity via precomposed local/ref clauses (each clause bakes in its
 // own `in schema` suffix when its table is not in the default schema). A change to one part of
 // the key — its columns, its referenced columns, its referenced table, or a referential action —
-// names that part in `{{fkAction}}` and is otherwise name-only with from/to (Principle B).
+// names that part in `{{fkAction}}` and is otherwise name-only with from/to (Principle B). A key
+// with no name (an inline `REFERENCES`) is identified by its local clause instead; the named rows
+// carry more params, so a named key never selects an unnamed row.
 export const FOREIGN_KEY_TEMPLATES = [
+  "[{{action}}] foreign key {{localClause}} {{refClause}}",
   "[{{action}}] foreign key '{{fkName}}' {{localClause}} {{refClause}}",
+  "[{{action}}] {{fkAction}} of foreign key {{localClause}} from '{{oldValue}}' to '{{newValue}}'",
   "[{{action}}] {{fkAction}} of foreign key '{{fkName}}' on table '{{tableName}}' from '{{oldValue}}' to '{{newValue}}'",
   "[{{action}}] {{fkAction}} of foreign key '{{fkName}}' on table '{{tableName}}' in schema '{{schemaName}}' from '{{oldValue}}' to '{{newValue}}'",
 ]
@@ -551,12 +555,18 @@ const foreignKeyParams: DdlParamHandler = (pc, diff) => {
   const fkNode = pc.nodeAt(fkPath, fkIdx + 2)
   const fkName = nameOf(fkNode, DdlapiProperties.Symbol) ?? nameOf(fkNode)
   const last = fkPath[fkPath.length - 1]
+  const localColumns = columnNames(fkNode, DdlapiProperties.Columns)
+  const localTable = nameOf(pc.nodeAt(fkPath, TABLE_DEPTH))
+  const localSchema = pc.schemaOf(fkPath)
+  const localClause = `on ${columnNoun(localColumns.length)} ${quoteJoin(localColumns)} of table '${localTable}'${localSchema ? ` in schema '${localSchema}'` : ''}`
   const partOfKey = (part: string, oldValue: PrimitiveType | undefined, newValue: PrimitiveType | undefined): DynamicParams => ({
     ...pc.base,
     [TEMPLATE_PARAM_FK_NAME]: fkName,
     [TEMPLATE_PARAM_FK_ACTION]: part,
-    [TEMPLATE_PARAM_TABLE_NAME]: nameOf(pc.nodeAt(fkPath, TABLE_DEPTH)),
-    [TEMPLATE_PARAM_SCHEMA_NAME]: pc.schemaOf(fkPath),
+    [TEMPLATE_PARAM_TABLE_NAME]: localTable,
+    [TEMPLATE_PARAM_SCHEMA_NAME]: localSchema,
+    // An unnamed key is identified by its columns; a named key keeps the row that quotes its name.
+    ...(fkName === undefined && { [TEMPLATE_PARAM_LOCAL_CLAUSE]: localClause }),
     [TEMPLATE_PARAM_OLD_VALUE]: oldValue,
     [TEMPLATE_PARAM_NEW_VALUE]: newValue,
   })
@@ -579,16 +589,13 @@ const foreignKeyParams: DdlParamHandler = (pc, diff) => {
   if (last === DdlapiProperties.RefTable) {
     return partOfKey('referenced table', renderTableRef(beforeValueOf(diff)), renderTableRef(afterValueOf(diff)))
   }
-  const localColumns = columnNames(fkNode, DdlapiProperties.Columns)
-  const localTable = nameOf(pc.nodeAt(fkPath, TABLE_DEPTH))
-  const localSchema = pc.schemaOf(fkPath)
   const refTable = isObject(fkNode) ? fkNode[DdlapiProperties.RefTable] : undefined
   const refColumns = columnNames(fkNode, DdlapiProperties.RefColumns)
   const refSchema = pc.nonDefaultSchema(nameOf(refTable, DdlapiProperties.Schema))
   return {
     ...pc.base,
     [TEMPLATE_PARAM_FK_NAME]: fkName,
-    [TEMPLATE_PARAM_LOCAL_CLAUSE]: `on ${columnNoun(localColumns.length)} ${quoteJoin(localColumns)} of table '${localTable}'${localSchema ? ` in schema '${localSchema}'` : ''}`,
+    [TEMPLATE_PARAM_LOCAL_CLAUSE]: localClause,
     [TEMPLATE_PARAM_REF_CLAUSE]: `referencing ${columnNoun(refColumns.length)} ${quoteJoin(refColumns)} of table '${nameOf(refTable)}'${refSchema ? ` in schema '${refSchema}'` : ''}`,
   }
 }
