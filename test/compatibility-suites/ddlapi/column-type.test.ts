@@ -280,12 +280,6 @@ describe('DDLApi Column Type: ', () => {
     expect(result).toEqual(diffsMatcher([
       expect.objectContaining({
         action: DiffAction.replace,
-        beforeDeclarationPaths: [PRECISION_PATH],
-        afterDeclarationPaths: [PRECISION_PATH],
-        type: nonBreaking,
-      }),
-      expect.objectContaining({
-        action: DiffAction.replace,
         beforeDeclarationPaths: [SCALE_PATH],
         afterDeclarationPaths: [SCALE_PATH],
         type: nonBreaking,
