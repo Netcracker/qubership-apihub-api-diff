@@ -442,11 +442,6 @@ describe('DDLApi Column Type: ', () => {
       }),
       expect.objectContaining({
         action: DiffAction.remove,
-        beforeDeclarationPaths: [[...ENUM_PATH, 'values']],
-        type: unclassified,
-      }),
-      expect.objectContaining({
-        action: DiffAction.remove,
         beforeDeclarationPaths: [ENUM_PATH],
         type: unclassified,
       }),
@@ -462,11 +457,6 @@ describe('DDLApi Column Type: ', () => {
         beforeDeclarationPaths: [TYPE_PATH],
         afterDeclarationPaths: [[...ENUM_PATH, 'type']],
         type: breaking,
-      }),
-      expect.objectContaining({
-        action: DiffAction.add,
-        afterDeclarationPaths: [[...ENUM_PATH, 'values']],
-        type: unclassified,
       }),
       expect.objectContaining({
         action: DiffAction.add,

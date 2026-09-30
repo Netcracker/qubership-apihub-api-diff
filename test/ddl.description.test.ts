@@ -77,6 +77,32 @@ describe('column type', () => {
     expect(onlyDescription(diffs)).toBe("[Changed] type for column 'name' of table 't' from 'varchar(50)' to 'varchar(200)'")
   })
 
+  it('enum → text reports the type change only', async () => {
+    const beforeSql = `
+      create type mood as enum ('happy', 'sad');
+      create table t(m mood);
+    `
+    const afterSql = `
+      create type mood as enum ('happy', 'sad');
+      create table t(m text);
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] type for column 'm' of table 't' from 'mood' to 'text'")
+  })
+
+  it('text → enum reports the type change only', async () => {
+    const beforeSql = `
+      create type mood as enum ('happy', 'sad');
+      create table t(m text);
+    `
+    const afterSql = `
+      create type mood as enum ('happy', 'sad');
+      create table t(m mood);
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Changed] type for column 'm' of table 't' from 'text' to 'mood'")
+  })
+
   it('int → text', async () => {
     const beforeSql = 'create table t(id int);'
     const afterSql = 'create table t(id text);'
@@ -330,6 +356,48 @@ describe('enum values', () => {
     `
     const { diffs } = await diffSql(beforeSql, afterSql)
     expect(onlyDescription(diffs)).toBe("[Deleted] value 'neutral' from enum 'mood'")
+  })
+})
+
+describe('enum types', () => {
+  it('added enum lists its values', async () => {
+    const beforeSql = 'create table t(id int);'
+    const afterSql = `
+      create type mood as enum ('happy', 'sad');
+      create table t(id int);
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Added] enum 'mood' with values 'happy', 'sad'")
+  })
+
+  it('deleted enum with one value uses the singular', async () => {
+    const beforeSql = `
+      create type mood as enum ('happy');
+      create table t(id int);
+    `
+    const afterSql = 'create table t(id int);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Deleted] enum 'mood' with value 'happy'")
+  })
+
+  it('deleted enum with no values names the enum only', async () => {
+    const beforeSql = `
+      create type mood as enum ();
+      create table t(id int);
+    `
+    const afterSql = 'create table t(id int);'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Deleted] enum 'mood'")
+  })
+
+  it('added enum in a non-default schema includes the in-schema clause', async () => {
+    const beforeSql = 'create table s.t(id int);'
+    const afterSql = `
+      create type s.mood as enum ('happy', 'sad');
+      create table s.t(id int);
+    `
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(onlyDescription(diffs)).toBe("[Added] enum 'mood' in schema 's' with values 'happy', 'sad'")
   })
 })
 

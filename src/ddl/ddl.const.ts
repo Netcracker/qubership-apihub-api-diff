@@ -40,6 +40,8 @@ export const TEMPLATE_PARAM_INDEX_KIND = 'indexKind'
 export const TEMPLATE_PARAM_COLUMNS_CLAUSE = 'columnsClause'
 // Precomposed single index-part clause: `column 'b'` or `expression 'lower(a)'`.
 export const TEMPLATE_PARAM_PART_CLAUSE = 'partClause'
+// Precomposed enum value list for a whole enum add/delete: `value 'a'` or `values 'a', 'b'`.
+export const TEMPLATE_PARAM_ENUM_VALUES_CLAUSE = 'enumValuesClause'
 // Precomposed foreign-key clauses (each carries its own `in schema` suffix when non-default):
 // local = `on column 'a' of table 'u'`, ref = `referencing column 'x' of table 't'`.
 export const TEMPLATE_PARAM_LOCAL_CLAUSE = 'localClause'

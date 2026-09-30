@@ -29,6 +29,7 @@ import {
   DiffCallback,
   DiffEntry,
   DiffRemove,
+  IGNORE_ADD_REMOVE_RULE,
   InternalCompareOptions,
   JsonNode,
   MergeState,
@@ -381,17 +382,23 @@ const useMergeFactory = (onDiff: DiffCallback, options: InternalCompareOptions):
           }
           once = true
 
+          // ignoreAddRemove on the child rule drops the diff only. A removed child is still
+          // merged by the crawl (the removed-node branch of the hook), an added one below.
           keyToRemove.forEach((keyToBefore) => {
             const removalBwc = apiCompatibilityScopeFunction?.([...crawlContext.path, keyToBefore], beforeValue[keyToBefore]) || computedApiCompatibilityScope
             const childCtx = createChildContext(ctx, keyToBefore, keyToBefore, undefined, removalBwc)
-            jsoDiffEntries.push(getOrCreateChildDiffRemove(diffUniquenessCache, childCtx))
+            if (!childCtx.rules[IGNORE_ADD_REMOVE_RULE]) {
+              jsoDiffEntries.push(getOrCreateChildDiffRemove(diffUniquenessCache, childCtx))
+            }
           })
 
           keysToAdd.forEach((keyInAfter) => {
             const additionBwc = apiCompatibilityScopeFunction?.([...crawlContext.path, keyInAfter], undefined, afterJso[keyInAfter]) || computedApiCompatibilityScope
             const keyInMerge = isArray(mergedJsoValue) ? mergedJsoValue.length : keyInAfter
             const childCtx = createChildContext(ctx, keyInMerge, undefined, keyInAfter, additionBwc)
-            jsoDiffEntries.push(getOrCreateChildDiffAdd(diffUniquenessCache, childCtx))
+            if (!childCtx.rules[IGNORE_ADD_REMOVE_RULE]) {
+              jsoDiffEntries.push(getOrCreateChildDiffAdd(diffUniquenessCache, childCtx))
+            }
             mergedJsoValue[keyInMerge] = afterValue[keyInAfter]
             // add case- cleanup firstReferenceKeyProperty if required
             if (!options.retainFirstReferenceKeyProperty && options.firstReferenceKeyProperty && isObject(afterValue[keyInAfter])) {

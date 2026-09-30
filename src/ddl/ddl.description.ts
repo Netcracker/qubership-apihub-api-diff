@@ -39,6 +39,7 @@ import {
   TEMPLATE_PARAM_COLUMNS_CLAUSE,
   TEMPLATE_PARAM_ENUM_TYPE_NAME,
   TEMPLATE_PARAM_ENUM_VALUE,
+  TEMPLATE_PARAM_ENUM_VALUES_CLAUSE,
   TEMPLATE_PARAM_FACET,
   TEMPLATE_PARAM_FK_ACTION,
   TEMPLATE_PARAM_FK_NAME,
@@ -80,6 +81,15 @@ export const COLUMN_FACET_TEMPLATES = [
   "[{{action}}] {{facet}} '{{value}}' for column '{{columnName}}' of table '{{tableName}}' in schema '{{schemaName}}'",
   "[{{action}}] {{facet}} for column '{{columnName}}' of table '{{tableName}}' from '{{oldValue}}' to '{{newValue}}'",
   "[{{action}}] {{facet}} for column '{{columnName}}' of table '{{tableName}}' in schema '{{schemaName}}' from '{{oldValue}}' to '{{newValue}}'",
+]
+
+// A whole enum type add/delete carries its values inline; an enum with no values degrades to
+// the name-only rows.
+export const ENUM_TYPE_TEMPLATES = [
+  "[{{action}}] enum '{{enumTypeName}}'",
+  "[{{action}}] enum '{{enumTypeName}}' in schema '{{schemaName}}'",
+  "[{{action}}] enum '{{enumTypeName}}' with {{enumValuesClause}}",
+  "[{{action}}] enum '{{enumTypeName}}' in schema '{{schemaName}}' with {{enumValuesClause}}",
 ]
 
 export const ENUM_VALUE_TEMPLATES = [
@@ -177,6 +187,7 @@ export const CHECK_TEMPLATES = [
 export const tableDescription: DiffDescriptionRule = diffDescription(TABLE_TEMPLATES)
 export const columnDescription: DiffDescriptionRule = diffDescription(COLUMN_TEMPLATES)
 export const columnFacetDescription: DiffDescriptionRule = diffDescription(COLUMN_FACET_TEMPLATES)
+export const enumTypeDescription: DiffDescriptionRule = diffDescription(ENUM_TYPE_TEMPLATES)
 export const enumValueDescription: DiffDescriptionRule = diffDescription(ENUM_VALUE_TEMPLATES)
 export const commentDescription: DiffDescriptionRule = diffDescription(COMMENT_TEMPLATES)
 export const indexDescription: DiffDescriptionRule = diffDescription(INDEX_TEMPLATES)
@@ -685,6 +696,27 @@ const attrMemberParams: DdlParamHandler = (pc, diff) => {
   return undefined
 }
 
+// `value 'a'` / `values 'a', 'b'` for a whole enum's value list.
+const renderEnumValuesClause = (enumNode: unknown): string | undefined => {
+  const values = isObject(enumNode) ? enumNode[DdlapiProperties.Values] : undefined
+  if (!isArray(values)) { return undefined }
+  const labels = values.map(checkPrimitiveType).filter((value): value is PrimitiveType => value !== undefined)
+  return labels.length === 0 ? undefined : `${labels.length === 1 ? 'value' : 'values'} ${quoteJoin(labels)}`
+}
+
+// Enum type add / remove — the EnumType member of `objects[*]`.
+const enumTypeParams: DdlParamHandler = pc => {
+  const enumPath = pc.pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Objects && typeof lastSegments(p)[1] === 'number')
+  if (!enumPath) { return undefined }
+  const enumNode = pc.nodeAt(enumPath, enumPath.length)
+  return {
+    ...pc.base,
+    [TEMPLATE_PARAM_ENUM_TYPE_NAME]: nameOf(enumNode, DdlapiProperties.Type),
+    [TEMPLATE_PARAM_ENUM_VALUES_CLAUSE]: renderEnumValuesClause(enumNode),
+    [TEMPLATE_PARAM_SCHEMA_NAME]: enumPath[0] === DdlapiProperties.Schemas ? pc.schemaOf(enumPath) : undefined,
+  }
+}
+
 // Enum value add / remove — EnumType.values[*].
 const enumValueParams: DdlParamHandler = (pc, diff) => {
   const enumValuePath = pc.pathWhere(p => lastSegments(p)[0] === DdlapiProperties.Values && typeof lastSegments(p)[1] === 'number')
@@ -704,4 +736,5 @@ export const createColumnParamsCalculator = (dialect: DdlDiffDialect): DiffTempl
 export const createIndexParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => paramsCalculator(dialect, indexParams)
 export const createForeignKeyParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => paramsCalculator(dialect, foreignKeyParams)
 export const createAttrMemberParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => paramsCalculator(dialect, attrMemberParams)
+export const createEnumTypeParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => paramsCalculator(dialect, enumTypeParams)
 export const createEnumValueParamsCalculator = (dialect: DdlDiffDialect): DiffTemplateParamsCalculator => paramsCalculator(dialect, enumValueParams)

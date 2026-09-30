@@ -7,6 +7,7 @@ import {
   CompareMode,
   CompareRule,
   CompareRules,
+  IGNORE_ADD_REMOVE_RULE,
   IGNORE_DIFFERENCE_IN_KEYS_RULE,
   IGNORE_DIFFERENCE_RULE,
 } from '../types'
@@ -42,10 +43,12 @@ import {
   commentDescription,
   createAttrMemberParamsCalculator,
   createColumnParamsCalculator,
+  createEnumTypeParamsCalculator,
   createEnumValueParamsCalculator,
   createForeignKeyParamsCalculator,
   createIndexParamsCalculator,
   createTableParamsCalculator,
+  enumTypeDescription,
   enumValueDescription,
   foreignKeyDescription,
   indexDescription,
@@ -97,6 +100,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   const indexParams = createIndexParamsCalculator(dialect)
   const foreignKeyParams = createForeignKeyParamsCalculator(dialect)
   const attrMemberParams = createAttrMemberParamsCalculator(dialect)
+  const enumTypeParams = createEnumTypeParamsCalculator(dialect)
   const enumValueParams = createEnumValueParamsCalculator(dialect)
 
   // --- union kind-dispatchers (lazy; default branch → dialect lookup → fall through) ---
@@ -156,7 +160,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
       case ObjectKind.ForeignKey: return foreignKeyRules
       case ObjectKind.Check: return checkRules
       case ObjectKind.NamedDefault: return namedDefaultRules
-      case ObjectKind.EnumType: return enumTypeRules
+      case ObjectKind.EnumType: return enumObjectRules
       default:
         return (kind !== undefined ? dialect.objectRulesFor(kind) : undefined) ?? {}
     }
@@ -171,9 +175,15 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   // cross-family breaking signal rides on the `/type` name (kind is suppressed; a cross-family
   // change always changes the canonical name). Within-kind size/precision/scale changes are
   // non-breaking (O1). `/unsigned` is a PG-irrelevant MySQL-ism (always false) → suppressed.
+  //
+  // An enum column's SchemaType is the EnumType declared in `objects`, so a column type change
+  // to or from an enum adds or removes `/values` on the column's SchemaType. The `/type` name
+  // change already reports it, and the diff would point at the enum's declaration even when the
+  // enum itself is unchanged, so that add/remove is not reported.
   const typeFieldRules: CompareRules = {
     '/kind': SUPPRESS,
     '/unsigned': SUPPRESS,
+    '/values': { [IGNORE_ADD_REMOVE_RULE]: true },
     '/type': { $: typeNameClassifier, description: columnFacetDescription }, // facet = type
     '/size': { $: allNonBreaking, description: columnFacetDescription },
     '/precision': { $: allNonBreaking, description: columnFacetDescription },
@@ -183,6 +193,7 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
   const enumTypeRules: CompareRules = {
     ...typeFieldRules,
     '/values': {
+      [IGNORE_ADD_REMOVE_RULE]: true,
       mapping: enumValuesMappingResolver,
       // set semantics — a reorder maps a value to a new index; ignoreKeyDifference (on the
       // element) stops that index change being reported as a rename.
@@ -194,6 +205,12 @@ export const ddlRules = (_options: DdlRulesOptions, dialect: DdlDiffDialect): Co
       },
     },
     '/attrs': attrsArrayRule,
+  }
+  // The EnumType declaration itself (`CREATE TYPE … AS ENUM`), as a member of `objects`.
+  const enumObjectRules: CompareRules = {
+    ...enumTypeRules,
+    descriptionParamCalculator: enumTypeParams,
+    description: enumTypeDescription,
   }
 
   // --- Attr members ---
