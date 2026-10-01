@@ -602,6 +602,36 @@ describe('indexes and primary keys', () => {
       "[Changed] position of column 'b' in index 'idx' of table 't' from '2' to '1'",
     ])
   })
+
+  it('primary key column reorder ⇒ one position description per moved column', async () => {
+    const beforeSql = 'create table t(a int not null, b int not null, primary key (a, b));'
+    const afterSql = 'create table t(a int not null, b int not null, primary key (b, a));'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs).toHaveLength(2)
+    expect(diffs.map(d => d.description).sort()).toEqual([
+      "[Changed] position of column 'a' in primary key of table 't' from '1' to '2'",
+      "[Changed] position of column 'b' in primary key of table 't' from '2' to '1'",
+    ])
+  })
+
+  it('middle column removed from a primary key ⇒ the removal and the next column moving up', async () => {
+    const beforeSql = 'create table t(a int not null, b int not null, c int not null, primary key (a, b, c));'
+    const afterSql = 'create table t(a int not null, b int not null, c int not null, primary key (a, c));'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs.map(d => d.description).sort()).toEqual([
+      "[Changed] position of column 'c' in primary key of table 't' from '3' to '2'",
+      "[Deleted] column 'b' from primary key of table 't'",
+    ])
+  })
+
+  it('primary key column reorder in a non-default schema includes the in-schema clause', async () => {
+    const beforeSql = 'create table s.t(a int not null, b int not null, primary key (a, b));'
+    const afterSql = 'create table s.t(a int not null, b int not null, primary key (b, a));'
+    const { diffs } = await diffSql(beforeSql, afterSql)
+    expect(diffs.map(d => d.description)).toContain(
+      "[Changed] position of column 'a' in primary key of table 't' in schema 's' from '1' to '2'",
+    )
+  })
 })
 
 describe('foreign keys', () => {

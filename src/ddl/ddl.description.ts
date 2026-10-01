@@ -134,6 +134,9 @@ export const INDEX_TEMPLATES = [
   // a key column added to or removed from the primary key
   "[{{action}}] {{partClause}} {{preposition}} primary key of table '{{tableName}}'",
   "[{{action}}] {{partClause}} {{preposition}} primary key of table '{{tableName}}' in schema '{{schemaName}}'",
+  // a primary key column moved to another position (1-based position change)
+  "[{{action}}] position of {{partClause}} in primary key of table '{{tableName}}' from '{{oldValue}}' to '{{newValue}}'",
+  "[{{action}}] position of {{partClause}} in primary key of table '{{tableName}}' in schema '{{schemaName}}' from '{{oldValue}}' to '{{newValue}}'",
   // an unnamed index (an inline UNIQUE column constraint has no name to quote). Listed before the
   // named rows so that on a tie — `findTemplate` keeps the later of two equally rich templates —
   // a named index still selects the row that quotes its name.
@@ -500,6 +503,15 @@ const indexParams: DdlParamHandler = (pc, diff) => {
     const pkPartsIdx = pkPath.indexOf(DdlapiProperties.Parts)
     if (lastSegments(pkPath)[0] === DdlapiProperties.Parts && typeof pkPath[pkPath.length - 1] === 'number') {
       return { ...pkCommon, [TEMPLATE_PARAM_PART_CLAUSE]: renderPartClause(pc.nodeAt(pkPath, pkPartsIdx + 2)) }
+    }
+    if (pkPartsIdx >= 0 && pkPath[pkPath.length - 1] === DdlapiProperties.SeqNo) {
+      // key column moved — `seqNo` is 0-based in the model, rendered 1-based.
+      return {
+        ...pkCommon,
+        [TEMPLATE_PARAM_PART_CLAUSE]: renderPartClause(pc.nodeAt(pkPath, pkPartsIdx + 2)),
+        [TEMPLATE_PARAM_OLD_VALUE]: oneBased(beforeValueOf(diff)),
+        [TEMPLATE_PARAM_NEW_VALUE]: oneBased(afterValueOf(diff)),
+      }
     }
     return pkCommon
   }
